@@ -1,0 +1,273 @@
+html_content = """<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phân loại Giai đoạn Ung thư Phụ khoa - OncoPortal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0fdfa; }
+        .hero-gradient { background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%); }
+        .tab-active { border-bottom: 2px solid #0d9488; color: #0d9488; font-weight: 700; }
+        .tab-inactive { color: #64748b; font-weight: 500; }
+        .tab-inactive:hover { color: #0d9488; }
+        
+        .criteria-row:hover { background-color: #f0fdfa; cursor: pointer; }
+        .criteria-selected { background-color: #ccfbf1 !important; border-left: 4px solid #0d9488; }
+        
+        /* Ẩn scrollbar nhưng vẫn cho cuộn */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-teal-600 text-white p-2 rounded-lg">
+                    <i class="fa-solid fa-staff-snake text-xl"></i>
+                </div>
+                <span class="font-black text-xl text-teal-800 tracking-tight">Onco<span class="text-sky-500">Portal</span></span>
+            </div>
+            <nav class="hidden md:flex space-x-8">
+                <a href="index.html" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition"><i class="fa-solid fa-house mr-1"></i> Trang chủ</a>
+                <a href="#" class="text-teal-600 font-bold border-b-2 border-teal-600 px-1 py-2">Công cụ TNM</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex flex-col lg:flex-row gap-8">
+        
+        <div class="w-full lg:w-2/3 flex flex-col">
+            <div class="mb-4">
+                <a href="index.html" class="text-teal-600 hover:text-teal-800 text-sm font-medium"><i class="fa-solid fa-arrow-left mr-1"></i> Quay lại</a>
+                <h1 class="text-3xl font-black text-slate-800 mt-2">Phân loại Giai đoạn Ung thư Phụ khoa</h1>
+                <p class="text-slate-500 mt-1">Dựa trên hệ thống phân loại FIGO mới nhất.</p>
+            </div>
+
+            <div class="bg-white rounded-t-2xl border border-slate-200 border-b-0 px-4 pt-4 flex space-x-6 overflow-x-auto no-scrollbar">
+                <button onclick="switchTab('ovarian')" id="tab-ovarian" class="tab-active pb-3 px-2 whitespace-nowrap transition">
+                    <i class="fa-solid fa-disease mr-2"></i>Buồng trứng
+                </button>
+                <button onclick="switchTab('cervical')" id="tab-cervical" class="tab-inactive pb-3 px-2 whitespace-nowrap transition">
+                    <i class="fa-solid fa-venus mr-2"></i>Cổ tử cung (FIGO 2018)
+                </button>
+                <button onclick="switchTab('endometrial')" id="tab-endometrial" class="tab-inactive pb-3 px-2 whitespace-nowrap transition">
+                    <i class="fa-solid fa-dna mr-2"></i>Nội mạc tử cung (FIGO 2023)
+                </button>
+            </div>
+
+            <div class="bg-white rounded-b-2xl rounded-tr-2xl border border-slate-200 shadow-sm p-6 flex-1">
+                <div class="mb-4 bg-sky-50 border border-sky-100 p-4 rounded-lg text-sm text-sky-800">
+                    <i class="fa-solid fa-circle-info mr-2"></i> <strong>Hướng dẫn:</strong> Đọc và click chọn vào mô tả tổn thương phù hợp nhất (xa nhất/nặng nhất) với tình trạng bệnh nhân.
+                </div>
+
+                <div id="criteria-container" class="space-y-4">
+                    </div>
+            </div>
+        </div>
+
+        <div class="w-full lg:w-1/3 relative">
+            <div class="sticky top-24 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-xl border border-slate-700 p-6 text-white text-center flex flex-col h-[400px]">
+                <div class="w-16 h-16 mx-auto bg-teal-500/20 text-teal-400 rounded-full flex items-center justify-center text-3xl mb-4">
+                    <i class="fa-solid fa-microscope"></i>
+                </div>
+                <h3 class="text-slate-300 text-sm font-bold uppercase tracking-wider mb-2">Kết quả Phân loại</h3>
+                
+                <div class="flex-1 flex flex-col items-center justify-center">
+                    <div id="result-stage" class="text-6xl font-black text-white mb-4 drop-shadow-md">
+                        --
+                    </div>
+                    <div id="result-desc" class="text-slate-300 text-sm px-4">
+                        Vui lòng chọn tiêu chuẩn lâm sàng ở danh sách bên trái.
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-4 border-t border-slate-700">
+                    <button onclick="resetSelection()" class="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition text-white">
+                        <i class="fa-solid fa-rotate-right mr-2"></i> Đặt lại lựa chọn
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-8 border-t-4 border-teal-600 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
+            <div>
+                <p class="font-bold text-white mb-1"><i class="fa-solid fa-staff-snake text-teal-500 mr-2"></i> OncoPortal &copy; 2026</p>
+                <p class="text-xs">Công cụ hỗ trợ nội bộ. Vui lòng đối chiếu với thực tế lâm sàng.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Cơ sở dữ liệu từ hình ảnh được cung cấp
+        const db = {
+            'ovarian': [
+                { stage: 'I', group: 'Giai đoạn I', title: 'Giới hạn ở buồng trứng/vòi trứng' },
+                { stage: 'IA', desc: 'Ung thư ở 1 buồng trứng hoặc vòi trứng (không vỡ vỏ/tràn/dịch rửa âm tính).' },
+                { stage: 'IB', desc: 'Ung thư ở cả 2 buồng trứng hoặc vòi trứng (không vỡ vỏ/tràn/dịch rửa âm tính).' },
+                { stage: 'IC1', desc: 'Tràn vỡ khối u trong quá trình phẫu thuật (Surgical spill).' },
+                { stage: 'IC2', desc: 'Vỏ bao vỡ trước phẫu thuật hoặc có u trên bề mặt.' },
+                { stage: 'IC3', desc: 'Tế bào ác tính trong dịch báng hoặc dịch rửa ổ bụng.' },
+                
+                { stage: 'II', group: 'Giai đoạn II', title: 'Lan tràn vùng chậu' },
+                { stage: 'IIA', desc: 'Ung thư lan ra tử cung và/hoặc vòi trứng và/hoặc buồng trứng.' },
+                { stage: 'IIB', desc: 'Lan ra các mô vùng chậu khác (đại tràng hoặc bàng quang).' },
+                
+                { stage: 'III', group: 'Giai đoạn III', title: 'Di căn phúc mạc ngoài vùng chậu / Hạch sau phúc mạc' },
+                { stage: 'IIIA1', desc: 'Di căn hạch sau phúc mạc dương tính.' },
+                { stage: 'IIIA2', desc: 'Di căn phúc mạc vi thể ngoài vùng chậu.' },
+                { stage: 'IIIB', desc: 'Di căn phúc mạc đại thể ngoài vùng chậu ≤ 2 cm.' },
+                { stage: 'IIIC', desc: 'Di căn phúc mạc đại thể ngoài vùng chậu > 2 cm.' },
+                
+                { stage: 'IV', group: 'Giai đoạn IV', title: 'Di căn xa' },
+                { stage: 'IVA', desc: 'Tràn dịch màng phổi có tế bào học dương tính.' },
+                { stage: 'IVB', desc: 'Di căn nhu mô gan, lách, hoặc cơ quan ngoài ổ bụng.' }
+            ],
+            'cervical': [
+                { stage: 'I', group: 'Giai đoạn I', title: 'Giới hạn nghiêm ngặt ở cổ tử cung' },
+                { stage: 'IA1', desc: 'Xâm lấn mô đệm sâu ≤ 3 mm.' },
+                { stage: 'IA2', desc: 'Xâm lấn mô đệm sâu > 3 mm và ≤ 5 mm.' },
+                { stage: 'IB1', desc: 'Xâm lấn mô đệm > 5 mm và kích thước khối u lớn nhất ≤ 2 cm.' },
+                { stage: 'IB2', desc: 'Kích thước khối u lớn nhất > 2 cm và ≤ 4 cm.' },
+                { stage: 'IB3', desc: 'Kích thước khối u lớn nhất > 4 cm.' },
+                
+                { stage: 'II', group: 'Giai đoạn II', title: 'Lan ra khỏi tử cung, nhưng chưa tới 1/3 dưới âm đạo hoặc vách chậu' },
+                { stage: 'IIA1', desc: 'Lan ra 2/3 trên âm đạo, không lan ra dây chằng rộng, kích thước ≤ 4 cm.' },
+                { stage: 'IIA2', desc: 'Lan ra 2/3 trên âm đạo, không lan ra dây chằng rộng, kích thước > 4 cm.' },
+                { stage: 'IIB', desc: 'Lan ra dây chằng rộng (parametrial involvement) nhưng chưa tới vách chậu.' },
+                
+                { stage: 'III', group: 'Giai đoạn III', title: 'Lan tới 1/3 dưới âm đạo, vách chậu, thận ứ nước, hạch chậu/cạnh động mạch chủ' },
+                { stage: 'IIIA', desc: 'Lan tới 1/3 dưới âm đạo, không lan tới vách chậu.' },
+                { stage: 'IIIB', desc: 'Lan tới vách chậu và/hoặc gây thận ứ nước/thận mất chức năng.' },
+                { stage: 'IIIC1', desc: 'Chỉ di căn hạch vùng chậu.' },
+                { stage: 'IIIC2', desc: 'Di căn hạch cạnh động mạch chủ (para-aortic).' },
+                
+                { stage: 'IV', group: 'Giai đoạn IV', title: 'Lan ra ngoài vùng chậu hoặc niêm mạc bàng quang/trực tràng' },
+                { stage: 'IVA', desc: 'Lan tới các cơ quan vùng chậu lân cận (niêm mạc bàng quang, trực tràng).' },
+                { stage: 'IVB', desc: 'Di căn cơ quan xa.' }
+            ],
+            'endometrial': [
+                { stage: 'I', group: 'Giai đoạn I', title: 'Giới hạn ở thân tử cung và buồng trứng (FIGO 2023)' },
+                { stage: 'IA1', desc: 'Mô học không xâm lấn mạnh (Non-aggressive) giới hạn ở polyp hoặc nội mạc tử cung.' },
+                { stage: 'IA2', desc: 'Mô học không xâm lấn mạnh, xâm lấn < 50% cơ tử cung, không có hoặc chỉ có xâm lấn mạch máu (LVSI) khu trú.' },
+                { stage: 'IA3', desc: 'Ung thư biểu mô dạng nội mạc (Endometrioid) grade thấp giới hạn ở tử cung và buồng trứng.' },
+                { stage: 'IB', desc: 'Mô học không xâm lấn mạnh, xâm lấn ≥ 50% cơ tử cung, không có hoặc chỉ có LVSI khu trú.' },
+                { stage: 'IC', desc: 'Mô học xâm lấn mạnh (Aggressive) giới hạn ở polyp hoặc nội mạc tử cung.' },
+                
+                { stage: 'II', group: 'Giai đoạn II', title: 'Xâm lấn mô đệm cổ tử cung, LVSI đáng kể, hoặc mô học mạnh có xâm lấn cơ' },
+                { stage: 'IIA', desc: 'Xâm lấn mô đệm cổ tử cung của loại mô học không xâm lấn mạnh.' },
+                { stage: 'IIB', desc: 'Có xâm lấn mạch máu hạch bạch huyết (LVSI) đáng kể của loại mô học không xâm lấn mạnh.' },
+                { stage: 'IIC', desc: 'Mô học xâm lấn mạnh có bất kỳ mức độ xâm lấn cơ tử cung nào.' },
+                
+                { stage: 'III', group: 'Giai đoạn III', title: 'Lan tại chỗ/Vùng' },
+                { stage: 'IIIA1', desc: 'Lan tới buồng trứng hoặc vòi trứng (trừ trường hợp đáp ứng tiêu chuẩn IA3).' },
+                { stage: 'IIIA2', desc: 'Xâm lấn lớp thanh mạc dưới tử cung hoặc xuyên qua thanh mạc.' },
+                { stage: 'IIIB1', desc: 'Di căn hoặc lan trực tiếp tới âm đạo và/hoặc dây chằng rộng.' },
+                { stage: 'IIIB2', desc: 'Di căn phúc mạc chậu.' },
+                { stage: 'IIIC1', desc: 'Di căn hạch chậu (i: Vi di căn, ii: Di căn đại thể).' },
+                { stage: 'IIIC2', desc: 'Di căn hạch cạnh ĐM chủ (i: Vi di căn, ii: Di căn đại thể).' },
+                
+                { stage: 'IV', group: 'Giai đoạn IV', title: 'Lan tới bàng quang, ruột hoặc di căn xa' },
+                { stage: 'IVA', desc: 'Xâm lấn niêm mạc bàng quang và/hoặc niêm mạc ruột.' },
+                { stage: 'IVB', desc: 'Di căn phúc mạc ổ bụng ngoài vùng chậu.' },
+                { stage: 'IVC', desc: 'Di căn xa (hạch ngoài ổ bụng/trong ổ bụng trên cuống thận, phổi, gan, não, xương).' }
+            ]
+        };
+
+        let currentType = 'ovarian';
+        let selectedItemIndex = -1;
+
+        function renderList() {
+            const container = document.getElementById('criteria-container');
+            container.innerHTML = '';
+            
+            const data = db[currentType];
+            let currentGroup = '';
+
+            data.forEach((item, index) => {
+                if (item.group) {
+                    // Header của nhóm
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'mt-6 mb-2 first:mt-0 flex items-center';
+                    groupHeader.innerHTML = `
+                        <span class="bg-teal-100 text-teal-800 text-xs font-bold px-2 py-1 rounded mr-2">${item.group}</span>
+                        <span class="font-bold text-slate-700 text-sm uppercase">${item.title}</span>
+                    `;
+                    container.appendChild(groupHeader);
+                } else {
+                    // Hàng có thể chọn
+                    const isSelected = selectedItemIndex === index;
+                    const row = document.createElement('div');
+                    row.className = `criteria-row border border-slate-200 rounded-lg p-3 flex gap-4 items-start transition ${isSelected ? 'criteria-selected' : ''}`;
+                    row.onclick = () => selectStage(index, item.stage, item.desc);
+                    
+                    row.innerHTML = `
+                        <div class="mt-0.5">
+                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-teal-500 bg-teal-500 text-white' : 'border-slate-300'}">
+                                ${isSelected ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+                            </div>
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800 mr-2">Stage ${item.stage}:</span>
+                            <span class="text-slate-600 text-sm">${item.desc}</span>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                }
+            });
+        }
+
+        function selectStage(index, stage, desc) {
+            selectedItemIndex = index;
+            renderList(); // re-render để update UI màu sắc
+            
+            // Cập nhật thẻ kết quả bên phải
+            const resultStage = document.getElementById('result-stage');
+            const resultDesc = document.getElementById('result-desc');
+            
+            resultStage.innerHTML = `<span class="text-2xl text-teal-400 align-top mr-1">Giai đoạn</span>${stage}`;
+            resultDesc.innerText = desc;
+        }
+
+        function resetSelection() {
+            selectedItemIndex = -1;
+            renderList();
+            document.getElementById('result-stage').innerText = '--';
+            document.getElementById('result-desc').innerText = 'Vui lòng chọn tiêu chuẩn lâm sàng ở danh sách bên trái.';
+        }
+
+        function switchTab(type) {
+            currentType = type;
+            resetSelection();
+            
+            // Cập nhật giao diện tab
+            ['ovarian', 'cervical', 'endometrial'].forEach(t => {
+                const tab = document.getElementById(`tab-${t}`);
+                if (t === type) {
+                    tab.classList.remove('tab-inactive');
+                    tab.classList.add('tab-active');
+                } else {
+                    tab.classList.remove('tab-active');
+                    tab.classList.add('tab-inactive');
+                }
+            });
+        }
+
+        // Khởi tạo ban đầu
+        renderList();
+
+    </script>
+</body>
+</html>
+"""
+
+with open('tnm_ungthu.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("[file-tag: tnm_ungthu.html]")

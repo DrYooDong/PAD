@@ -27,12 +27,12 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
             </div>
             <div>
-                <h1 class="text-xl font-bold tracking-tight uppercase">TNM Staging Tool</h1>
-                <p class="text-teal-200 text-xs font-medium">Hỗ trợ Bác sĩ Ung bướu - BV Ung Bướu TP.HCM</p>
+                <h1 class="text-xl font-bold tracking-tight uppercase">TNM & FIGO Staging Tool</h1>
+                <p class="text-teal-200 text-xs font-medium">Hỗ trợ Bác sĩ Ung bướu - Phụ khoa</p>
             </div>
         </div>
         <div id="version-tag" class="hidden md:block text-[10px] font-bold bg-teal-900 px-3 py-1 rounded-full border border-teal-700 opacity-80">
-            AJCC VERSION 9 / 8
+            AJCC 8/9 & FIGO
         </div>
     </header>
 
@@ -41,11 +41,18 @@
             <div class="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center gap-3">
                 <label class="text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Chọn loại ung thư:</label>
                 <select id="cancer-select" onchange="loadCancerType()" class="flex-1 p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none font-bold text-teal-900 bg-slate-50 text-base">
-                    <option value="cervix_v9">Ung thư Cổ tử cung (AJCC v9)</option>
-                    <option value="lung_v8">Ung thư Phổi (NSCLC - AJCC 8th)</option>
-                    <option value="liver_v8">Ung thư Gan (HCC - AJCC 8th)</option>
-                    <option value="thyroid_v8">Ung thư Tuyến giáp (Biệt hóa - AJCC 8th)</option>
-                    <option value="breast_v8">Ung thư Vú (Lâm sàng - AJCC 8th)</option>
+                    <optgroup label="Ung thư Phụ khoa (FIGO)">
+                        <option value="cervix_figo2018">Ung thư Cổ tử cung (FIGO 2018)</option>
+                        <option value="ovary_figo">Ung thư Buồng trứng (FIGO)</option>
+                        <option value="endometrial_figo">Ung thư Thân tử cung (FIGO)</option>
+                        <option value="vulva_figo">Ung thư Âm hộ (FIGO)</option>
+                    </optgroup>
+                    <optgroup label="Các ung thư khác (AJCC)">
+                        <option value="lung_v8">Ung thư Phổi (NSCLC - AJCC 8th)</option>
+                        <option value="liver_v8">Ung thư Gan (HCC - AJCC 8th)</option>
+                        <option value="thyroid_v8">Ung thư Tuyến giáp (Biệt hóa - AJCC 8th)</option>
+                        <option value="breast_v8">Ung thư Vú (Lâm sàng - AJCC 8th)</option>
+                    </optgroup>
                 </select>
             </div>
         </div>
@@ -59,7 +66,7 @@
                             <span class="bg-teal-100 text-teal-700 w-6 h-6 flex items-center justify-center rounded-full text-xs font-black">T</span> 
                             Khối u nguyên phát (Tumor)
                         </h3>
-                        <div id="t-container" class="space-y-2"></div>
+                        <div id="t-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
                     </div>
 
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
@@ -75,7 +82,7 @@
                             <span class="bg-teal-100 text-teal-700 w-6 h-6 flex items-center justify-center rounded-full text-xs font-black">M</span> 
                             Di căn xa (Metastasis)
                         </h3>
-                        <div id="m-container" class="flex gap-2"></div>
+                        <div id="m-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
                     </div>
                 </div>
 
@@ -94,7 +101,7 @@
 
                         <div class="mb-8 bg-slate-800 p-6 rounded-2xl border border-slate-700 relative">
                             <p class="text-xs font-bold text-slate-400 uppercase mb-2">GIAI ĐOẠN (STAGE):</p>
-                            <p id="res-stage" class="text-7xl font-black text-white leading-none">--</p>
+                            <p id="res-stage" class="text-6xl font-black text-white leading-none">--</p>
                             <div id="res-extra" class="mt-4 text-sm font-bold text-teal-400 border-t border-slate-700 pt-3"></div>
                         </div>
 
@@ -114,111 +121,156 @@
 
     <script>
         const cancerData = {
-            "cervix_v9": {
-                "name": "Cổ tử cung (AJCC v9)",
+            "cervix_figo2018": {
+                "name": "Cổ tử cung (FIGO 2018)",
                 "T": [
-                    { id: "T1a1", desc: "Xâm lấn mô đệm ≤ 3 mm" },
-                    { id: "T1a2", desc: "Xâm lấn mô đệm > 3 mm và ≤ 5 mm" },
-                    { id: "T1b1", desc: "Xâm lấn > 5 mm; kích thước u ≤ 2 cm" },
+                    { id: "T1a1", desc: "Khu trú ở CTC, xâm lấn mô đệm ≤ 3 mm sâu" },
+                    { id: "T1a2", desc: "Xâm lấn mô đệm > 3 mm và ≤ 5 mm sâu" },
+                    { id: "T1b1", desc: "Xâm lấn > 5mm sâu, kích thước u ≤ 2 cm" },
                     { id: "T1b2", desc: "Kích thước u > 2 cm và ≤ 4 cm" },
                     { id: "T1b3", desc: "Kích thước u > 4 cm" },
-                    { id: "T2a1", desc: "Xâm lấn âm đạo (2/3 trên), u < 4 cm" },
-                    { id: "T2a2", desc: "Xâm lấn âm đạo (2/3 trên), u ≥ 4 cm" },
-                    { id: "T2b", desc: "Xâm lấn mô cạnh tử cung (chưa tới thành chậu)" },
-                    { id: "T3a", desc: "Xâm lấn 1/3 dưới âm đạo" },
-                    { id: "T3b", desc: "Xâm lấn thành chậu và/hoặc thận ứ nước" },
+                    { id: "T2a1", desc: "Lan 2/3 trên âm đạo, không lan mô cạnh tử cung, u ≤ 4 cm" },
+                    { id: "T2a2", desc: "Lan 2/3 trên âm đạo, không lan mô cạnh tử cung, u > 4 cm" },
+                    { id: "T2b", desc: "Lan mô cạnh tử cung (chưa tới thành chậu)" },
+                    { id: "T3a", desc: "Lan 1/3 dưới âm đạo, chưa tới thành chậu" },
+                    { id: "T3b", desc: "Lan tới thành chậu và/hoặc thận ứ nước/mất chức năng" },
+                    { id: "T4", desc: "Xâm lấn niêm mạc bàng quang hoặc trực tràng" }
+                ],
+                "N": [
+                    { id: "N0", desc: "Không di căn hạch vùng" },
+                    { id: "N1", desc: "Di căn hạch chậu (Giai đoạn IIIC1)" },
+                    { id: "N2", desc: "Di căn hạch cạnh động mạch chủ (Giai đoạn IIIC2)" }
+                ],
+                "M": [
+                    { id: "M0", desc: "Không di căn xa" },
+                    { id: "M1", desc: "Có di căn xa (Giai đoạn IVB)" }
+                ]
+            },
+            "ovary_figo": {
+                "name": "Buồng trứng (FIGO)",
+                "T": [
+                    { id: "T1a", desc: "U giới hạn ở 1 buồng trứng, vỏ bao nguyên vẹn" },
+                    { id: "T1b", desc: "U ở cả 2 buồng trứng, vỏ bao nguyên vẹn" },
+                    { id: "T1c1", desc: "Vỡ vỏ bao trong lúc mổ" },
+                    { id: "T1c2", desc: "Vỡ vỏ bao trước mổ hoặc u trên bề mặt" },
+                    { id: "T1c3", desc: "Tế bào ác tính trong dịch báng/dịch rửa ổ bụng" },
+                    { id: "T2a", desc: "Lan tới tử cung / vòi trứng" },
+                    { id: "T2b", desc: "Lan tới các mô vùng chậu khác" },
+                    { id: "T3a", desc: "Di căn vi thể phúc mạc ngoài vùng chậu" },
+                    { id: "T3b", desc: "Di căn đại thể phúc mạc ngoài vùng chậu ≤ 2 cm" },
+                    { id: "T3c", desc: "Di căn đại thể phúc mạc ngoài vùng chậu > 2 cm" }
+                ],
+                "N": [
+                    { id: "N0", desc: "Không di căn hạch vùng" },
+                    { id: "N1", desc: "Di căn hạch sau phúc mạc (Giai đoạn IIIA1)" }
+                ],
+                "M": [
+                    { id: "M0", desc: "Không di căn xa" },
+                    { id: "M1a", desc: "Tràn dịch màng phổi có tế bào ác tính (IVA)" },
+                    { id: "M1b", desc: "Di căn nhu mô gan/lách, cơ quan ngoài ổ bụng (IVB)" }
+                ]
+            },
+            "endometrial_figo": {
+                "name": "Thân tử cung (FIGO)",
+                "T": [
+                    { id: "T1a", desc: "Khu trú ở nội mạc tử cung hoặc xâm lấn < 50% cơ tử cung" },
+                    { id: "T1b", desc: "Xâm lấn ≥ 50% lớp cơ tử cung" },
+                    { id: "T2", desc: "Xâm lấn mô đệm cổ tử cung, không lan ra ngoài tử cung" },
+                    { id: "T3a", desc: "Xâm lấn thanh mạc tử cung và/hoặc phần phụ" },
+                    { id: "T3b", desc: "Lan tới âm đạo và/hoặc mô cạnh tử cung" },
                     { id: "T4", desc: "Xâm lấn niêm mạc bàng quang/trực tràng" }
                 ],
                 "N": [
                     { id: "N0", desc: "Không di căn hạch vùng" },
                     { id: "N1", desc: "Di căn hạch chậu (IIIC1)" },
-                    { id: "N2", desc: "Di căn hạch cạnh ĐMC (IIIC2)" }
+                    { id: "N2", desc: "Di căn hạch cạnh động mạch chủ, có/không có hạch chậu (IIIC2)" }
                 ],
                 "M": [
                     { id: "M0", desc: "Không di căn xa" },
-                    { id: "M1", desc: "Có di căn xa (IVB)" }
+                    { id: "M1", desc: "Di căn xa (ổ bụng, bẹn, phổi, gan...) (IVB)" }
                 ]
             },
-            "lung_v8": {
-                "name": "Phổi (NSCLC v8)",
+            "vulva_figo": {
+                "name": "Âm hộ (FIGO)",
                 "T": [
-                    { id: "T1a", desc: "U ≤ 1 cm" },
-                    { id: "T1b", desc: "1 < U ≤ 2 cm" },
-                    { id: "T1c", desc: "2 < U ≤ 3 cm" },
-                    { id: "T2a", desc: "3 < U ≤ 4 cm hoặc xâm lấn màng phổi tạng" },
-                    { id: "T2b", desc: "4 < U ≤ 5 cm" },
-                    { id: "T3", desc: "5 < U ≤ 7 cm hoặc xâm lấn thành ngực/màng tim" },
-                    { id: "T4", desc: "U > 7 cm hoặc xâm lấn trung thất/tim/mạch máu lớn" }
+                    { id: "T1a", desc: "U ≤ 2 cm, xâm lấn mô đệm ≤ 1 mm" },
+                    { id: "T1b", desc: "U > 2 cm hoặc xâm lấn mô đệm > 1 mm" },
+                    { id: "T2", desc: "Xâm lấn 1/3 dưới niệu đạo, 1/3 dưới âm đạo, hoặc hậu môn" },
+                    { id: "T3", desc: "Xâm lấn 2/3 trên niệu đạo/âm đạo, niêm mạc bàng quang/trực tràng, hoặc gắn chặt vào xương chậu" }
                 ],
                 "N": [
                     { id: "N0", desc: "Không di căn hạch vùng" },
-                    { id: "N1", desc: "Hạch rốn phổi cùng bên" },
-                    { id: "N2", desc: "Hạch trung thất cùng bên" },
-                    { id: "N3", desc: "Hạch trung thất/thượng đòn đối bên" }
+                    { id: "N1a", desc: "1-2 hạch bẹn/đùi kích thước < 5 mm" },
+                    { id: "N1b", desc: "1 hạch bẹn/đùi kích thước ≥ 5 mm" },
+                    { id: "N2a", desc: "≥ 3 hạch < 5 mm" },
+                    { id: "N2b", desc: "≥ 2 hạch ≥ 5 mm" },
+                    { id: "N2c", desc: "Hạch có lan tràn ngoài vỏ bao hạch" },
+                    { id: "N3", desc: "Hạch cố định hoặc loét bướu hạch" }
                 ],
                 "M": [
-                    { id: "M0", desc: "Không di căn" },
-                    { id: "M1a", desc: "U phổi đối bên / Tràn dịch màng phổi" },
-                    { id: "M1b", desc: "Di căn đơn ổ ngoài lồng ngực" },
-                    { id: "M1c", desc: "Đa ổ ngoài lồng ngực" }
+                    { id: "M0", desc: "Không di căn xa" },
+                    { id: "M1", desc: "Di căn xa, bao gồm cả hạch chậu (IVB)" }
+                ]
+            },
+            // Các bệnh khác giữ nguyên theo AJCC
+            "lung_v8": {
+                "name": "Phổi (NSCLC v8)",
+                "T": [
+                    { id: "T1a", desc: "U ≤ 1 cm" }, { id: "T1b", desc: "1 < U ≤ 2 cm" }, { id: "T1c", desc: "2 < U ≤ 3 cm" },
+                    { id: "T2a", desc: "3 < U ≤ 4 cm hoặc xâm lấn màng phổi tạng" }, { id: "T2b", desc: "4 < U ≤ 5 cm" },
+                    { id: "T3", desc: "5 < U ≤ 7 cm hoặc xâm lấn thành ngực/màng tim" }, { id: "T4", desc: "U > 7 cm hoặc xâm lấn trung thất/tim" }
+                ],
+                "N": [
+                    { id: "N0", desc: "Không di căn hạch vùng" }, { id: "N1", desc: "Hạch rốn phổi cùng bên" },
+                    { id: "N2", desc: "Hạch trung thất cùng bên" }, { id: "N3", desc: "Hạch trung thất/thượng đòn đối bên" }
+                ],
+                "M": [
+                    { id: "M0", desc: "Không di căn" }, { id: "M1a", desc: "U phổi đối bên / Tràn dịch màng phổi" },
+                    { id: "M1b", desc: "Di căn đơn ổ ngoài lồng ngực" }, { id: "M1c", desc: "Đa ổ ngoài lồng ngực" }
                 ]
             },
             "liver_v8": {
                 "name": "Gan (HCC v8)",
                 "T": [
-                    { id: "T1a", desc: "U đơn độc ≤ 2 cm" },
-                    { id: "T1b", desc: "U đơn độc > 2 cm, không xâm lấn mạch" },
+                    { id: "T1a", desc: "U đơn độc ≤ 2 cm" }, { id: "T1b", desc: "U đơn độc > 2 cm, không xâm lấn mạch" },
                     { id: "T2", desc: "U đơn độc > 2 cm xâm lấn mạch hoặc đa u ≤ 5 cm" },
-                    { id: "T3", desc: "Đa u, có ít nhất 1 u > 5 cm" },
-                    { id: "T4", desc: "Xâm lấn tĩnh mạch cửa chính hoặc TM gan" }
+                    { id: "T3", desc: "Đa u, có ít nhất 1 u > 5 cm" }, { id: "T4", desc: "Xâm lấn tĩnh mạch cửa chính hoặc TM gan" }
                 ],
                 "N": [
-                    { id: "N0", desc: "Không di căn hạch" },
-                    { id: "N1", desc: "Di căn hạch vùng" }
+                    { id: "N0", desc: "Không di căn hạch" }, { id: "N1", desc: "Di căn hạch vùng" }
                 ],
                 "M": [
-                    { id: "M0", desc: "Không di căn" },
-                    { id: "M1", desc: "Di căn xa" }
+                    { id: "M0", desc: "Không di căn" }, { id: "M1", desc: "Di căn xa" }
                 ]
             },
             "thyroid_v8": {
                 "name": "Tuyến giáp (Biệt hóa v8)",
                 "T": [
-                    { id: "T1a", desc: "U ≤ 1 cm giới hạn tại giáp" },
-                    { id: "T1b", desc: "1 < U ≤ 2 cm giới hạn tại giáp" },
-                    { id: "T2", desc: "2 < U ≤ 4 cm giới hạn tại giáp" },
-                    { id: "T3a", desc: "U > 4 cm giới hạn tại giáp" },
-                    { id: "T3b", desc: "Xâm lấn đại thể cơ dưới móng" },
-                    { id: "T4a", desc: "Xâm lấn thanh/khí/thực quản/dây thanh" },
+                    { id: "T1a", desc: "U ≤ 1 cm giới hạn tại giáp" }, { id: "T1b", desc: "1 < U ≤ 2 cm giới hạn tại giáp" },
+                    { id: "T2", desc: "2 < U ≤ 4 cm giới hạn tại giáp" }, { id: "T3a", desc: "U > 4 cm giới hạn tại giáp" },
+                    { id: "T3b", desc: "Xâm lấn đại thể cơ dưới móng" }, { id: "T4a", desc: "Xâm lấn thanh/khí/thực quản" },
                     { id: "T4b", desc: "Xâm lấn mạc trước sống/bao cảnh" }
                 ],
                 "N": [
-                    { id: "N0", desc: "Không di căn hạch" },
-                    { id: "N1a", desc: "Hạch nhóm VI, VII" },
+                    { id: "N0", desc: "Không di căn hạch" }, { id: "N1a", desc: "Hạch nhóm VI, VII" },
                     { id: "N1b", desc: "Hạch cổ bên (I-V) hoặc hạch sau hầu" }
                 ],
                 "M": [
-                    { id: "M0", desc: "Không di căn" },
-                    { id: "M1", desc: "Di căn xa" }
+                    { id: "M0", desc: "Không di căn" }, { id: "M1", desc: "Di căn xa" }
                 ]
             },
             "breast_v8": {
                 "name": "Vú (Lâm sàng v8)",
                 "T": [
-                    { id: "T1", desc: "U ≤ 2 cm" },
-                    { id: "T2", desc: "2 < U ≤ 5 cm" },
-                    { id: "T3", desc: "U > 5 cm" },
+                    { id: "T1", desc: "U ≤ 2 cm" }, { id: "T2", desc: "2 < U ≤ 5 cm" }, { id: "T3", desc: "U > 5 cm" },
                     { id: "T4", desc: "Xâm lấn thành ngực/da hoặc vú viêm" }
                 ],
                 "N": [
-                    { id: "N0", desc: "Không di căn hạch vùng" },
-                    { id: "N1", desc: "Hạch nách di động cùng bên" },
-                    { id: "N2", desc: "Hạch nách cố định hoặc hạch vú trong" },
-                    { id: "N3", desc: "Hạch hạ đòn/thượng đòn" }
+                    { id: "N0", desc: "Không di căn hạch vùng" }, { id: "N1", desc: "Hạch nách di động cùng bên" },
+                    { id: "N2", desc: "Hạch nách cố định hoặc hạch vú trong" }, { id: "N3", desc: "Hạch hạ đòn/thượng đòn" }
                 ],
                 "M": [
-                    { id: "M0", desc: "Không di căn" },
-                    { id: "M1", desc: "Di căn xa" }
+                    { id: "M0", desc: "Không di căn" }, { id: "M1", desc: "Di căn xa" }
                 ]
             }
         };
@@ -229,7 +281,6 @@
             const key = document.getElementById('cancer-select').value;
             const data = cancerData[key];
             
-            // Render Buttons
             renderGroup('t-container', data.T, 'T');
             renderGroup('n-container', data.N, 'N');
             renderGroup('m-container', data.M, 'M');
@@ -240,8 +291,8 @@
         function renderGroup(containerId, options, cat) {
             const container = document.getElementById(containerId);
             container.innerHTML = options.map(item => `
-                <button onclick="selectOption('${cat}', '${item.id}')" id="btn-${item.id}" class="option-btn w-full text-left p-3 rounded-xl hover:bg-slate-50 text-sm flex gap-3">
-                    <span class="font-black text-teal-800 shrink-0">${item.id}</span>
+                <button onclick="selectOption('${cat}', '${item.id}')" id="btn-${item.id}" class="option-btn w-full text-left p-3 rounded-xl hover:bg-slate-50 text-sm flex gap-3 flex-col sm:flex-row">
+                    <span class="font-black text-teal-800 shrink-0 w-10">${item.id}</span>
                     <span class="text-slate-600">${item.desc}</span>
                 </button>
             `).join('');
@@ -267,30 +318,61 @@
             let stage = '--';
             let extra = '';
 
-            // Logic Stage Grouping
-            if (currentM.startsWith('M1')) {
-                stage = 'IV';
-                if (key === 'cervix_v9') stage = 'IVB';
-            } else {
-                if (key === 'cervix_v9') {
-                    if (currentN === 'N2') stage = 'IIIC2';
+            // Phân loại giai đoạn tùy thuộc vào hệ thống
+            switch (key) {
+                case 'cervix_figo2018':
+                    if (currentM === 'M1') stage = 'IVB';
+                    else if (currentT === 'T4') stage = 'IVA'; // T4 ghi đè N1/N2
+                    else if (currentN === 'N2') stage = 'IIIC2';
                     else if (currentN === 'N1') stage = 'IIIC1';
-                    else if (currentT === 'T4') stage = 'IVA';
-                    else if (currentT.startsWith('T3')) stage = 'III';
-                    else if (currentT.startsWith('T2')) stage = 'II';
-                    else if (currentT.startsWith('T1')) stage = 'I';
-                    
-                    // Map cụ thể IA1, IB2...
-                    if(stage === 'I') stage = currentT.replace('T', '');
-                    if(stage === 'II') stage = currentT.replace('T', '');
-                    extra = "FIGO Standard";
-                } else {
-                    // Logic cơ bản AJCC 8th
-                    if (currentN !== 'N0') stage = 'III';
-                    else if (currentT.startsWith('T3') || currentT.startsWith('T4')) stage = 'III';
-                    else if (currentT.startsWith('T2')) stage = 'II';
-                    else stage = 'I';
-                }
+                    else stage = currentT.replace('T', '').toUpperCase(); // IA1, IB2...
+                    extra = "Theo hệ thống FIGO 2018";
+                    break;
+
+                case 'ovary_figo':
+                    if (currentM === 'M1b') stage = 'IVB';
+                    else if (currentM === 'M1a') stage = 'IVA';
+                    else if (currentT === 'T3c') stage = 'IIIC'; // T3a/b/c ghi đè N1
+                    else if (currentT === 'T3b') stage = 'IIIB';
+                    else if (currentT === 'T3a') stage = 'IIIA2';
+                    else if (currentN === 'N1') stage = 'IIIA1';
+                    else stage = currentT.replace('T', '').toUpperCase();
+                    extra = "Theo hệ thống FIGO";
+                    break;
+
+                case 'endometrial_figo':
+                    if (currentM === 'M1') stage = 'IVB';
+                    else if (currentT === 'T4') stage = 'IVA'; // T4 ghi đè N1/N2
+                    else if (currentN === 'N2') stage = 'IIIC2';
+                    else if (currentN === 'N1') stage = 'IIIC1';
+                    else stage = currentT.replace('T', '').toUpperCase();
+                    extra = "Theo hệ thống FIGO";
+                    break;
+
+                case 'vulva_figo':
+                    if (currentM === 'M1') { stage = 'IVB'; }
+                    else if (currentT === 'T3' || currentN === 'N3') { stage = 'IVA'; }
+                    else if (currentN === 'N2a' || currentN === 'N2b' || currentN === 'N2c') { stage = 'IIIC'; }
+                    else if (currentN === 'N1b') { stage = 'IIIB'; }
+                    else if (currentN === 'N1a') { stage = 'IIIA'; }
+                    else if (currentT === 'T2') { stage = 'II'; }
+                    else { stage = currentT.replace('T', '').toUpperCase(); } // IA hoặc IB
+                    extra = "Theo hệ thống FIGO";
+                    break;
+
+                default:
+                    // Logic chung cho các bệnh theo AJCC
+                    if (currentM.startsWith('M1')) {
+                        stage = 'IV';
+                    } else if (currentN !== 'N0' || currentT.startsWith('T3') || currentT.startsWith('T4')) {
+                        stage = 'III';
+                    } else if (currentT.startsWith('T2')) {
+                        stage = 'II';
+                    } else {
+                        stage = 'I';
+                    }
+                    extra = "Phân loại AJCC Tham khảo (Chưa có Sub-stage chi tiết)";
+                    break;
             }
 
             document.getElementById('res-stage').innerText = stage;
