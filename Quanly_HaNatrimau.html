@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Hạ Natri Máu - OncoPortal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0fdfa; }
+        .hero-gradient {
+            background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%);
+        }
+        /* Custom styles for the calculator */
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #334155;
+            font-size: 0.95rem;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background-color: #f8fafc;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+            background-color: #ffffff;
+        }
+        .result-safe {
+            background-color: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+        .result-warning {
+            background-color: #fffde7;
+            border-color: #fef08a;
+            color: #854d0e;
+        }
+        .result-danger {
+            background-color: #fef2f2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+        .badge-danger { background-color: #fee2e2; color: #ef4444; }
+        .badge-warning { background-color: #fef9c3; color: #eab308; }
+        .badge-info { background-color: #e0f2fe; color: #0ea5e9; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <a href="index.html" class="flex items-center gap-2">
+                    <div class="bg-teal-600 text-white p-2 rounded-lg">
+                        <i class="fa-solid fa-staff-snake text-xl"></i>
+                    </div>
+                    <span class="font-black text-xl text-teal-800 tracking-tight">Onco<span class="text-sky-500">Portal</span></span>
+                </a>
+            </div>
+            <nav class="hidden md:flex space-x-8">
+                <a href="index.html" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition">Trang chủ</a>
+                <a href="#" class="text-teal-600 font-bold border-b-2 border-teal-600 px-1 py-2">Công cụ</a>
+                <a href="#" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition">Phác đồ</a>
+                <a href="#" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition">Nghiên cứu</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero-gradient text-white py-12 px-4">
+        <div class="max-w-7xl mx-auto text-center">
+            <h1 class="text-3xl md:text-4xl font-black mb-4 drop-shadow-md">Quản Lý Hạ Natri Máu</h1>
+            <p class="text-lg text-teal-50 max-w-3xl mx-auto font-medium opacity-90">
+                Tính toán lượng dịch thiếu hụt và tốc độ truyền dung dịch NaCl theo công thức Adrogue-Madias.
+            </p>
+        </div>
+    </section>
+
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
+        
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+            <div class="bg-slate-50 border-b border-slate-200 p-4 sm:px-6">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-sky-500"></i> Bản mẫu tính toán dịch truyền
+                </h2>
+                <p class="text-sm text-slate-500 mt-1">Vui lòng điền thông số bệnh nhân để tự động phân tích khuyến cáo.</p>
+            </div>
+            
+            <div class="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Cột nhập liệu -->
+                <div class="space-y-5">
+                    <h3 class="text-lg font-bold text-slate-700 border-b border-slate-100 pb-2 mb-4">1. Thông số lâm sàng & Cận lâm sàng</h3>
+                    
+                    <div class="form-group">
+                        <label for="gender">Giới tính bệnh nhân</label>
+                        <select id="gender" onchange="calculateHyponatremia()">
+                            <option value="male_adult">Nam trưởng thành</option>
+                            <option value="female_adult">Nữ trưởng thành</option>
+                            <option value="male_elderly">Nam cao tuổi / Suy kiệt</option>
+                            <option value="female_elderly">Nữ cao tuổi / Suy kiệt</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="weight">Cân nặng thực tế (kg)</label>
+                        <input type="number" id="weight" value="60" min="20" max="200" oninput="calculateHyponatremia()">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="current_na">Natri (Na+) máu hiện tại (mmol/L)</label>
+                        <input type="number" id="current_na" value="115" min="90" max="134" oninput="calculateHyponatremia()">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="risk_factor">Yếu tố nguy cơ cao đi kèm</label>
+                        <select id="risk_factor" onchange="calculateHyponatremia()">
+                            <option value="low">Không có (Nguy cơ ODS trung bình)</option>
+                            <option value="high">Có (Hạ K+ máu, Xơ gan, Nghiện rượu, Suy dinh dưỡng)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fluid_type">Loại dịch truyền dự kiến dùng</label>
+                        <select id="fluid_type" onchange="calculateHyponatremia()">
+                            <option value="3.0">Natri Clorua ưu trương 3% (513 mmol/L Na+)</option>
+                            <option value="0.9">Natri Clorua đẳng trương 0.9% (154 mmol/L Na+)</option>
+                            <option value="1.8">Natri Clorua 1.8% (308 mmol/L Na+)</option>
+                            <option value="RL">Ringer Lactate (130 mmol/L Na+)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Cột kết quả phân tích động -->
+                <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 h-fit">
+                    <h3 class="text-lg font-bold text-slate-700 border-b border-slate-200 pb-2 mb-4">2. Kết quả & Khuyến cáo Phác đồ</h3>
+                    
+                    <div id="result_area" class="border rounded-xl p-4 result-danger">
+                        <div class="flex items-center gap-2 mb-3 flex-wrap">
+                            <span id="severity_badge" class="px-2 py-1 text-xs font-bold rounded uppercase badge-danger">Hạ Na+ Nặng</span>
+                            <span id="analysis_title" class="font-bold text-[0.95rem]">Cần can thiệp khẩn cấp khống chế triệu chứng</span>
+                        </div>
+                        
+                        <div class="space-y-2 text-sm mb-4">
+                            <p><strong>Tổng lượng nước cơ thể ước tính (TBW):</strong> <span id="lbl_tbw" class="font-semibold text-base">36.0</span> Lít</p>
+                            <p><strong>Hiệu ứng của 1 Lít dịch truyền đã chọn:</strong> Làm tăng Natri máu lên <span id="lbl_delta" class="font-semibold text-base">9.68</span> mmol/L.</p>
+                        </div>
+                        
+                        <div class="bg-white/60 p-4 rounded-lg mt-4 text-sm border border-black/5">
+                            <strong class="block mb-2 text-slate-800">Mục tiêu an toàn khuyến cáo:</strong>
+                            <ul class="list-disc pl-5 space-y-1 text-slate-700">
+                                <li>Tốc độ tăng tối đa: <span id="lbl_max_rate" class="font-bold">8 mmol/L trong 24 giờ đầu</span>.</li>
+                                <li>Thể tích dịch truyền tối đa cần thiết trong 24h: <span id="lbl_volume_24h" class="font-bold text-base text-sky-600">826</span> mL.</li>
+                                <li>Tốc độ truyền tĩnh mạch gợi ý: <span id="lbl_pump_rate" class="font-bold text-base text-rose-600">34</span> mL/giờ.</li>
+                            </ul>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t border-black/10 text-xs text-slate-700 space-y-1">
+                            <strong class="text-slate-800 block mb-1"><i class="fa-solid fa-notes-medical text-teal-600 mr-1"></i> Hướng dẫn xử trí nhanh tại giường bệnh:</strong>
+                            <p>• Nếu bệnh nhân có triệu chứng nặng (co giật, hôn mê): Truyền bolus tĩnh mạch 100-150 ml dung dịch NaCl 3% trong 20 phút, đo lại Na+ sau 20-30 phút. Lặp lại nếu triệu chứng chưa cải thiện (Tối đa 3 lần hoặc tăng 5 mmol/L).</p>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-500 mt-4 italic">
+                        <i class="fa-solid fa-circle-info mr-1"></i> <strong>Lưu ý pháp lý:</strong> Công cụ dựa trên Công thức Adrogue-Madias kinh điển. Bác sĩ phải cá thể hóa điều trị dựa trên lượng nước tiểu thực tế của bệnh nhân.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h2 class="text-xl font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">
+                    <i class="fa-solid fa-layer-group text-teal-500 mr-2"></i> Kiến trúc Chức năng
+                </h2>
+                <ul class="space-y-3 text-sm text-slate-600 list-disc pl-5 marker:text-teal-400">
+                    <li><strong>Khối phân loại & Đánh giá nguy cơ:</strong> Xác định hạ Na+ máu cấp (&lt;48h) hay mạn (&ge;48h); phân cấp triệu chứng.</li>
+                    <li><strong>Khối tính toán động học:</strong> Thao tác tự động theo công thức Adrogue-Madias.</li>
+                    <li><strong>Khối giám sát & Định thời:</strong> Lập lịch nhắc đo lại điện giải đồ sau mỗi 2 - 4 giờ hoặc 4 - 6 giờ.</li>
+                    <li><strong>Hệ thống cảnh báo thông minh:</strong> Cảnh báo nếu tốc độ tăng sNa dự kiến vượt quá 8-10 mmol/L/24h (hoặc 4-6 mmol/L cho nhóm nguy cơ cao).</li>
+                </ul>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h2 class="text-xl font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">
+                    <i class="fa-solid fa-book-medical text-indigo-500 mr-2"></i> Nguồn Tài liệu Tham khảo
+                </h2>
+                <ul class="space-y-3 text-sm text-slate-600 list-decimal pl-5 marker:text-indigo-400 marker:font-bold">
+                    <li><strong>Bộ Y tế Việt Nam (2014):</strong> Quyết định số 1904/QĐ-BYT về Hướng dẫn quy trình kỹ thuật chuyên ngành Hồi sức.</li>
+                    <li><strong>Phác đồ Lâm sàng VNRAS (2022):</strong> Hướng dẫn tiếp cận dịch truyền và xử trí cấp cứu.</li>
+                    <li><strong>Adrogue HJ, Madias NE (2000):</strong> "Hyponatremia" — The New England Journal of Medicine (NEJM).</li>
+                    <li><strong>ESICM & ERA-EDTA Guidelines (2014):</strong> Hướng dẫn thực hành lâm sàng về chẩn đoán và điều trị hạ natri máu.</li>
+                </ul>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-8 border-t-4 border-teal-600 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
+            <div>
+                <p class="font-bold text-white mb-1"><i class="fa-solid fa-staff-snake text-teal-500 mr-2"></i> OncoPortal &copy; 2026</p>
+                <p class="text-xs">Công cụ hỗ trợ nội bộ. Vui lòng đối chiếu với thực tế lâm sàng.</p>
+            </div>
+            <div class="flex gap-4">
+                <a href="#" class="hover:text-white transition">Hỗ trợ</a>
+                <a href="#" class="hover:text-white transition">Báo lỗi</a>
+                <a href="#" class="hover:text-white transition">Bảo mật</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function calculateHyponatremia() {
+            const gender = document.getElementById('gender').value;
+            const weight = parseFloat(document.getElementById('weight').value) || 0;
+            const currentNa = parseFloat(document.getElementById('current_na').value) || 0;
+            const riskFactor = document.getElementById('risk_factor').value;
+            const fluidType = document.getElementById('fluid_type').value;
+
+            if (weight <= 0 || currentNa <= 0) return;
+
+            let factor = 0.6;
+            if (gender === 'male_adult') factor = 0.6;
+            else if (gender === 'female_adult') factor = 0.5;
+            else if (gender === 'male_elderly') factor = 0.5;
+            else if (gender === 'female_elderly') factor = 0.45;
+
+            const tbw = weight * factor;
+            document.getElementById('lbl_tbw').innerText = tbw.toFixed(1);
+
+            let infNa = 154; // default 0.9%
+            if (fluidType === '3.0') infNa = 513;
+            else if (fluidType === '1.8') infNa = 308;
+            else if (fluidType === '0.9') infNa = 154;
+            else if (fluidType === 'RL') infNa = 130;
+
+            const deltaNa = (infNa - currentNa) / (tbw + 1);
+            document.getElementById('lbl_delta').innerText = deltaNa.toFixed(2);
+
+            let max24hChange = 8;
+            if (riskFactor === 'high') {
+                max24hChange = 6;
+                document.getElementById('lbl_max_rate').innerText = "6 mmol/L trong 24 giờ (Nguy cơ cao ODS)";
+            } else {
+                document.getElementById('lbl_max_rate').innerText = "8 mmol/L trong 24 giờ";
+            }
+
+            const badgeEl = document.getElementById('severity_badge');
+            const resultBox = document.getElementById('result_area');
+            const titleEl = document.getElementById('analysis_title');
+
+            resultBox.className = "border rounded-xl p-4 transition-colors duration-300"; 
+            badgeEl.className = "px-2 py-1 text-xs font-bold rounded uppercase";
+
+            if (currentNa < 120) {
+                badgeEl.innerText = "Hạ Na+ Nặng";
+                badgeEl.classList.add("badge-danger");
+                resultBox.classList.add('result-danger');
+                titleEl.innerText = "Cần can thiệp khẩn cấp khống chế triệu chứng";
+            } else if (currentNa >= 120 && currentNa < 130) {
+                badgeEl.innerText = "Hạ Na+ Trung Bình";
+                badgeEl.classList.add("badge-warning");
+                resultBox.classList.add('result-warning');
+                titleEl.innerText = "Theo dõi sát, tìm nguyên nhân nền";
+            } else {
+                badgeEl.innerText = "Hạ Na+ Nhẹ";
+                badgeEl.classList.add("badge-info");
+                resultBox.classList.add('result-safe');
+                titleEl.innerText = "Điều chỉnh an toàn qua đường uống/truyền chậm";
+            }
+
+            if (deltaNa > 0) {
+                let requiredVolume = max24hChange / deltaNa;
+                let requiredVolumeMl = requiredVolume * 1000;
+                let pumpRate = requiredVolumeMl / 24;
+
+                document.getElementById('lbl_volume_24h').innerText = Math.round(requiredVolumeMl);
+                document.getElementById('lbl_pump_rate').innerText = Math.round(pumpRate);
+            } else {
+                document.getElementById('lbl_volume_24h').innerText = "0 (Dịch có Na+ thấp hơn Na+ máu)";
+                document.getElementById('lbl_pump_rate').innerText = "0";
+            }
+        }
+
+        window.onload = function() {
+            calculateHyponatremia();
+        };
+    </script>
+</body>
+</html>
