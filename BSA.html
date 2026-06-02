@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tính liều BSA & Thuốc - OncoPortal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0fdfa; }
+        .hero-gradient {
+            background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header giữ nguyên từ cấu trúc ban đầu -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='index.html'">
+                <div class="bg-teal-600 text-white p-2 rounded-lg">
+                    <i class="fa-solid fa-staff-snake text-xl"></i>
+                </div>
+                <span class="font-black text-xl text-teal-800 tracking-tight">Onco<span class="text-sky-500">Portal</span></span>
+            </div>
+            <nav class="hidden md:flex space-x-8">
+                <a href="index.html" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition">Trang chủ</a>
+                <a href="#" class="text-teal-600 font-bold border-b-2 border-teal-600 px-1 py-2">Công cụ</a>
+                <a href="#" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition">Phác đồ</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Tiêu đề trang công cụ -->
+    <section class="hero-gradient text-white py-8 px-4 shadow-inner">
+        <div class="max-w-3xl mx-auto text-center">
+            <h1 class="text-3xl font-black mb-2 drop-shadow-md"><i class="fa-solid fa-calculator mr-2"></i>Tính liều BSA & Thuốc</h1>
+            <p class="text-teal-50 font-medium opacity-90 text-sm md:text-base">
+                Tính toán diện tích bề mặt cơ thể (Body Surface Area) và liều lượng thuốc chuẩn xác.
+            </p>
+        </div>
+    </section>
+
+    <!-- Nội dung chính: Form tính toán -->
+    <main class="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Nút quay lại -->
+        <a href="index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-teal-600 mb-6 transition">
+            <i class="fa-solid fa-arrow-left mr-2"></i> Quay lại danh sách công cụ
+        </a>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 md:p-8">
+                <form id="bsaForm" class="space-y-6">
+                    
+                    <!-- Form nhập chiều cao, cân nặng -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Chiều cao (cm) <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <i class="fa-solid fa-ruler-vertical"></i>
+                                </div>
+                                <input type="number" id="height" step="any" min="1" required
+                                    class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition"
+                                    placeholder="Ví dụ: 165">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Cân nặng (kg) <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <i class="fa-solid fa-weight-scale"></i>
+                                </div>
+                                <input type="number" id="weight" step="any" min="1" required
+                                    class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition"
+                                    placeholder="Ví dụ: 60">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chọn công thức tính toán -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Công thức áp dụng</label>
+                        <select id="formula" class="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none cursor-pointer">
+                            <option value="mosteller">Mosteller (Phổ biến nhất, khuyến cáo dùng chung)</option>
+                            <option value="dubois">Du Bois & Du Bois (Tiêu chuẩn cổ điển)</option>
+                        </select>
+                    </div>
+
+                    <!-- Tính năng bổ sung: Tính liều hóa chất -->
+                    <div class="border-t border-slate-200 pt-6">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Liều thuốc chỉ định (mg/m²) <span class="text-slate-400 font-normal">- Tùy chọn</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-pills"></i>
+                            </div>
+                            <input type="number" id="dosePerSqm" step="any" min="0"
+                                class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition"
+                                placeholder="Nhập liều lượng theo phác đồ (Ví dụ: 50)">
+                        </div>
+                    </div>
+
+                    <!-- Nút tính toán -->
+                    <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-4 px-6 rounded-xl shadow-md hover:shadow-lg transition-all flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-calculator"></i> Tính Toán Kết Quả
+                    </button>
+                </form>
+            </div>
+
+            <!-- Khu vực hiển thị kết quả (Mặc định ẩn) -->
+            <div id="resultSection" class="hidden bg-slate-50 border-t border-slate-200 p-6 md:p-8">
+                <h3 class="text-lg font-black text-slate-700 uppercase tracking-wide mb-4 text-center">Kết Quả</h3>
+                
+                <div class="flex flex-col items-center justify-center bg-white border border-sky-200 rounded-2xl p-6 shadow-sm mb-4">
+                    <span class="text-slate-500 font-medium mb-1">Chỉ số diện tích da (BSA)</span>
+                    <div class="text-4xl md:text-5xl font-black text-sky-600">
+                        <span id="bsaValue">0.00</span> <span class="text-2xl text-sky-500 font-bold">m²</span>
+                    </div>
+                    <span id="formulaUsedText" class="text-xs text-slate-400 mt-2">Theo công thức Mosteller</span>
+                </div>
+
+                <!-- Box hiển thị liều lượng thuốc -->
+                <div id="doseResultBox" class="hidden flex flex-col items-center justify-center bg-teal-50 border border-teal-200 rounded-2xl p-6 shadow-sm">
+                    <span class="text-teal-700 font-medium mb-1">Tổng liều thuốc cần dùng</span>
+                    <div class="text-3xl font-black text-teal-700">
+                        <span id="totalDoseValue">0.00</span> <span class="text-xl text-teal-600 font-bold">mg</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chú thích Y khoa -->
+        <div class="mt-6 text-xs text-slate-500 bg-slate-100 p-4 rounded-xl">
+            <p class="font-bold mb-1"><i class="fa-solid fa-circle-info mr-1"></i> Ghi chú lâm sàng:</p>
+            <ul class="list-disc pl-5 space-y-1">
+                <li><strong>Công thức Mosteller:</strong> BSA = &radic;((Chiều cao &times; Cân nặng) / 3600)</li>
+                <li><strong>Công thức Du Bois:</strong> BSA = 0.007184 &times; Chiều cao<sup>0.725</sup> &times; Cân nặng<sup>0.425</sup></li>
+                <li>Việc giới hạn mức BSA tối đa (ví dụ: tối đa 2.0 m² hoặc 2.2 m² để tránh độc tính hóa trị ở bệnh nhân béo phì) tùy thuộc vào từng loại thuốc và hướng dẫn của phác đồ cụ thể.</li>
+            </ul>
+        </div>
+    </main>
+
+    <!-- Footer giữ nguyên từ cấu trúc ban đầu -->
+    <footer class="bg-slate-900 text-slate-400 py-8 border-t-4 border-teal-600 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
+            <div>
+                <p class="font-bold text-white mb-1"><i class="fa-solid fa-staff-snake text-teal-500 mr-2"></i> OncoPortal &copy; 2026</p>
+                <p class="text-xs">Công cụ hỗ trợ nội bộ. Vui lòng đối chiếu với thực tế lâm sàng.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Khối Script thực thi logic tính toán -->
+    <script>
+        document.getElementById('bsaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // 1. Lấy dữ liệu từ input
+            const height = parseFloat(document.getElementById('height').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const formula = document.getElementById('formula').value;
+            const dosePerSqmInput = document.getElementById('dosePerSqm').value;
+            
+            let bsa = 0;
+            let formulaName = '';
+
+            // 2. Tính BSA theo công thức được chọn
+            if (formula === 'mosteller') {
+                bsa = Math.sqrt((height * weight) / 3600);
+                formulaName = 'Theo công thức Mosteller';
+            } else if (formula === 'dubois') {
+                bsa = 0.007184 * Math.pow(height, 0.725) * Math.pow(weight, 0.425);
+                formulaName = 'Theo công thức Du Bois & Du Bois';
+            }
+
+            // 3. Hiển thị kết quả BSA
+            document.getElementById('bsaValue').textContent = bsa.toFixed(2);
+            document.getElementById('formulaUsedText').textContent = formulaName;
+
+            // 4. Tính toán liều thuốc (nếu có nhập)
+            const doseResultBox = document.getElementById('doseResultBox');
+            if (dosePerSqmInput && parseFloat(dosePerSqmInput) > 0) {
+                const totalDose = bsa * parseFloat(dosePerSqmInput);
+                document.getElementById('totalDoseValue').textContent = totalDose.toFixed(2);
+                doseResultBox.classList.remove('hidden');
+            } else {
+                doseResultBox.classList.add('hidden');
+            }
+
+            // 5. Mở khu vực hiển thị kết quả
+            const resultSection = document.getElementById('resultSection');
+            resultSection.classList.remove('hidden');
+            
+            // Tự động cuộn mượt mà xuống phần kết quả
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    </script>
+</body>
+</html>

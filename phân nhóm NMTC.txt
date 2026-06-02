@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phân nhóm nguy cơ Ung thư Nội mạc tử cung (FIGO 2023) - OncoPortal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0fdfa; }
+        .hero-gradient { background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%); }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-teal-600 text-white p-2 rounded-lg">
+                    <i class="fa-solid fa-staff-snake text-xl"></i>
+                </div>
+                <span class="font-black text-xl text-teal-800 tracking-tight">Onco<span class="text-sky-500">Portal</span></span>
+            </div>
+            <a href="index.html" class="text-slate-500 hover:text-teal-600 font-medium transition flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-12 w-full">
+        
+        <div class="mb-8">
+            <h1 class="text-3xl font-black text-slate-800 mb-2">Phân nhóm Nguy cơ UT Nội mạc tử cung</h1>
+            <p class="text-slate-500">Dựa trên Hệ thống Phân loại FIGO 2023 & Phân nhóm Sinh học (Molecular classification)</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 md:p-8">
+                <form id="figoForm" class="space-y-6">
+                    
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Phân nhóm Sinh học phân tử (Molecular classification)</label>
+                        <div class="relative">
+                            <select id="molecular" class="w-full pl-4 pr-10 py-3 text-slate-700 bg-slate-50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition">
+                                <option value="" disabled selected>-- Chọn phân nhóm phân tử --</option>
+                                <option value="POLEmut">Đột biến POLE (POLEmut)</option>
+                                <option value="MMRd">Thiếu hụt sửa chữa bắt cặp nhầm (MMRd)</option>
+                                <option value="NSMP_low">NSMP grade thấp & ER dương tính</option>
+                                <option value="NSMP_high">NSMP grade cao hoặc ER âm tính (hoặc cả 2)</option>
+                                <option value="p53abn">Bất thường p53 (p53abn)</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Giai đoạn FIGO 2023</label>
+                        <div class="relative">
+                            <select id="stage" class="w-full pl-4 pr-10 py-3 text-slate-700 bg-slate-50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition">
+                                <option value="" disabled selected>-- Chọn Giai đoạn --</option>
+                                <optgroup label="Giai đoạn I">
+                                    <option value="IA1">IA1 (Grade thấp, giới hạn nội mạc/polyp)</option>
+                                    <option value="IA2">IA2 (Grade thấp, xâm lấn cơ < 50%)</option>
+                                    <option value="IA3">IA3 (Grade thấp, K nội mạc và buồng trứng)</option>
+                                    <option value="IB">IB (Grade thấp, xâm lấn cơ >= 50%)</option>
+                                    <option value="IC">IC (Mô học High-grade, giới hạn nội mạc/polyp)</option>
+                                </optgroup>
+                                <optgroup label="Giai đoạn II">
+                                    <option value="IIA">IIA (Grade thấp, xâm lấn mô đệm cổ tử cung)</option>
+                                    <option value="IIB">IIB (Grade thấp, xâm lấn mạch bạch huyết rõ rệt - LVSI)</option>
+                                    <option value="IIC">IIC (Mô học High-grade, có xâm lấn cơ tử cung)</option>
+                                </optgroup>
+                                <optgroup label="Giai đoạn III & IV">
+                                    <option value="III">Giai đoạn III (IIIA, IIIB, IIIC)</option>
+                                    <option value="IVA">Giai đoạn IVA</option>
+                                    <option value="IVB_C">Giai đoạn IVB, IVC (Di căn xa / Phúc mạc)</option>
+                                </optgroup>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mmrd_iic_container" class="hidden bg-orange-50 border border-orange-200 rounded-xl p-4">
+                        <label class="block text-sm font-bold text-orange-800 mb-2">
+                            <i class="fa-solid fa-circle-exclamation mr-1"></i> Chi tiết đặc điểm Giai đoạn IIC (Chỉ dành cho MMRd)
+                        </label>
+                        <select id="mmrd_sub" class="w-full pl-4 pr-10 py-2.5 text-slate-700 bg-white border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition">
+                            <option value="myo_less50">Xâm lấn cơ < 50%, không có/focal LVSI</option>
+                            <option value="myo_more50">Xâm lấn cơ >= 50%, không có/focal LVSI</option>
+                            <option value="cervical">Xâm lấn mô đệm CTC, không có/focal LVSI</option>
+                            <option value="substantial_lvsi">LVSI rõ rệt (Substantial LVSI)</option>
+                        </select>
+                    </div>
+
+                    <button type="button" onclick="calculateRisk()" class="w-full hero-gradient text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-calculator mr-2"></i> Phân loại Nguy Cơ
+                    </button>
+
+                </form>
+            </div>
+
+            <div id="resultArea" class="hidden border-t border-slate-200 p-6 md:p-8 bg-slate-50">
+                <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Kết Quả Phân Nhóm</h3>
+                
+                <div id="resultBox" class="rounded-2xl p-6 border-2 flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-medium mb-1 opacity-80" id="resultSubtitle">Nhóm Nguy Cơ:</div>
+                        <div class="text-2xl font-black" id="resultText">Nguy cơ Thấp</div>
+                    </div>
+                    <div class="text-4xl opacity-80" id="resultIcon">
+                        <i class="fa-solid fa-shield-check"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-400 mt-4 text-center">* Đánh giá dựa trên Bảng 3: Định nghĩa nhóm nguy cơ FIGO 2023</p>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Lắng nghe sự thay đổi để hiện/ẩn form phụ
+        const molSelect = document.getElementById('molecular');
+        const stageSelect = document.getElementById('stage');
+        const mmrdContainer = document.getElementById('mmrd_iic_container');
+
+        function checkSubForm() {
+            if (molSelect.value === 'MMRd' && stageSelect.value === 'IIC') {
+                mmrdContainer.classList.remove('hidden');
+            } else {
+                mmrdContainer.classList.add('hidden');
+            }
+        }
+
+        molSelect.addEventListener('change', checkSubForm);
+        stageSelect.addEventListener('change', checkSubForm);
+
+        function calculateRisk() {
+            const mol = molSelect.value;
+            const stage = stageSelect.value;
+            const mmrdSub = document.getElementById('mmrd_sub').value;
+
+            if (!mol || !stage) {
+                alert("Vui lòng chọn đầy đủ Phân nhóm sinh học và Giai đoạn FIGO!");
+                return;
+            }
+
+            let riskLevel = "unknown";
+
+            // LOGIC DỰA TRÊN ẢNH FIGO 2023
+            if (mol === 'POLEmut') {
+                if (['IA1', 'IA2', 'IA3', 'IB', 'IC', 'IIA', 'IIB', 'IIC'].includes(stage)) {
+                    riskLevel = "low";
+                } else {
+                    riskLevel = "uncertain"; // Stage III, IV
+                }
+            } 
+            else if (mol === 'NSMP_high') {
+                // Theo bảng, toàn bộ cột NSMP high-grade / p53abn là màu Đỏ (High risk)
+                riskLevel = "high";
+            }
+            else if (mol === 'p53abn') {
+                if (stage === 'IA1') {
+                    riskLevel = "uncertain";
+                } else {
+                    riskLevel = "high"; // Các giai đoạn còn lại đều Đỏ
+                }
+            }
+            else if (mol === 'NSMP_low') {
+                if (['IA1', 'IA2', 'IA3'].includes(stage)) riskLevel = "low";
+                else if (stage === 'IB') riskLevel = "intermediate";
+                else if (['IIA', 'IIB'].includes(stage)) riskLevel = "high_intermediate";
+                else if (['IC', 'IIC'].includes(stage)) riskLevel = "na"; // NA trong bảng
+                else riskLevel = "high"; // III, IV
+            }
+            else if (mol === 'MMRd') {
+                if (['IA1', 'IA2', 'IA3', 'IC', 'IIB'].includes(stage)) riskLevel = "low";
+                else if (['IB', 'IIA'].includes(stage)) riskLevel = "intermediate";
+                else if (stage === 'IIC') {
+                    if (mmrdSub === 'myo_less50' || mmrdSub === 'myo_more50') riskLevel = "intermediate";
+                    else riskLevel = "high_intermediate"; // cervical hoặc substantial lvsi
+                }
+                else riskLevel = "high"; // III, IV
+            }
+
+            renderUI(riskLevel);
+        }
+
+        function renderUI(risk) {
+            const resultArea = document.getElementById('resultArea');
+            const resultBox = document.getElementById('resultBox');
+            const resultText = document.getElementById('resultText');
+            const resultIcon = document.getElementById('resultIcon');
+
+            resultArea.classList.remove('hidden');
+            resultBox.className = 'rounded-2xl p-6 border-2 flex items-center justify-between transition-all';
+
+            const styles = {
+                "low": { 
+                    text: "Nguy cơ Thấp", 
+                    cls: "bg-green-50 text-green-800 border-green-500", 
+                    icon: "<i class='fa-solid fa-shield-virus'></i>" 
+                },
+                "intermediate": { 
+                    text: "Nguy cơ Trung bình", 
+                    cls: "bg-yellow-50 text-yellow-800 border-yellow-400", 
+                    icon: "<i class='fa-solid fa-triangle-exclamation'></i>" 
+                },
+                "high_intermediate": { 
+                    text: "Nguy cơ Trung bình - Cao", 
+                    cls: "bg-orange-50 text-orange-800 border-orange-500", 
+                    icon: "<i class='fa-solid fa-radiation'></i>" 
+                },
+                "high": { 
+                    text: "Nguy cơ Cao", 
+                    cls: "bg-red-50 text-red-800 border-red-500", 
+                    icon: "<i class='fa-solid fa-skull-crossbones'></i>" 
+                },
+                "uncertain": { 
+                    text: "Không xác định (Thiếu dữ liệu)", 
+                    cls: "bg-slate-100 text-slate-600 border-slate-400", 
+                    icon: "<i class='fa-solid fa-circle-question'></i>" 
+                },
+                "na": { 
+                    text: "Không áp dụng (NA)", 
+                    cls: "bg-white text-slate-400 border-slate-200", 
+                    icon: "<i class='fa-solid fa-ban'></i>" 
+                }
+            };
+
+            const setting = styles[risk] || styles["uncertain"];
+            
+            resultBox.className += " " + setting.cls;
+            resultText.innerText = setting.text;
+            resultIcon.innerHTML = setting.icon;
+        }
+    </script>
+</body>
+</html>
