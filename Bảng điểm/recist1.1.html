@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RECIST 1.1 - Đánh giá Đáp ứng Khối u</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; }
+        .radio-card { transition: all 0.2s ease-in-out; }
+        .radio-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        input[type="radio"]:checked + div {
+            border-color: #0ea5e9; background-color: #f0f9ff;
+        }
+        input[type="radio"]:checked + div .radio-dot {
+            transform: scale(1); opacity: 1;
+        }
+        .radio-dot { transform: scale(0.5); opacity: 0; transition: all 0.2s; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col">
+
+    <header class="bg-sky-900 text-white p-4 shadow-md flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="bg-sky-700 p-2 rounded-lg">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">RECIST 1.1 CALCULATOR</h1>
+                <p class="text-sky-200 text-xs font-medium">Hỗ trợ Đánh giá Đáp ứng Điều trị Đối với U Đặc</p>
+            </div>
+        </div>
+        <a href="../index.html" class="flex items-center gap-2 bg-sky-800 hover:bg-sky-700 text-white px-3 py-2 rounded-lg transition text-sm font-medium border border-sky-700">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span class="hidden sm:inline">Trang chủ</span>
+        </a>
+    </header>
+
+    <main class="flex-1 overflow-hidden flex flex-col">
+        <div class="flex-1 overflow-y-auto p-4 md:p-6">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <div class="lg:col-span-8 space-y-6" id="recist-form">
+                    
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="text-sky-800 font-bold mb-4 flex items-center gap-2 border-b pb-3 text-base uppercase tracking-wide">
+                            1. Tổn thương đích (Target Lesions)
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="cursor-pointer radio-card">
+                                <input type="radio" name="target-lesion" class="hidden recist-item" value="CR" checked>
+                                <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                    <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0">
+                                        <div class="w-2.5 h-2.5 bg-sky-600 rounded-full radio-dot"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-slate-700 block">CR - Đáp ứng hoàn toàn</span>
+                                        <span class="text-xs text-slate-500 block mt-0.5">Biến mất hoàn toàn tổn thương đích. Trục ngắn hạch bạch huyết giảm < 10 mm.</span>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer radio-card">
+                                <input type="radio" name="target-lesion" class="hidden recist-item" value="PR">
+                                <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                    <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0">
+                                        <div class="w-2.5 h-2.5 bg-sky-600 rounded-full radio-dot"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-slate-700 block">PR - Đáp ứng một phần</span>
+                                        <span class="text-xs text-slate-500 block mt-0.5">Tổng đường kính lớn nhất (SLD) giảm ≥ 30% so với thời điểm ban đầu (Baseline).</span>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer radio-card">
+                                <input type="radio" name="target-lesion" class="hidden recist-item" value="SD">
+                                <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                    <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0">
+                                        <div class="w-2.5 h-2.5 bg-sky-600 rounded-full radio-dot"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-slate-700 block">SD - Bệnh ổn định</span>
+                                        <span class="text-xs text-slate-500 block mt-0.5">Không đủ giảm để đạt PR, cũng không đủ tăng để xếp vào PD (Lấy Nadir làm mốc).</span>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer radio-card">
+                                <input type="radio" name="target-lesion" class="hidden recist-item" value="PD">
+                                <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                    <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0">
+                                        <div class="w-2.5 h-2.5 bg-sky-600 rounded-full radio-dot"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-rose-700 block">PD - Bệnh tiến triển</span>
+                                        <span class="text-xs text-slate-500 block mt-0.5">SLD tăng ≥ 20% so với trị số nhỏ nhất từng ghi nhận (Nadir) VÀ tăng tuyệt đối ≥ 5 mm.</span>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer radio-card md:col-span-2">
+                                <input type="radio" name="target-lesion" class="hidden recist-item" value="NE">
+                                <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                    <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0">
+                                        <div class="w-2.5 h-2.5 bg-sky-600 rounded-full radio-dot"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-slate-600 block">NE - Không đánh giá được (Not Evaluated)</span>
+                                        <span class="text-xs text-slate-500 block mt-0.5">Không thể thu thập dữ liệu chẩn đoán hình ảnh hoặc thông số tổn thương đích không rõ ràng.</span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="text-sky-800 font-bold mb-4 flex items-center gap-2 border-b pb-3 text-base uppercase tracking-wide">
+                            2. Tổn thương không đích (Non-target Lesions)
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="cursor-pointer radio-card">
+                                <input type="radio" name="nontarget-lesion" class="hidden recist-item" value="CR" checked>
+                                <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                    <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0">
+                                        <div class="w-2.5 h-2.5 bg-sky-600 rounded-full radio-dot"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-slate-700 block">CR - Biến mất hoàn toàn</span>
+                                        <span class="text-xs text-slate-500 block mt-0.5">Biến mất toàn bộ tổn thương không đích và nồng độ các dấu ấn ung thư (tumor markers) bình thường.</span>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer radio-card">
+                                <input type="radio" name="nontarget-lesion" class="hidden recist-item" value="NON_CR_PD">
+                                <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                    <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0">
+                                        <div class="w-2.5 h-2.5 bg-sky-600 rounded-full radio-dot"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-slate-700 block">Non-CR / Non-PD - Ổn định / Còn tồn tại</span>
+                                        <span class="text-xs text-slate-500 block mt-0.5">Còn sót lại một hoặc nhiều tổn thương không đích và/hoặc nồng độ tumor marker cao hơn bình thường.</span>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer radio-card">
+                                <input type="radio" name="nontarget-lesion" class="hidden recist-item" value="NE">
+                                <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                    <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0">
+                                        <div class="w-2.5 h-2.5 bg-sky-600 rounded-full radio-dot"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-slate-600 block">NE - Không đánh giá được (Not Evaluated)</span>
+                                        <span class="text-xs text-slate-500 block mt-0.5">Không thu thập đủ dữ liệu để kết luận tình trạng của các tổn thương không đích.</span>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer radio-card">
+                                <input type="radio" name="nontarget-lesion" class="hidden recist-item" value="PD">
+                                <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                    <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0">
+                                        <div class="w-2.5 h-2.5 bg-sky-600 rounded-full radio-dot"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-rose-700 block">PD - Tiến triển rõ rệt</span>
+                                        <span class="text-xs text-slate-500 block mt-0.5">Tăng kích thước các tổn thương không đích cũ rõ ràng trên lâm sàng/hình ảnh học.</span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="text-sky-800 font-bold mb-4 flex items-center gap-2 border-b pb-3 text-base uppercase tracking-wide">
+                            3. Tổn thương mới (New Lesions)
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="cursor-pointer radio-card">
+                                <input type="radio" name="new-lesion" class="hidden recist-item" value="NO" checked>
+                                <div class="border border-slate-200 p-3 rounded-xl flex items-center gap-3 h-full">
+                                    <div class="border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0">
+                                        <div class="w-2.5 h-2.5 bg-sky-600 rounded-full radio-dot"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-slate-700 block">Không xuất hiện tổn thương mới</span>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer radio-card">
+                                <input type="radio" name="new-lesion" class="hidden recist-item" value="YES">
+                                <div class="border border-slate-200 p-3 rounded-xl flex items-center gap-3 h-full">
+                                    <div class="border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0">
+                                        <div class="w-2.5 h-2.5 bg-sky-600 rounded-full radio-dot"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-rose-700 block">Có xuất hiện tổn thương mới</span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="lg:col-span-4">
+                    <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-2xl sticky top-4 border-t-4 border-sky-500 overflow-hidden">
+                        
+                        <div class="mb-6">
+                            <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">ĐÁP ỨNG TỔNG THỂ</p>
+                            <div class="space-y-2">
+                                <h2 id="res-overall" class="text-3xl font-black text-sky-400 leading-tight">Complete Response</h2>
+                                <div class="flex items-center mt-2">
+                                    <span id="res-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-800 text-emerald-200">
+                                        CR
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <p class="text-xs font-bold text-sky-400 uppercase mb-2">PHÂN TÍCH TIÊU CHUẨN LÂM SÀNG:</p>
+                            <div id="res-analysis" class="text-sm text-slate-200 space-y-2 bg-slate-800 p-4 rounded-xl border border-slate-700 leading-relaxed min-h-[100px]">
+                                Đáp ứng hoàn toàn: Mọi tổn thương đích và không đích đều biến mất hoàn toàn. Không có sự xuất hiện của bất kỳ tổn thương mới nào.
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <p class="text-xs font-bold text-amber-400 uppercase mb-2 border-b border-slate-700 pb-2">HƯỚNG ĐIỀU TRỊ KHUYẾN CÁO:</p>
+                            <div id="res-action" class="text-sm text-slate-300 leading-relaxed bg-black/30 p-4 rounded-xl border border-slate-800">
+                                Tiếp tục theo dõi định kỳ hoặc duy trì phác đồ hiện tại theo phác đồ điều trị đích / miễn dịch chuẩn hóa của bệnh viện.
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-2 italic">* Đánh giá dựa trên tiêu chuẩn quốc tế RECIST phiên bản 1.1.</p>
+                        </div>
+
+                        <div>
+                            <button onclick="resetTool()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl text-xs font-bold transition border border-slate-700">
+                                ĐẶT LẠI MẶC ĐỊNH
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Lắng nghe sự kiện thay đổi của tất cả các radio buttons
+        document.querySelectorAll('.recist-item').forEach(item => {
+            item.addEventListener('change', calculateRECIST);
+        });
+
+        function calculateRECIST() {
+            // Lấy giá trị được chọn từ form
+            const target = document.querySelector('input[name="target-lesion"]:checked').value;
+            const nontarget = document.querySelector('input[name="nontarget-lesion"]:checked').value;
+            const newLesions = document.querySelector('input[name="new-lesion"]:checked').value;
+
+            let overallText = "";
+            let badgeText = "";
+            let badgeClass = "";
+            let analysisHtml = "";
+            let actionHtml = "";
+
+            // Logic phân tầng đáp ứng tổng thể (Overall Response Matrix) theo RECIST 1.1
+            if (newLesions === "YES") {
+                overallText = "Progressive Disease";
+                badgeText = "PD";
+                badgeClass = "bg-rose-800 text-rose-200";
+                analysisHtml = "⚠️ <strong>Bệnh tiến triển (PD):</strong> Phát hiện thấy có sự xuất hiện của tổn thương di căn mới. Theo tiêu chuẩn, chỉ cần có tổn thương mới, kết luận tổng thể lập tức là tiến triển.";
+                actionHtml = "❌ Cân nhắc ngừng phác đồ hiện tại do u đã kháng thuốc. Hội chẩn tiểu ban ung bướu để chuyển đổi sang phác đồ bước tiếp theo.";
+            } 
+            else if (target === "PD" || nontarget === "PD") {
+                overallText = "Progressive Disease";
+                badgeText = "PD";
+                badgeClass = "bg-rose-800 text-rose-200";
+                analysisHtml = `⚠️ <strong>Bệnh tiến triển (PD):</strong> ${target === "PD" ? "Tổng kích thước (SLD) u đích tăng ≥ 20% và tăng tuyệt đối ≥ 5mm so với Nadir." : "Các tổn thương không đích tăng tiến rõ rệt về kích thước trên lâm sàng."}`;
+                actionHtml = "❌ Đánh giá mức độ dung nạp và chuẩn bị phương án điều trị thay thế (Hóa trị bậc 2/3, xạ trị triệu chứng hoặc thử nghiệm lâm sàng).";
+            } 
+            else if (target === "CR" && nontarget === "CR") {
+                overallText = "Complete Response";
+                badgeText = "CR";
+                badgeClass = "bg-emerald-800 text-emerald-200";
+                analysisHtml = "🎉 <strong>Đáp ứng hoàn toàn (CR):</strong> Toàn bộ tổn thương đích và không đích đều biến mất hoàn toàn. Hạch lympho đích giảm về đường kính trục ngắn < 10 mm. Dấu ấn khối u bình thường.";
+                actionHtml = "✅ Tiếp tục phác đồ duy trì (nếu có chỉ định) hoặc tiến hành theo dõi định kỳ sát sao.";
+            } 
+            else if (target === "CR" && (nontarget === "NON_CR_PD" || nontarget === "NE")) {
+                overallText = "Partial Response";
+                badgeText = "PR";
+                badgeClass = "bg-sky-800 text-sky-200";
+                analysisHtml = "✨ <strong>Đáp ứng một phần (PR):</strong> Tổn thương đích co lại và biến mất hoàn toàn (CR), tuy nhiên tổn thương không đích vẫn còn tồn tại hoặc chưa thể đánh giá toàn diện.";
+                actionHtml = "👉 Đánh giá hiệu quả lâm sàng tốt. Giữ nguyên phác đồ điều trị hiện hành và đánh giá lại chu kỳ sau.";
+            } 
+            else if (target === "PR" && (nontarget === "CR" || nontarget === "NON_CR_PD" || nontarget === "NE")) {
+                overallText = "Partial Response";
+                badgeText = "PR";
+                badgeClass = "bg-sky-800 text-sky-200";
+                analysisHtml = "✨ <strong>Đáp ứng một phần (PR):</strong> Tổng kích thước (SLD) các tổn thương đích giảm đáng kể (≥ 30% từ Baseline) và không có vùng nào bị tiến triển nặng lên.";
+                actionHtml = "👉 Bệnh nhân đang đáp ứng thuận lợi với thuốc. Khuyến cáo tiếp tục điều trị theo kế hoạch.";
+            } 
+            else if (target === "SD" && (nontarget === "CR" || nontarget === "NON_CR_PD" || nontarget === "NE")) {
+                overallText = "Stable Disease";
+                badgeText = "SD";
+                badgeClass = "bg-orange-800 text-orange-200";
+                analysisHtml = "⏸️ <strong>Bệnh ổn định (SD):</strong> Khối u không co lại đủ sâu để đạt PR nhưng cũng không tăng kích thước để bị xếp vào PD. Đây vẫn là một kết quả tích cực trong kiểm soát u.";
+                actionHtml = "⚖️ Tiếp tục duy trì phác đồ hiện hành để kéo dài thời gian sống bệnh không tiến triển (PFS).";
+            } 
+            else if (target === "NE" && nontarget !== "PD") {
+                overallText = "Unevaluable";
+                badgeText = "NE";
+                badgeClass = "bg-slate-700 text-slate-300";
+                analysisHtml = "❔ <strong>Không thể đánh giá (NE):</strong> Thiếu thông tin hình ảnh học cốt lõi của tổn thương đích để tính toán chính xác mức độ thay đổi.";
+                actionHtml = "🔍 Đề xuất chỉ định chụp lại CT/MRI hoặc thu thập thêm dữ liệu khám sàng lọc lâm sàng bổ sung.";
+            } 
+            else {
+                overallText = "Chưa xác định";
+                badgeText = "--";
+                badgeClass = "bg-slate-700 text-slate-300";
+                analysisHtml = "Vui lòng kiểm tra lại tổ hợp các tiêu chí chọn.";
+                actionHtml = "Yêu cầu nhập lại số liệu.";
+            }
+
+            // Cập nhật lên giao diện HTML
+            document.getElementById('res-overall').innerText = overallText;
+            document.getElementById('res-badge').innerText = badgeText;
+            document.getElementById('res-badge').className = `px-3 py-1 rounded-full text-xs font-bold ${badgeClass}`;
+            document.getElementById('res-analysis').innerHTML = analysisHtml;
+            document.getElementById('res-action').innerHTML = actionHtml;
+        }
+
+        function resetTool() {
+            // Trả về cấu hình mặc định (Dòng 1 trong bảng: CR - CR - NO)
+            document.getElementsByName('target-lesion')[0].checked = true;
+            document.getElementsByName('nontarget-lesion')[0].checked = true;
+            document.getElementsByName('new-lesion')[0].checked = true;
+            calculateRECIST();
+        }
+
+        // Khởi chạy tính toán ban đầu khi tải trang
+        window.onload = calculateRECIST;
+    </script>
+</body>
+</html>

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tính liều BSA & Thuốc - OncoPortal</title>
+    <title>Tính toán Chức năng Thận - OncoPortal</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
             --primary-color: #17a2b8;
@@ -21,6 +22,7 @@
             line-height: 1.6;
             background-color: var(--secondary-color);
         }
+
         /* Header styles */
         .main-header {
             background-color: #fff;
@@ -86,7 +88,8 @@
         }
         .main-nav a:hover {
             color: #0d9488;
-        }        
+        }
+        
         .page-header {
             background-color: var(--primary-color);
             color: #fff;
@@ -137,12 +140,12 @@
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.2rem;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
         }
         
         .form-group {
-            margin-bottom: 1.2rem;
+            margin-bottom: 0.75rem;
         }
         
         .form-label {
@@ -192,24 +195,63 @@
             color: #adb5bd;
         }
         
-        .select-field {
-            width: 100%;
-            padding: 0.75rem 1rem;
+        .unit-select {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            padding: 0 0.8rem;
+            border: 1px solid var(--border-color);
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+            background-color: #f8f9fa;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+        }
+        .unit-select:focus {
+            border-color: var(--primary-color);
+        }
+        
+        .input-field.with-unit {
+            padding-right: 6rem;
+            border-radius: 8px 0 0 8px;
+        }
+        
+        .toggle-group {
+            display: flex;
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            font-size: 1rem;
-            outline: none;
-            background-color: #f8f9fa;
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            padding-right: 2.5rem;
+            overflow: hidden;
         }
-        .select-field:focus {
-            border-color: var(--primary-color);
-            background-color: #fff;
+        .toggle-option {
+            flex: 1;
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .toggle-option:first-child {
+            border-right: 1px solid var(--border-color);
+        }
+        .toggle-option.active {
+            background-color: var(--primary-color);
+            color: #fff;
+            font-weight: 600;
+        }
+        .toggle-option:hover:not(.active) {
+            background-color: #e9ecef;
+        }
+        
+        .input-hint {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 0.3rem;
+            margin-left: 0.3rem;
         }
         
         .result-box {
@@ -253,11 +295,6 @@
             font-size: 0.95rem;
             color: #6c757d;
             margin-left: 0.3rem;
-        }
-        .result-note {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-top: 0.3rem;
         }
         
         .clinical-notes {
@@ -306,6 +343,7 @@
     </style>
 </head>
 <body>
+
     <header class="main-header">
         <div class="header-container">
             <div class="logo" onclick="window.location.href='../index.html'">
@@ -324,47 +362,64 @@
     </header>
 
     <div class="page-header">
-        <h1>🧮 Tính liều BSA & Thuốc</h1>
-        <p>Tính toán diện tích bề mặt cơ thể (Body Surface Area) và liều lượng thuốc chuẩn xác.</p>
+        <h1>🧮 Tính toán Chức năng Thận</h1>
+        <p>Đánh giá độ lọc cầu thận (eGFR) và độ thanh thải Creatinine (CrCl).</p>
     </div>
 
     <div class="container">
         <a href="../index.html#tools" class="back-link">← Quay lại danh sách công cụ</a>
 
         <div class="form-card">
-            <form id="bsaForm">
+            <form id="renalForm">
+                <div class="form-group">
+                    <label class="form-label">Giới tính <span class="required">*</span></label>
+                    <div class="toggle-group">
+                        <button type="button" class="toggle-option active" onclick="selectGender('female')">Nữ</button>
+                        <button type="button" class="toggle-option" onclick="selectGender('male')">Nam</button>
+                    </div>
+                    <input type="hidden" id="gender" value="female">
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Chiều cao (cm) <span class="required">*</span></label>
+                        <label class="form-label">Tuổi <span class="required">*</span></label>
                         <div class="input-wrapper">
-                            <span class="input-icon">📏</span>
-                            <input type="number" class="input-field" id="height" min="1" step="0.1" placeholder="Ví dụ: 165" required>
+                            <span class="input-icon">🎂</span>
+                            <input type="number" class="input-field" id="age" min="1" max="120" placeholder="Ví dụ: 65" required>
                         </div>
+                        <div class="input-hint">Khoảng tham khảo: 18 - 120 tuổi</div>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Cân nặng (kg) <span class="required">*</span></label>
+                        <label class="form-label">Cân nặng <span class="required">*</span></label>
                         <div class="input-wrapper">
-                            <span class="input-icon">️</span>
+                            <span class="input-icon">⚖️</span>
                             <input type="number" class="input-field" id="weight" min="1" step="0.1" placeholder="Ví dụ: 60" required>
                         </div>
+                        <div class="input-hint">Khoảng tham khảo: 40 - 150 kg</div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Công thức áp dụng</label>
-                    <select class="select-field" id="formula">
-                        <option value="mosteller">Mosteller (Phổ biến nhất, khuyến cáo dùng chung)</option>
-                        <option value="dubois">Du Bois & Du Bois (Tiêu chuẩn cổ điển)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Liều thuốc chỉ định (mg/m²) <span class="optional">- Tùy chọn</span></label>
+                    <label class="form-label">Creatinine huyết thanh <span class="required">*</span></label>
                     <div class="input-wrapper">
-                        <span class="input-icon"></span>
-                        <input type="number" class="input-field" id="dosage" min="0" step="0.1" placeholder="Nhập liều lượng theo phác đồ (Ví dụ: 50)">
+                        <span class="input-icon">🧪</span>
+                        <input type="number" class="input-field with-unit" id="scr" min="0.1" step="0.01" placeholder="Ví dụ: 80" required>
+                        <select class="unit-select" id="scrUnit" onchange="calculateRenalFunction()">
+                            <option value="umol">μmol/L</option>
+                            <option value="mg">mg/dL</option>
+                        </select>
                     </div>
+                    <div class="input-hint">μmol/L (62-115) hoặc mg/dL (0.7-1.3)</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Chiều cao <span class="optional">- Tùy chọn</span></label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">📏</span>
+                        <input type="number" class="input-field" id="height" min="1" step="0.1" placeholder="Ví dụ: 165">
+                    </div>
+                    <div class="input-hint">Khoảng tham khảo: 152 - 213 cm</div>
                 </div>
             </form>
         </div>
@@ -373,30 +428,28 @@
             <h3>📊 Kết Quả</h3>
             <div class="result-grid">
                 <div class="result-item">
-                    <div class="result-label">Chỉ số diện tích da (BSA)</div>
+                    <div class="result-label">CrCl (Cockcroft-Gault)</div>
                     <div>
-                        <span class="result-value" id="bsaResult">0.00</span>
-                        <span class="result-unit">m²</span>
+                        <span class="result-value" id="crclResult">0.00</span>
+                        <span class="result-unit">mL/phút</span>
                     </div>
-                    <div class="result-note" id="formulaNote">Theo công thức Mosteller</div>
                 </div>
-                <div class="result-item" id="doseResultItem">
-                    <div class="result-label">Tổng liều thuốc cần dùng</div>
+                <div class="result-item">
+                    <div class="result-label">eGFR (CKD-EPI 2021)</div>
                     <div>
-                        <span class="result-value" id="doseResult">0.00</span>
-                        <span class="result-unit">mg</span>
+                        <span class="result-value" id="egfrResult">0.00</span>
+                        <span class="result-unit">mL/phút/1.73m²</span>
                     </div>
-                    <div class="result-note" id="doseNote">-</div>
                 </div>
             </div>
         </div>
 
         <div class="clinical-notes">
-            <h4> Ghi chú lâm sàng:</h4>
+            <h4>📝 Ghi chú lâm sàng:</h4>
             <ul>
-                <li><strong>Công thức Mosteller:</strong> BSA = √((Chiều cao × Cân nặng) / 3600)</li>
-                <li><strong>Công thức Du Bois:</strong> BSA = 0.007184 × Chiều cao<sup>0.725</sup> × Cân nặng<sup>0.425</sup></li>
-                <li>Việc giới hạn mức BSA tối đa (ví dụ: tối đa 2.0 m² hoặc 2.2 m² để tránh độc tính hóa trị ở bệnh nhân béo phì) tùy thuộc vào từng loại thuốc và hướng dẫn của phác đồ cụ thể.</li>
+                <li><strong>Cockcroft-Gault:</strong> CrCl = [(140 - Tuổi) × Cân nặng] / (72 × SCr) × (0.85 nếu là nữ). Thường dùng để điều chỉnh liều thuốc.</li>
+                <li><strong>CKD-EPI 2021:</strong> Công thức mới nhất được KDIGO khuyến nghị, không sử dụng yếu tố chủng tộc.</li>
+                <li><strong>Lưu ý:</strong> Ở bệnh nhân béo phì (BMI > 30), cân nhắc sử dụng Cân nặng Lý tưởng (IBW) hoặc Cân nặng Điều chỉnh.</li>
             </ul>
         </div>
     </div>
@@ -407,50 +460,63 @@
     </footer>
 
     <script>
-        function calculateBSA() {
-            const height = parseFloat(document.getElementById('height').value);
-            const weight = parseFloat(document.getElementById('weight').value);
-            const formula = document.getElementById('formula').value;
-            const dosage = parseFloat(document.getElementById('dosage').value) || 0;
+        let gender = 'female';
 
-            // Kiểm tra đủ thông tin bắt buộc
-            if (!height || !weight || height <= 0 || weight <= 0) {
-                document.getElementById('resultBox').style.display = 'none';
+        function selectGender(value) {
+            gender = value;
+            document.getElementById('gender').value = value;
+            const buttons = document.querySelectorAll('.toggle-option');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            buttons[value === 'female' ? 0 : 1].classList.add('active');
+            calculateRenalFunction();
+        }
+
+        function calculateRenalFunction() {
+            const age = parseFloat(document.getElementById('age').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            let scr = parseFloat(document.getElementById('scr').value);
+            const scrUnit = document.getElementById('scrUnit').value;
+
+            if (!age || !weight || !scr || age <= 0 || weight <= 0 || scr <= 0) {
+                document.getElementById('resultBox').style.display = "none";
                 return;
             }
 
-            let bsa = 0;
-            let formulaName = '';
-
-            if (formula === 'mosteller') {
-                bsa = Math.sqrt((height * weight) / 3600);
-                formulaName = 'Mosteller';
-            } else {
-                bsa = 0.007184 * Math.pow(height, 0.725) * Math.pow(weight, 0.425);
-                formulaName = 'Du Bois';
+            // Chuyển đổi đơn vị Creatinine
+            if (scrUnit === 'umol' && scr > 20) {
+                scr = scr / 88.4; // Chuyển từ μmol/L sang mg/dL
             }
 
-            const totalDose = dosage > 0 ? bsa * dosage : 0;
+            // Tính Cockcroft-Gault (CrCl)
+            let crcl = ((140 - age) * weight) / (72 * scr);
+            if (gender === 'female') {
+                crcl *= 0.85;
+            }
 
-            document.getElementById('bsaResult').textContent = bsa.toFixed(2);
-            document.getElementById('formulaNote').textContent = `Theo công thức ${formulaName}`;
+            // Tính CKD-EPI 2021 (eGFR)
+            let egfr = 0;
+            let kappa = (gender === 'female') ? 0.7 : 0.9;
+            let alpha = (gender === 'female') ? -0.241 : -0.302;
             
-            if (dosage > 0) {
-                document.getElementById('doseResult').textContent = totalDose.toFixed(2);
-                document.getElementById('doseNote').textContent = `Dựa trên ${dosage} mg/m²`;
-                document.getElementById('doseResultItem').style.display = 'block';
+            if (scr <= kappa) {
+                egfr = 142 * Math.pow(scr / kappa, alpha) * Math.pow(0.9938, age);
             } else {
-                document.getElementById('doseResultItem').style.display = 'none';
+                egfr = 142 * Math.pow(scr / kappa, -1.200) * Math.pow(0.9938, age);
+            }
+            
+            if (gender === 'female') {
+                egfr *= 1.012;
             }
 
-            document.getElementById('resultBox').style.display = 'block';
+            document.getElementById('crclResult').textContent = crcl.toFixed(2);
+            document.getElementById('egfrResult').textContent = egfr.toFixed(2);
+            document.getElementById('resultBox').style.display = "block";
         }
 
-        // Auto-calculate khi nhập liệu
-        document.getElementById('height').addEventListener('input', calculateBSA);
-        document.getElementById('weight').addEventListener('input', calculateBSA);
-        document.getElementById('formula').addEventListener('change', calculateBSA);
-        document.getElementById('dosage').addEventListener('input', calculateBSA);
+        document.getElementById('age').addEventListener('input', calculateRenalFunction);
+        document.getElementById('weight').addEventListener('input', calculateRenalFunction);
+        document.getElementById('scr').addEventListener('input', calculateRenalFunction);
+        document.getElementById('height').addEventListener('input', calculateRenalFunction);
     </script>
 </body>
 </html>
