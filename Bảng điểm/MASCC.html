@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thang điểm MASCC - Đánh giá Lâm sàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; }
+        .option-card { transition: all 0.2s ease-in-out; }
+        .option-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04); }
+        input[type="radio"]:checked + div,
+        input[type="checkbox"]:checked + div {
+            border-color: #0ea5e9; background-color: #f0f9ff;
+        }
+        input[type="radio"]:checked + div .check-icon,
+        input[type="checkbox"]:checked + div .check-icon {
+            opacity: 1; transform: scale(1);
+        }
+        .check-icon { opacity: 0; transform: scale(0.5); transition: all 0.2s; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+    <header class="bg-sky-900 text-white p-4 shadow-md flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="bg-sky-700 p-2 rounded-lg">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">MASCC RISK INDEX</h1>
+                <p class="text-sky-200 text-xs font-medium">Phân tầng nguy cơ biến chứng ở sốt giảm bạch cầu hạt</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 p-4 md:p-6">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <section class="lg:col-span-8 space-y-6" id="mascc-form">
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-sky-800 font-bold mb-4 flex items-center gap-2 border-b pb-3 text-base uppercase">1. Mức độ gánh nặng bệnh tật (Burden of illness)</h2>
+                    <p class="text-sm text-slate-500 mb-4">Chỉ chọn một mức phù hợp nhất tại thời điểm đánh giá.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <label class="cursor-pointer option-card">
+                            <input type="radio" name="burden" class="hidden mascc-item" value="5">
+                            <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0"><svg class="w-3 h-3 text-sky-600 check-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div>
+                                <span class="text-sm font-medium text-slate-700">Không hoặc triệu chứng nhẹ <span class="text-emerald-600 font-bold block">+5 điểm</span></span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer option-card">
+                            <input type="radio" name="burden" class="hidden mascc-item" value="3">
+                            <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0"><svg class="w-3 h-3 text-sky-600 check-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div>
+                                <span class="text-sm font-medium text-slate-700">Triệu chứng vừa <span class="text-amber-600 font-bold block">+3 điểm</span></span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer option-card">
+                            <input type="radio" name="burden" class="hidden mascc-item" value="0" checked>
+                            <div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full">
+                                <div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded-full flex items-center justify-center bg-white shrink-0"><svg class="w-3 h-3 text-sky-600 check-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div>
+                                <span class="text-sm font-medium text-slate-700">Triệu chứng nặng / suy kiệt <span class="text-rose-600 font-bold block">0 điểm</span></span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-sky-800 font-bold mb-4 flex items-center gap-2 border-b pb-3 text-base uppercase">2. Các yếu tố tiên lượng thuận lợi</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <label class="cursor-pointer option-card"><input type="checkbox" class="hidden mascc-item" value="5"><div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full"><div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded flex items-center justify-center bg-white shrink-0"><svg class="w-3 h-3 text-sky-600 check-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div><span class="text-sm font-medium text-slate-700">Không tụt huyết áp, HA tâm thu ≥ 90 mmHg <span class="text-sky-600 block font-bold">+5 điểm</span></span></div></label>
+                        <label class="cursor-pointer option-card"><input type="checkbox" class="hidden mascc-item" value="4"><div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full"><div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded flex items-center justify-center bg-white shrink-0"><svg class="w-3 h-3 text-sky-600 check-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div><span class="text-sm font-medium text-slate-700">Không có COPD <span class="text-sky-600 block font-bold">+4 điểm</span></span></div></label>
+                        <label class="cursor-pointer option-card"><input type="checkbox" class="hidden mascc-item" value="4"><div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full"><div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded flex items-center justify-center bg-white shrink-0"><svg class="w-3 h-3 text-sky-600 check-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div><span class="text-sm font-medium text-slate-700">Có ung thư đặc hoặc không có tiền sử nhiễm nấm trước đó <span class="text-sky-600 block font-bold">+4 điểm</span></span></div></label>
+                        <label class="cursor-pointer option-card"><input type="checkbox" class="hidden mascc-item" value="3"><div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full"><div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded flex items-center justify-center bg-white shrink-0"><svg class="w-3 h-3 text-sky-600 check-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div><span class="text-sm font-medium text-slate-700">Không mất nước cần truyền dịch <span class="text-sky-600 block font-bold">+3 điểm</span></span></div></label>
+                        <label class="cursor-pointer option-card"><input type="checkbox" class="hidden mascc-item" value="3"><div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full"><div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded flex items-center justify-center bg-white shrink-0"><svg class="w-3 h-3 text-sky-600 check-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div><span class="text-sm font-medium text-slate-700">Khởi phát sốt khi đang điều trị ngoại trú <span class="text-sky-600 block font-bold">+3 điểm</span></span></div></label>
+                        <label class="cursor-pointer option-card"><input type="checkbox" class="hidden mascc-item" value="2"><div class="border border-slate-200 p-3 rounded-xl flex items-start gap-3 h-full"><div class="mt-0.5 border-2 border-slate-300 w-5 h-5 rounded flex items-center justify-center bg-white shrink-0"><svg class="w-3 h-3 text-sky-600 check-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div><span class="text-sm font-medium text-slate-700">Tuổi &lt; 60 <span class="text-sky-600 block font-bold">+2 điểm</span></span></div></label>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-sky-800 font-bold mb-4 flex items-center gap-2 border-b pb-3 text-base uppercase">3. Ghi chú sử dụng</h2>
+                    <div class="space-y-2 text-sm text-slate-600 leading-6">
+                        <p>- Thang điểm này dùng để phân tầng nguy cơ biến chứng ở bệnh nhân sốt giảm bạch cầu hạt.</p>
+                        <p>- Cần kết hợp với đánh giá lâm sàng tổng thể, ổ nhiễm, chức năng cơ quan, khả năng theo dõi ngoại trú và bối cảnh điều trị.</p>
+                        <p>- Mốc phân loại trong file này được đặt theo yêu cầu: <strong>&le; 21 điểm = High risk</strong>; <strong>&gt; 21 điểm = Low risk</strong>.</p>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="lg:col-span-4 lg:sticky lg:top-6 self-start">
+                <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+                    <div class="bg-gradient-to-r from-sky-700 to-cyan-600 p-6 text-white">
+                        <p class="text-sky-100 text-sm font-medium tracking-wide">TỔNG ĐIỂM MASCC</p>
+                        <div class="flex items-end gap-2 mt-2">
+                            <span id="totalScore" class="text-5xl font-extrabold tracking-tight">0</span>
+                            <span class="text-sky-100 text-lg pb-1">điểm</span>
+                        </div>
+                    </div>
+
+                    <div class="p-6 space-y-5">
+                        <div>
+                            <p class="text-sm text-slate-500 mb-2">Phân tầng nguy cơ</p>
+                            <div id="riskBadge" class="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold bg-rose-100 text-rose-700">High risk</div>
+                            <p id="riskText" class="mt-3 text-lg font-bold text-slate-800">Nguy cơ cao biến chứng</p>
+                            <p id="riskExplain" class="mt-2 text-sm text-slate-600 leading-6">Điểm hiện tại thuộc nhóm nguy cơ cao theo ngưỡng &le; 21 điểm.</p>
+                        </div>
+
+                        <div class="border-t pt-5">
+                            <h3 class="text-sky-800 font-bold text-sm uppercase mb-3">Hướng xử trí lâm sàng</h3>
+                            <p id="managementText" class="text-sm text-slate-700 leading-6">Ưu tiên nhập viện, kháng sinh phổ rộng đường tĩnh mạch và theo dõi sát. Chỉ cân nhắc ngoại trú khi đánh giá toàn diện cho thấy thật sự an toàn.</p>
+                        </div>
+
+                        <div class="border-t pt-5">
+                            <h3 class="text-sky-800 font-bold text-sm uppercase mb-3">Diễn giải nhanh</h3>
+                            <ul class="space-y-2 text-sm text-slate-600 leading-6">
+                                <li><span class="font-semibold text-slate-800">Điểm tối đa:</span> 26 điểm</li>
+                                <li><span class="font-semibold text-slate-800">High risk:</span> &le; 21 điểm</li>
+                                <li><span class="font-semibold text-slate-800">Low risk:</span> &gt; 21 điểm</li>
+                            </ul>
+                        </div>
+
+                        <button id="resetBtn" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-3 rounded-xl transition text-sm font-semibold border border-slate-200">Đặt lại lựa chọn</button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <script>
+        const totalScoreEl = document.getElementById('totalScore');
+        const riskBadgeEl = document.getElementById('riskBadge');
+        const riskTextEl = document.getElementById('riskText');
+        const riskExplainEl = document.getElementById('riskExplain');
+        const managementTextEl = document.getElementById('managementText');
+        const resetBtn = document.getElementById('resetBtn');
+
+        function calculateScore() {
+            const items = document.querySelectorAll('.mascc-item');
+            let total = 0;
+            items.forEach(item => {
+                if (item.checked) total += Number(item.value || 0);
+            });
+            totalScoreEl.textContent = total;
+
+            if (total <= 21) {
+                riskBadgeEl.className = 'inline-flex items-center rounded-full px-3 py-1 text-sm font-bold bg-rose-100 text-rose-700';
+                riskBadgeEl.textContent = 'High risk';
+                riskTextEl.textContent = 'Nguy cơ cao biến chứng';
+                riskExplainEl.innerHTML = 'Điểm hiện tại thuộc nhóm nguy cơ cao theo ngưỡng <strong>&le; 21 điểm</strong>.';
+                managementTextEl.textContent = 'Ưu tiên nhập viện, dùng kháng sinh phổ rộng đường tĩnh mạch và theo dõi sát huyết động, ổ nhiễm, chức năng cơ quan. Không nên quyết định ngoại trú chỉ dựa riêng vào điểm số.';
+            } else {
+                riskBadgeEl.className = 'inline-flex items-center rounded-full px-3 py-1 text-sm font-bold bg-emerald-100 text-emerald-700';
+                riskBadgeEl.textContent = 'Low risk';
+                riskTextEl.textContent = 'Nguy cơ thấp biến chứng';
+                riskExplainEl.innerHTML = 'Điểm hiện tại thuộc nhóm nguy cơ thấp theo ngưỡng <strong>&gt; 21 điểm</strong>.';
+                managementTextEl.textContent = 'Có thể cân nhắc điều trị ngoại trú hoặc xuất viện sớm nếu bệnh nhân ổn định lâm sàng, không có chống chỉ định, có khả năng tái khám và được theo dõi an toàn.';
+            }
+        }
+
+        document.querySelectorAll('.mascc-item').forEach(item => {
+            item.addEventListener('change', calculateScore);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            document.querySelectorAll('input[type="checkbox"].mascc-item').forEach(el => el.checked = false);
+            const defaultBurden = document.querySelector('input[name="burden"][value="0"]');
+            if (defaultBurden) defaultBurden.checked = true;
+            calculateScore();
+        });
+
+        calculateScore();
+    </script>
+</body>
+</html>
