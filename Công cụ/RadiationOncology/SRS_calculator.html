@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Máy tính Phân loại Nguy cơ & Xạ phẫu Di căn Não SRS / SBRT (SRS & Brain Met Calculator)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #4f46e5 100%);
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            .card-box { border: 1px solid #e2e8f0; box-shadow: none !important; }
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg transition" title="Về trang chủ">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <div class="flex items-center gap-2">
+                    <div class="bg-indigo-600 text-white p-2 rounded-lg font-bold text-lg">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <div>
+                        <span class="font-black text-lg text-white tracking-tight">Onco<span class="text-indigo-400">SRS Calculator</span></span>
+                        <span class="text-xs block text-slate-400 font-medium">Tiên lượng DS-GPA & Đánh giá Nguy cơ Hoại tử Não</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i class="fa-solid fa-print"></i> In Báo cáo Khuyến cáo
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="gradient-header text-white py-8 px-4 no-print shadow-inner">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full mb-2">
+                    <i class="fa-solid fa-crosshairs"></i> Xạ trị & Xạ phẫu Định vị (Stereotactic Radiosurgery - SRS / SRT)
+                </div>
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Máy tính Phân loại Nguy cơ & Xạ phẫu Di căn Não SRS / SBRT</h1>
+                <p class="text-slate-300 text-sm mt-1 max-w-3xl">
+                    Tính thang điểm tiên lượng DS-GPA / MolGPA, tổng thể tích u di căn ($V_{\text{total}}$), ước tính thời gian sống thêm (mOS) và nguy cơ hoại tử mô não do xạ trị theo khuyến cáo NCCN / ASTRO 2022.
+                </p>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-3.5 rounded-xl flex items-center gap-4 text-xs">
+                <div>
+                    <div class="text-slate-300 font-medium">Điểm Tiên lượng DS-GPA</div>
+                    <div id="quick-gpa-score" class="text-xl font-black text-indigo-300">0.0 / 4.0</div>
+                </div>
+                <div class="h-8 w-px bg-white/20"></div>
+                <div>
+                    <div class="text-slate-300 font-medium">Thời gian Sống thêm mOS</div>
+                    <div id="quick-mos" class="text-xs font-bold text-white mt-0.5">-- tháng</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col gap-6">
+
+        <!-- Grid 2 Cột: Đánh giá DS-GPA + Tổng Thể tích U & Chỉ định Xạ phẫu -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Cột Trái (5 cols): Thang điểm DS-GPA / MolGPA -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+
+                <!-- Thẻ 1: Chọn Loại Ung thư Nguyên phát & Tiêu chí DS-GPA -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="border-b border-slate-100 pb-3 mb-4">
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-user-doctor text-indigo-600"></i> 1. Thang điểm Tiên lượng DS-GPA / MolGPA
+                        </h2>
+                        <p class="text-[11px] text-slate-500">Diagnosis-Specific Graded Prognostic Assessment</p>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <!-- Loại Ung thư Nguyên phát -->
+                        <div>
+                            <label class="block font-bold text-slate-800 mb-1">Ung thư Nguyên phát (Primary Tumor):</label>
+                            <select id="gpa-primary-site" onchange="updateGPACriteriaFields(); calculateGPA();" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-bold text-indigo-900 focus:outline-none focus:border-indigo-500">
+                                <option value="nsclc" selected>Ung thư Phổi tế bào không nhỏ (NSCLC)</option>
+                                <option value="breast">Ung thư Vú (Breast Cancer)</option>
+                                <option value="melanoma">Ung thư Tế bào Hắc tố (Melanoma)</option>
+                                <option value="rcc">Ung thư Tế bào Thận (RCC)</option>
+                                <option value="gi">Ung thư Tiêu hóa (GI Cancer)</option>
+                            </select>
+                        </div>
+
+                        <!-- Thể trạng KPS / ECOG -->
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Thang điểm Thể trạng (KPS / ECOG):</label>
+                            <select id="gpa-kps" onchange="calculateGPA()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-medium focus:outline-none">
+                                <option value="1.0">KPS 90 - 100% (ECOG 0)</option>
+                                <option value="0.5" selected>KPS 70 - 80% (ECOG 1)</option>
+                                <option value="0.0">KPS ≤ 60% (ECOG ≥ 2)</option>
+                            </select>
+                        </div>
+
+                        <!-- Tuổi bệnh nhân -->
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Tuổi bệnh nhân:</label>
+                            <select id="gpa-age" onchange="calculateGPA()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-medium focus:outline-none">
+                                <option value="1.0">&lt; 50 tuổi</option>
+                                <option value="0.5" selected>50 - 59 tuổi</option>
+                                <option value="0.0">≥ 60 tuổi</option>
+                            </select>
+                        </div>
+
+                        <!-- Số lượng Ổ di căn Não -->
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Số lượng tổn thương di căn não:</label>
+                            <select id="gpa-brain-mets" onchange="calculateGPA()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-medium focus:outline-none">
+                                <option value="1.0">1 ổ đơn độc</option>
+                                <option value="0.5" selected>2 - 4 ổ</option>
+                                <option value="0.0">&gt; 4 ổ di căn</option>
+                            </select>
+                        </div>
+
+                        <!-- Di căn Ngoài Não -->
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Di căn ngoài não (Extracranial Mets):</label>
+                            <select id="gpa-ecm" onchange="calculateGPA()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-medium focus:outline-none">
+                                <option value="1.0" selected>Không có (No ECM)</option>
+                                <option value="0.0">Có di căn ngoài não (ECM Present)</option>
+                            </select>
+                        </div>
+
+                        <!-- Đột biến Phân tử Chuyên biệt (MolGPA) -->
+                        <div id="mol-gpa-container" class="bg-indigo-50 border border-indigo-200 rounded-xl p-3">
+                            <label class="block font-bold text-indigo-900 mb-1">Đột biến Phân tử (Molecular Markers):</label>
+                            <select id="gpa-molecular" onchange="calculateGPA()" class="w-full bg-white border border-indigo-300 rounded px-2 py-1.5 font-bold text-indigo-950 focus:outline-none">
+                                <option value="1.0">EGFR hoặc ALK Dương tính (EGFR/ALK+)</option>
+                                <option value="0.0" selected>Kiểu dại / Không có đột biến (Wild-type)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Display Result DS-GPA -->
+                    <div id="gpa-result-box" class="mt-4 pt-3 border-t border-slate-100 bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-xl p-3.5 text-center">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cột Phải (7 cols): Thể tích U, Nguy cơ Hoại tử & Chỉ định Xạ phẫu -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+
+                <!-- Thẻ 2: Tính Tổng Thể tích U ($V_{\text{total}}$) & Nguy cơ Hoại tử (Radionecrosis) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-shapes text-indigo-600"></i> 2. Tính Thể tích U & Nguy cơ Hoại tử (Radionecrosis)
+                        </h2>
+                        <button onclick="addLesionInput()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Thêm ổ di căn
+                        </button>
+                    </div>
+
+                    <!-- Danh sách các ổ di căn -->
+                    <div id="lesions-list-container" class="space-y-2 mb-3 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <!-- Chế độ Phân liều Xạ phẫu -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs mb-3">
+                        <label class="block font-bold text-slate-800 mb-1">Kế hoạch Phân liều Xạ phẫu (SRS / SRT Fractionation):</label>
+                        <select id="srs-dose-scheme" onchange="calculateVolumeAndRadionecrosis()" class="w-full bg-white border border-slate-300 rounded px-2 py-1.5 font-bold focus:outline-none">
+                            <option value="single-24">SRS Single-Fraction 24 Gy (U nhỏ &lt; 2 cm)</option>
+                            <option value="single-18">SRS Single-Fraction 18 Gy (U 2 - 3 cm)</option>
+                            <option value="single-15">SRS Single-Fraction 15 Gy (U 3 - 4 cm)</option>
+                            <option value="srt-3">Fractionated SRT 27 Gy / 3 phân liều (9 Gy/fx - Khuyên dùng u to)</option>
+                            <option value="srt-5">Fractionated SRT 30 Gy / 5 phân liều (6 Gy/fx - Khuyên dùng cận tủy/thị giác)</option>
+                        </select>
+                    </div>
+
+                    <!-- Kết quả Thể tích & Cảnh báo Hoại tử -->
+                    <div id="volume-radionecrosis-result-box" class="rounded-xl p-3 bg-amber-50 border border-amber-200 text-amber-950 text-xs">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Thẻ 3: Khuyến cáo Chỉ định Xạ phẫu SRS vs Phẫu thuật vs HA-WBRT (ASTRO / NCCN 2022) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box flex-1 flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-compass text-emerald-600"></i> 3. Khuyến cáo Chỉ định Xạ phẫu (ASTRO / NCCN 2022)
+                        </h2>
+
+                        <div id="astro-recommendations-box" class="space-y-2 text-xs">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-xl">
+                        <strong class="text-slate-700 block mb-0.5"><i class="fa-solid fa-circle-info text-indigo-600"></i> Tiêu chuẩn Đồng thuận Xạ phẫu Định vị (SRS/SRT):</strong>
+                        • <strong>Bảo tồn Trí nhớ (Cognitive Preservation)</strong>: Ưu tiên dùng SRS/SRT đơn độc thay vì Xạ trị Toàn não (WBRT) cho bệnh nhân có 1–10 ổ di căn nhằm bảo vệ chức năng nhận thức.<br>
+                        • <strong>Tránh Hoại tử Não (Radionecrosis)</strong>: Đối với tổn thương &gt; 2–3 cm hoặc thể tích $V_{12\text{Gy}} &gt; 10\text{ cm}^3$, khuyến cáo chuyển sang Xạ phẫu Phân liều (Fractionated SRT 3–5 buổi) để giảm tỷ lệ hoại tử.<br>
+                        • <strong>Trường hợp bắt buộc WBRT</strong>: Nên sử dụng phác đồ Tránh Vùng Hải mã (HA-WBRT) kết hợp với **Memantine** (20 mg/ngày) để giảm thiểu suy giảm trí nhớ.
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-10 no-print text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-medium text-slate-300">Hệ thống Tiên lượng Di căn Não & Khuyến cáo Xạ phẫu Định vị SRS / SRT</p>
+            <p class="text-slate-500 mt-1">Dựa trên Hướng dẫn Lâm sàng ASTRO/NCCN 2022 & Thang điểm DS-GPA Sperduto et al.</p>
+        </div>
+    </footer>
+
+    <script>
+        let lesions = [
+            { id: 1, diam: 1.8 }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateGPACriteriaFields();
+            calculateGPA();
+            renderLesionInputs();
+            calculateVolumeAndRadionecrosis();
+        });
+
+        function updateGPACriteriaFields() {
+            const site = document.getElementById('gpa-primary-site').value;
+            const molBox = document.getElementById('mol-gpa-container');
+            const molSelect = document.getElementById('gpa-molecular');
+
+            if (site === 'nsclc') {
+                molBox.classList.remove('hidden');
+                molSelect.innerHTML = `
+                    <option value="1.0">EGFR hoặc ALK Dương tính (EGFR/ALK+)</option>
+                    <option value="0.0" selected>Kiểu dại / Không có đột biến (Wild-type)</option>
+                `;
+            } else if (site === 'breast') {
+                molBox.classList.remove('hidden');
+                molSelect.innerHTML = `
+                    <option value="1.0">HER2 Dương tính (HER2+)</option>
+                    <option value="0.5">Luminal A/B (HR+, HER2-)</option>
+                    <option value="0.0" selected>Bộ ba Âm tính (Triple Negative)</option>
+                `;
+            } else if (site === 'melanoma') {
+                molBox.classList.remove('hidden');
+                molSelect.innerHTML = `
+                    <option value="0.5">BRAF V600 Dương tính (BRAF+)</option>
+                    <option value="0.0" selected>BRAF Kiểu dại (Wild-type)</option>
+                `;
+            } else {
+                molBox.classList.add('hidden');
+            }
+        }
+
+        function calculateGPA() {
+            const site = document.getElementById('gpa-primary-site').value;
+            const kps = parseFloat(document.getElementById('gpa-kps').value);
+            const age = parseFloat(document.getElementById('gpa-age').value);
+            const brainMets = parseFloat(document.getElementById('gpa-brain-mets').value);
+            const ecm = parseFloat(document.getElementById('gpa-ecm').value);
+            const mol = parseFloat(document.getElementById('gpa-molecular').value) || 0;
+
+            let score = kps + age + brainMets + ecm;
+            if (site === 'nsclc' || site === 'breast' || site === 'melanoma') {
+                score += mol;
+            }
+
+            // Cap at 4.0
+            score = Math.min(4.0, Math.max(0, score));
+
+            // Estimate Median OS (mOS)
+            let mos = '6 - 9';
+            if (score >= 3.5) {
+                mos = '25 - 46 (Tiên lượng Rất tốt)';
+            } else if (score >= 2.5) {
+                mos = '14 - 20 (Tiên lượng Khá)';
+            } else if (score >= 1.5) {
+                mos = '7 - 11 (Tiên lượng Trung bình)';
+            } else {
+                mos = '3 - 5 (Tiên lượng Xấu)';
+            }
+
+            document.getElementById('quick-gpa-score').textContent = `${score.toFixed(1)} / 4.0`;
+            document.getElementById('quick-mos').textContent = `${mos} tháng`;
+
+            const resBox = document.getElementById('gpa-result-box');
+            resBox.innerHTML = `
+                <div class="text-[10px] uppercase font-bold text-indigo-300 tracking-wider mb-0.5">Điểm Tiên lượng DS-GPA Tổng hợp:</div>
+                <div class="text-2xl font-black text-white mb-1">${score.toFixed(1)} / 4.0 điểm</div>
+                <div class="text-xs font-semibold text-emerald-400">Thời gian Sống thêm Trung vị Dự báo (mOS): ${mos} tháng</div>
+            `;
+
+            updateASTRORecommendations();
+        }
+
+        function renderLesionInputs() {
+            const container = document.getElementById('lesions-list-container');
+            let html = '';
+
+            lesions.forEach((les, idx) => {
+                html += `
+                    <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs">
+                        <span class="font-bold text-slate-700 w-16">Ổ u #${idx + 1}:</span>
+                        <div class="flex-1 flex items-center gap-1.5">
+                            <label class="text-slate-500">Đường kính:</label>
+                            <input type="number" value="${les.diam}" step="0.1" min="0.1" max="10" onchange="updateLesionDiam(${les.id}, this.value)" class="w-20 bg-white border border-slate-300 rounded px-2 py-1 font-bold text-right focus:outline-none focus:border-indigo-500">
+                            <span class="text-slate-600 font-semibold">cm</span>
+                        </div>
+                        <span class="text-slate-500 font-medium text-[11px]">Vol: ${calculateSphereVol(les.diam).toFixed(2)} cm³</span>
+                        ${lesions.length > 1 ? `<button onclick="removeLesionInput(${les.id})" class="text-slate-400 hover:text-red-500 text-xs px-1"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function calculateSphereVol(diam) {
+            const r = diam / 2;
+            return (4 / 3) * Math.PI * Math.pow(r, 3);
+        }
+
+        function addLesionInput() {
+            const nextId = lesions.length > 0 ? Math.max(...lesions.map(l => l.id)) + 1 : 1;
+            lesions.push({ id: nextId, diam: 1.5 });
+            renderLesionInputs();
+            calculateVolumeAndRadionecrosis();
+        }
+
+        function removeLesionInput(id) {
+            lesions = lesions.filter(l => l.id !== id);
+            renderLesionInputs();
+            calculateVolumeAndRadionecrosis();
+        }
+
+        function updateLesionDiam(id, val) {
+            const num = parseFloat(val) || 0.1;
+            const item = lesions.find(l => l.id === id);
+            if (item) item.diam = num;
+            renderLesionInputs();
+            calculateVolumeAndRadionecrosis();
+        }
+
+        function calculateVolumeAndRadionecrosis() {
+            let totalVol = 0;
+            let maxDiam = 0;
+
+            lesions.forEach(l => {
+                totalVol += calculateSphereVol(l.diam);
+                if (l.diam > maxDiam) maxDiam = l.diam;
+            });
+
+            const scheme = document.getElementById('srs-dose-scheme').value;
+            const resBox = document.getElementById('volume-radionecrosis-result-box');
+
+            const isSingleFx = scheme.startsWith('single');
+
+            let warningClass = 'bg-emerald-50 border-emerald-300 text-emerald-950';
+            let statusText = 'Nguy cơ Hoại tử Não THẤP (< 5%). Chế độ xạ phẫu an toàn.';
+
+            if (isSingleFx && maxDiam > 2.5) {
+                warningClass = 'bg-red-50 border-red-300 text-red-950';
+                statusText = `CẢNH BÁO NGUY CƠ HOẠI TỬ NÃO CAO (15 - 25% Radionecrosis)! Ổ u lớn (${maxDiam.toFixed(1)} cm) xạ đơn liều có thể gây quá tải V12Gy. KHUYÊN CHUYỂN SANG XẠ PHẪU PHÂN LIỀU (Fractionated SRT 3-5 buổi).`;
+            } else if (totalVol > 15.0) {
+                warningClass = 'bg-amber-50 border-amber-300 text-amber-950';
+                statusText = `Tổng thể tích u lớn (${totalVol.toFixed(1)} cm³). Cần cân nhắc phân chia 3-5 phân liều (Fractionated SRT) để giảm độc tính nhu mô não.`;
+            }
+
+            resBox.className = `rounded-xl p-3 border text-xs ${warningClass}`;
+            resBox.innerHTML = `
+                <div class="flex items-center justify-between font-bold text-sm mb-1">
+                    <span>Tổng Thể tích Khối u (V_total): ${totalVol.toFixed(2)} cm³</span>
+                    <span>Số lượng ổ: ${lesions.length} ổ</span>
+                </div>
+                <p class="leading-relaxed text-[11px] font-semibold">${statusText}</p>
+            `;
+
+            updateASTRORecommendations();
+        }
+
+        function updateASTRORecommendations() {
+            const count = lesions.length;
+            let maxDiam = 0;
+            let totalVol = 0;
+
+            lesions.forEach(l => {
+                totalVol += calculateSphereVol(l.diam);
+                if (l.diam > maxDiam) maxDiam = l.diam;
+            });
+
+            const box = document.getElementById('astro-recommendations-box');
+            let html = '';
+
+            if (maxDiam >= 3.0) {
+                html += `
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-2.5">
+                        <strong class="text-indigo-900 block mb-0.5"><i class="fa-solid fa-scalpel text-indigo-600"></i> Khuyến cáo Phẫu thuật + Cavity SRS:</strong>
+                        Tổn thương u lớn (${maxDiam.toFixed(1)} cm) gây chèn ép thần kinh. Khuyên mổ bóc u kết hợp Xạ phẫu SRS vào hố mổ sau phẫu thuật để kiểm soát tại chỗ tối ưu.
+                    </div>
+                `;
+            }
+
+            if (count >= 1 && count <= 4) {
+                html += `
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-2.5">
+                        <strong class="text-emerald-900 block mb-0.5"><i class="fa-solid fa-circle-check text-emerald-600"></i> Ưu tiên Xạ phẫu Đơn độc (SRS / SRT Alone):</strong>
+                        Có 1–4 ổ di căn. Khuyên dùng SRS đơn độc thay vì Xạ trị toàn não (WBRT) để bảo tồn tối đa chức năng nhận thức và trí nhớ cho bệnh nhân.
+                    </div>
+                `;
+            } else if (count >= 5 && count <= 10 && totalVol < 15.0) {
+                html += `
+                    <div class="bg-sky-50 border border-sky-200 rounded-lg p-2.5">
+                        <strong class="text-sky-900 block mb-0.5"><i class="fa-solid fa-microscope text-sky-600"></i> Chỉ định SRS cho Đa di căn (5-10 ổ):</strong>
+                        Có ${count} ổ di căn nhưng tổng thể tích u V_total &lt; 15 cm³. Khuyến cáo vẫn có thể tiến hành Xạ phẫu SRS tập trung cho từng ổ thay cho WBRT.
+                    </div>
+                `;
+            } else if (count > 10 || totalVol >= 15.0) {
+                html += `
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+                        <strong class="text-amber-900 block mb-0.5"><i class="fa-solid fa-radiation text-amber-600"></i> Khuyến cáo HA-WBRT + Memantine:</strong>
+                        Số lượng tổn thương nhiều (&gt; 10 ổ) hoặc thể tích u quá lớn. Chỉ định Xạ trị toàn não Tránh Vùng Hải mã (HA-WBRT 30 Gy / 10 fx) kết hợp thuốc <strong>Memantine</strong> (20 mg/ngày trong 24 tuần).
+                    </div>
+                `;
+            }
+
+            box.innerHTML = html;
+        }
+    </script>
+</body>
+
+</html>

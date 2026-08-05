@@ -944,9 +944,8 @@
         // Stale alert badge
         const staleBadge = getStaleAlertBadge(study);
 
-        // Forest Plot parsing
-        const forestData = parseForestData(study.keyResults);
-        const forestPlotHtml = forestData ? `<div class="forest-plot-inline">${renderForestPlotSVG(forestData)}</div>` : '';
+        // Forest Plot parsing (hỗ trợ cả 1 hoặc nhiều kết quả như PFS, OS...)
+        const forestPlotHtml = renderForestPlotsHTML(study.keyResults);
 
         // Subgroup Count & inline button
         const sgCount = (study.subgroups && typeof study.subgroups === 'object') ? Object.keys(study.subgroups).length : 0;
@@ -2044,163 +2043,450 @@
     // FOREST PLOT MINI
     // ════════════════════════════
 
-    /**
-     * Parse HR/OR/RR + 95% CI từ chuỗi keyResults.
-     * Hỗ trợ format: HR 0.86 (95% CI 0.74-0.99) hoặc OR 0.75 [0.65, 0.86]
-     * @returns { estimate, lower, upper, label } hoặc null nếu không parse được
-     */
-    /**
-     * Parse HR/OR/RR/aHR/aOR/RD/ARR/MD/SMD/p-value + 95% CI
-     * Hỗ trợ cả dạng chuỗi (ví dụ: "OR 0.75 (95% CI 0.65-0.86, p=0.002)")
-     * lẫn dạng JSON Object trực tiếp (ví dụ: {"label":"OR", "estimate":0.75, "lower":0.65, "upper":0.86, "p":"0.002"})
-     * @returns { label, estimate, lower, upper, pValue, isSig } hoặc null
-     */
-    function parseForestData(keyResults) {
-      if (!keyResults) return null;
+    // ════════════════════════════
+    // FOREST PLOT MINI (HỖ TRỢ 1 HOẶC NHIỀU KẾT QUẢ: PFS, OS, ORR...)
+    // ════════════════════════════
 
-      let label = '', estimate = NaN, lower = NaN, upper = NaN, pValue = null;
+    /**
+     * Trích xuất tất cả các kết quả Forest Plot từ chuỗi hoặc JSON Object/Array.
+     * Hỗ trợ nghiên cứu có 1 hoặc nhiều tiêu chí (VD: "PFS: HR 0.65 (95% CI 0.46-0.91, p=0.013); OS: HR 0.60 (95% CI 0.40-0.91, p=0.015)")
+     * @returns {Array<{ prefix, label, estimate, lower, upper, pValue, isSig }>}
+     */
+    function parseAllForestData(keyResults) {
+      if (!keyResults) return [];
 
-      // 1. Nếu keyResults là JSON object hoặc chuỗi JSON
+      if (Array.isArray(keyResults)) {
+        const list = [];
+        keyResults.forEach(item => {
+          const sub = parseAllForestData(item);
+          if (sub.length) list.push(...sub);
+        });
+        return list;
+      }
+
       let jsonObj = null;
       if (typeof keyResults === 'object') {
         jsonObj = keyResults;
       } else if (typeof keyResults === 'string' && keyResults.trim().startsWith('{')) {
         try { jsonObj = JSON.parse(keyResults.trim()); } catch(e) {}
+      } else if (typeof keyResults === 'string' && keyResults.trim().startsWith('[')) {
+        try {
+          const arr = JSON.parse(keyResults.trim());
+          if (Array.isArray(arr)) return parseAllForestData(arr);
+        } catch(e) {}
       }
 
       if (jsonObj) {
-        label = (jsonObj.label || jsonObj.type || jsonObj.metric || 'OR').toUpperCase();
-        estimate = parseFloat(jsonObj.estimate ?? jsonObj.val ?? jsonObj.value ?? jsonObj.or ?? jsonObj.rr ?? jsonObj.hr);
-        lower = parseFloat(jsonObj.lower ?? (Array.isArray(jsonObj.ci) ? jsonObj.ci[0] : jsonObj.ciLower));
-        upper = parseFloat(jsonObj.upper ?? (Array.isArray(jsonObj.ci) ? jsonObj.ci[1] : jsonObj.ciUpper));
-        if (jsonObj.p !== undefined || jsonObj.pValue !== undefined) {
-          const rawP = jsonObj.p ?? jsonObj.pValue;
-          pValue = typeof rawP === 'number' ? (rawP < 0.001 ? '<0.001' : rawP.toString()) : String(rawP);
+        if (jsonObj.estimate !== undefined || jsonObj.hr !== undefined || jsonObj.or !== undefined || jsonObj.rr !== undefined || jsonObj.val !== undefined) {
+          const single = parseSingleForestObject(jsonObj);
+          return single ? [single] : [];
         }
-      } else if (typeof keyResults === 'string') {
-        // Tách p-value trước nếu có trong chuỗi (ví dụ: p=0.04, p < 0.001, p=0.002, p < 0.05)
-        const pMatch = keyResults.match(/\bp\s*([<>=]=?)\s*([\d.]+)/i);
-        if (pMatch) {
-          const op = pMatch[1].replace('=', '');
-          pValue = op ? `${op}${pMatch[2]}` : pMatch[2];
+        const list = [];
+        for (const [key, val] of Object.entries(jsonObj)) {
+          const sub = parseAllForestData(val);
+          sub.forEach(item => {
+            if (!item.prefix && key) item.prefix = key;
+            list.push(item);
+          });
         }
+        return list;
+      }
 
-        // Regex patterns hỗ trợ OR, RR, HR, aOR, aHR, RD, ARR, MD, SMD, WMD...
-        // Hỗ trợ đơn vị tính (kg, mmol/L, %, ...) và từ nối "đến" / "dến" / "dên" / "to" / "-"
-        const sep = '(?:đến|dến|dên|to|[-\u2013\u2014,])';
-        const unit = '(?:\\s+[a-zA-Z%°µμ/-]+)?';
-        const metric = '(aHR|aOR|HR|OR|RR|RD|ARR|NNT|NNH|RRR|SMD|MD|WMD|IRR|PR|ORR|CR)';
+      if (typeof keyResults !== 'string') return [];
 
-        const patterns = [
-          // 1a. "MD -1.30 kg (95% CI -2.02 đến -0.57, p<0.01)" hoặc "HR 0.86 (95% CI 0.74-0.99)"
-          new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s*\\([^)]*?CI[^\\d-]*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)[^)]*\\)`, 'i'),
-          // 1b. "MD -1.30 kg (95% CI: -2.02 to -0.57)"
-          new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s*\\([^)]*?CI[^\\d-]*(-?[\\d.]+)\\s+to\\s+(-?[\\d.]+)[^)]*\\)`, 'i'),
-          // 2. "MD -1.30 kg (-2.02 đến -0.57)" — ngoặc tròn thuần túy
-          new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s*\\(\\s*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)[^)]*\\)`, 'i'),
-          // 3. "MD -1.30 kg [95% CI: -2.02 đến -0.57]" — ngoặc vuông
-          new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s*\\[[^\\]]*?CI[^\\d\\]]*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)[^\\]]*\\]`, 'i'),
-          // 4. "MD -1.30 kg, 95% CI -2.02 đến -0.57"
-          new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s*[,;]\\s*(?:95%\\s*)?CI\\s*[=:]?\\s*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)`, 'i'),
-          // 5. "MD -1.30 kg 95% CI -2.02 đến -0.57" — phân cách khoảng trắng
-          new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s+(?:95%\\s*)?CI\\s*[=:]?\\s*\\[?\\s*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)\\]?`, 'i'),
-          // 6. "MD = -1.30 kg; 95% CI [-2.02 đến -0.57]"
-          new RegExp(`\\b${metric}\\s*=\\s*(-?[\\d.]+${unit})[\\s;,]+(?:95%\\s*)?CI\\s*\\[?\\s*(-?[\\d.]+)\\s*(?:${sep}|to)\\s*(-?[\\d.]+)\\]?`, 'i'),
-          // 7. "pooled MD = -1.30 kg (-2.02 đến -0.57)"
-          new RegExp(`(?:pooled|combined)?\\s*${metric}\\s*=?\\s*(-?[\\d.]+${unit})\\s*\\(\\s*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)[^)]*\\)`, 'i')
-        ];
+      const parts = keyResults.split(/(?:;|\n|\||\/\/)/).map(s => s.trim()).filter(Boolean);
+      let results = [];
 
-        for (const pattern of patterns) {
-          const match = keyResults.match(pattern);
-          if (!match) continue;
-          label    = (match[1] || '').toUpperCase();
-          const rawEst = match[2].trim().split(/\s+/)[0];
-          estimate = parseFloat(rawEst);
-          lower    = parseFloat(match[3]);
-          upper    = parseFloat(match[4]);
-          if (!isNaN(estimate) && !isNaN(lower) && !isNaN(upper)) break;
+      for (const part of parts) {
+        const sub = parseForestDataFromText(part);
+        if (sub && sub.length > 0) {
+          results.push(...sub);
         }
       }
 
+      if (results.length === 0) {
+        results = parseForestDataFromText(keyResults);
+      }
+
+      return results;
+    }
+
+    function parseSingleForestObject(jsonObj) {
+      if (!jsonObj || typeof jsonObj !== 'object') return null;
+      const label = (jsonObj.prefix || jsonObj.label || jsonObj.type || jsonObj.metric || 'OR').toUpperCase();
+      const estimate = parseFloat(jsonObj.estimate ?? jsonObj.val ?? jsonObj.value ?? jsonObj.or ?? jsonObj.rr ?? jsonObj.hr);
+      const lower = parseFloat(jsonObj.lower ?? (Array.isArray(jsonObj.ci) ? jsonObj.ci[0] : jsonObj.ciLower));
+      const upper = parseFloat(jsonObj.upper ?? (Array.isArray(jsonObj.ci) ? jsonObj.ci[1] : jsonObj.ciUpper));
+      let pValue = null;
+      if (jsonObj.p !== undefined || jsonObj.pValue !== undefined) {
+        const rawP = jsonObj.p ?? jsonObj.pValue;
+        pValue = typeof rawP === 'number' ? (rawP < 0.001 ? '<0.001' : rawP.toString()) : String(rawP);
+      }
       if (isNaN(estimate) || isNaN(lower) || isNaN(upper)) return null;
-      if (lower > estimate || estimate > upper) return null;
-      if (Math.abs(upper - lower) > 500) return null;
-
-      const allowNeg = ['MD', 'SMD', 'WMD', 'RD', 'ARR'].includes(label);
-      if (!allowNeg && lower < 0) return null;
-      if (!allowNeg && estimate === 0) return null;
-
       let isSig = false;
       if (pValue) {
         const numP = parseFloat(pValue.replace(/[^\d.]/g, ''));
-        if (!isNaN(numP)) {
-          isSig = numP < 0.05 || pValue.includes('<');
+        if (!isNaN(numP)) isSig = numP < 0.05 || pValue.includes('<');
+      }
+      return { prefix: jsonObj.title || jsonObj.prefix || '', label, estimate, lower, upper, pValue, isSig };
+    }
+
+    function parseForestDataFromText(text) {
+      if (!text || typeof text !== 'string') return [];
+
+      const sep = '(?:đến|dến|dên|to|[-\u2013\u2014,])';
+      const unit = '(?:\\s+[a-zA-Z%°µμ/-]+)?';
+      const metric = '(aHR|aOR|HR|OR|RR|RD|ARR|NNT|NNH|RRR|SMD|MD|WMD|IRR|PR|ORR|CR)';
+
+      const patterns = [
+        new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s*\\([^)]*?CI[^\\d-]*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)[^)]*\\)`, 'gi'),
+        new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s*\\([^)]*?CI[^\\d-]*(-?[\\d.]+)\\s+to\\s+(-?[\\d.]+)[^)]*\\)`, 'gi'),
+        new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s*\\(\\s*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)[^)]*\\)`, 'gi'),
+        new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s*\\[[^\\]]*?CI[^\\d\\]]*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)[^\\]]*\\]`, 'gi'),
+        new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s*[,;]\\s*(?:95%\\s*)?CI\\s*[=:]?\\s*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)`, 'gi'),
+        new RegExp(`\\b${metric}\\s*[=:]?\\s*(-?[\\d.]+${unit})\\s+(?:95%\\s*)?CI\\s*[=:]?\\s*\\[?\\s*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)\\]?`, 'gi'),
+        new RegExp(`\\b${metric}\\s*=\\s*(-?[\\d.]+${unit})[\\s;,]+(?:95%\\s*)?CI\\s*\\[?\\s*(-?[\\d.]+)\\s*(?:${sep}|to)\\s*(-?[\\d.]+)\\]?`, 'gi'),
+        new RegExp(`(?:pooled|combined)?\\s*${metric}\\s*=?\\s*(-?[\\d.]+${unit})\\s*\\(\\s*(-?[\\d.]+)\\s*${sep}\\s*(-?[\\d.]+)[^)]*\\)`, 'gi')
+      ];
+
+      const results = [];
+      const matchedRanges = [];
+
+      for (const patternRegex of patterns) {
+        const regex = new RegExp(patternRegex.source, 'gi');
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+          const matchStart = match.index;
+          const matchEnd = regex.lastIndex;
+
+          if (matchedRanges.some(r => (matchStart >= r.start && matchStart < r.end) || (matchEnd > r.start && matchEnd <= r.end))) {
+            continue;
+          }
+
+          const rawLabel = (match[1] || '').toUpperCase();
+          const rawEst = match[2].trim().split(/\s+/)[0];
+          const estimate = parseFloat(rawEst);
+          const lower = parseFloat(match[3]);
+          const upper = parseFloat(match[4]);
+
+          if (isNaN(estimate) || isNaN(lower) || isNaN(upper)) continue;
+          if (lower > estimate || estimate > upper) continue;
+          if (Math.abs(upper - lower) > 500) continue;
+
+          const allowNeg = ['MD', 'SMD', 'WMD', 'RD', 'ARR'].includes(rawLabel);
+          if (!allowNeg && lower < 0) continue;
+          if (!allowNeg && estimate === 0) continue;
+
+          const fullMatchStr = match[0];
+          let pValue = null;
+          const pMatch = fullMatchStr.match(/\bp\s*([<>=]=?)\s*([\d.]+)/i) || text.slice(matchEnd, matchEnd + 25).match(/\bp\s*([<>=]=?)\s*([\d.]+)/i);
+          if (pMatch) {
+            const op = pMatch[1].replace('=', '');
+            pValue = op ? `${op}${pMatch[2]}` : pMatch[2];
+          }
+
+          let isSig = false;
+          if (pValue) {
+            const numP = parseFloat(pValue.replace(/[^\d.]/g, ''));
+            if (!isNaN(numP)) {
+              isSig = numP < 0.05 || pValue.includes('<');
+            }
+          }
+
+          let lastEnd = 0;
+          matchedRanges.forEach(r => { if (r.end <= matchStart && r.end > lastEnd) lastEnd = r.end; });
+          let rawPrefix = text.slice(lastEnd, matchStart).trim();
+          
+          let prefix = rawPrefix
+            .replace(/^[\s;,:|\/•\-\[\]\(\)]+/, '')
+            .replace(/[\s;,:|\/•\-\[\]\(\)]+$/, '')
+            .trim();
+
+          if (prefix.length > 35) {
+            const subParts = prefix.split(/[.,;\n]/);
+            prefix = subParts[subParts.length - 1].trim();
+          }
+
+          if (!prefix || prefix.toUpperCase() === rawLabel || prefix.length > 35) {
+            prefix = '';
+          }
+
+          matchedRanges.push({ start: matchStart, end: matchEnd });
+          results.push({
+            startIndex: matchStart,
+            prefix,
+            label: rawLabel,
+            estimate,
+            lower,
+            upper,
+            pValue,
+            isSig
+          });
         }
       }
 
-      return { label, estimate, lower, upper, pValue, isSig };
+      results.sort((a, b) => a.startIndex - b.startIndex);
+      return results;
     }
 
     /**
-     * Render SVG Forest Plot mini (width=270px, height=46px)
+     * Tương thích ngược: lấy kết quả đầu tiên nếu có
      */
-    function renderForestPlotSVG(forestData) {
-      if (!forestData) return '';
-      const { label, estimate, lower, upper, pValue, isSig } = forestData;
+    function parseForestData(keyResults) {
+      const all = parseAllForestData(keyResults);
+      return all.length > 0 ? all[0] : null;
+    }
 
-      const W = 270, H = 46;
-      const PAD_L = 10, PAD_R = 10;
+    /**
+     * Render SVG Forest Plot mini — PREMIUM v2 (width=320px, height=76px)
+     * Tính năng: vùng benefit/harm, gradient CI bar, diamond glow, tooltip HTML, animation entrance
+     */
+    function renderForestPlotSVG(forestData, showTooltip = true) {
+      if (!forestData) return '';
+      const { prefix, label, estimate, lower, upper, pValue, isSig } = forestData;
+
+      const W = 320, H = 76;
+      const PAD_L = 12, PAD_R = 12;
+      const PLOT_Y = 30; // y center of the plot track
       const plotW = W - PAD_L - PAD_R;
-      const cy = (H / 2) - 2;
 
       const isDiff = ['MD', 'SMD', 'WMD', 'RD', 'ARR'].includes(label);
       const nullVal = isDiff ? 0.0 : 1.0;
 
-      const maxDist = Math.max(Math.abs(upper - nullVal), Math.abs(nullVal - lower)) * 1.3 + 0.15;
+      const maxDist = Math.max(Math.abs(upper - nullVal), Math.abs(nullVal - lower)) * 1.35 + 0.12;
       const axisMin = isDiff ? (nullVal - maxDist) : Math.max(0.05, nullVal - maxDist);
       const axisMax = nullVal + maxDist;
 
       function toX(val) {
-        return PAD_L + ((val - axisMin) / (axisMax - axisMin)) * plotW;
+        return PAD_L + ((Math.max(axisMin, Math.min(axisMax, val)) - axisMin) / (axisMax - axisMin)) * plotW;
       }
 
-      const x0 = toX(nullVal);
-      const xE = toX(estimate);
-      const xL = toX(lower);
-      const xU = toX(upper);
+      const x0   = toX(nullVal);
+      const xE   = toX(estimate);
+      const xL   = toX(lower);
+      const xU   = toX(upper);
+      const xEnd = toX(axisMax);
 
-      const isGreen = isDiff ? estimate < 0.0 : estimate < 1.0;
-      const isHarm  = isDiff ? estimate > 0.0 : estimate > 1.0;
-      const dotColor = isGreen ? '#16a34a' : isHarm ? '#dc2626' : '#6b7280';
-      const ciColor  = isGreen ? '#86efac' : isHarm ? '#fca5a5' : '#cbd5e1';
+      const isBenefit = isDiff ? estimate < 0.0 : estimate < 1.0;
+      const isHarm    = isDiff ? estimate > 0.0 : estimate > 1.0;
 
-      const pStr = pValue ? ` (p${pValue.startsWith('<') || pValue.startsWith('>') ? '' : '='}${pValue})` : '';
-      const labelText = `${label} ${estimate.toFixed(2)} [${lower.toFixed(2)}–${upper.toFixed(2)}]${pStr}`;
+      // Color palette
+      const dotColor  = isBenefit ? '#15803d' : isHarm ? '#dc2626' : '#64748b';
+      const ciGrad    = isBenefit ? 'fp-grad-green' : isHarm ? 'fp-grad-red' : 'fp-grad-gray';
+      const glowColor = isBenefit ? '#bbf7d0' : isHarm ? '#fecaca' : '#e2e8f0';
+      const bgZoneBenefit = isDiff
+        ? `<rect x="${PAD_L}" y="8" width="${Math.max(0, x0 - PAD_L)}" height="${PLOT_Y * 2 - 8}" fill="url(#fp-bg-green)" rx="3"/>`
+        : `<rect x="${PAD_L}" y="8" width="${Math.max(0, x0 - PAD_L)}" height="${PLOT_Y * 2 - 8}" fill="url(#fp-bg-green)" rx="3"/>`;
+      const bgZoneHarm = isDiff
+        ? `<rect x="${x0}" y="8" width="${Math.max(0, xEnd - x0)}" height="${PLOT_Y * 2 - 8}" fill="url(#fp-bg-red)" rx="3"/>`
+        : `<rect x="${x0}" y="8" width="${Math.max(0, xEnd - x0)}" height="${PLOT_Y * 2 - 8}" fill="url(#fp-bg-red)" rx="3"/>`;
+
+      // Labels
+      const pStr    = pValue ? `p${pValue.startsWith('<') || pValue.startsWith('>') ? '' : '='}${pValue}` : '';
+      const pfxStr  = prefix ? `${prefix}: ` : '';
+      const metricVal = `${label} ${estimate.toFixed(2)} [${lower.toFixed(2)}–${upper.toFixed(2)}]`;
+      const fullLabel = `${pfxStr}${metricVal}`;
+      const pBadge  = pStr ? `  ${pStr}` : '';
+
+      // Significance asterisk ring
+      const sigRing = isSig
+        ? `<circle cx="${xE}" cy="${PLOT_Y}" r="11" fill="none" stroke="${dotColor}" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.55"/>`
+        : '';
+
+      // Percentage reduction/increase label (for ratio metrics)
+      let effectLabel = '';
+      if (!isDiff && estimate < 1.0 && estimate > 0) {
+        const pct = Math.round((1 - estimate) * 100);
+        effectLabel = `<text x="${xE}" y="${PLOT_Y - 17}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${dotColor}" font-family="Inter,sans-serif" letter-spacing="0.3">-${pct}%</text>`;
+      } else if (!isDiff && estimate > 1.0) {
+        const pct = Math.round((estimate - 1) * 100);
+        effectLabel = `<text x="${xE}" y="${PLOT_Y - 17}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${dotColor}" font-family="Inter,sans-serif" letter-spacing="0.3">+${pct}%</text>`;
+      }
+
+      // Axis tick values
+      const mid1X = toX(axisMin + (nullVal - axisMin) / 2);
+      const mid2X = toX(nullVal + (axisMax - nullVal) / 2);
+
+      // Tooltip data — encoded for HTML title attribute
+      const tooltipTitle = [
+        pfxStr ? `[${prefix}]` : '',
+        metricVal,
+        pStr,
+        isSig ? '✓ Có ý nghĩa thống kê (p<0.05)' : '✗ Chưa có ý nghĩa thống kê',
+        isBenefit ? `→ Giảm nguy cơ${!isDiff ? ` ${Math.round((1-estimate)*100)}%` : ''}` : isHarm ? '→ Tăng nguy cơ' : '→ Không có hiệu quả rõ ràng'
+      ].filter(Boolean).join(' | ');
+
+      // Unique animation id
+      const animId = `fp-${Math.random().toString(36).slice(2,7)}`;
 
       return `
         <svg class="forest-plot-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"
-             xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forest plot: ${labelText}">
-          <!-- Axis line -->
-          <line x1="${PAD_L}" y1="${cy}" x2="${W - PAD_R}" y2="${cy}" stroke="#cbd5e1" stroke-width="1"/>
-          <!-- Null line -->
-          <line x1="${x0}" y1="${cy - 12}" x2="${x0}" y2="${cy + 12}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,2"/>
-          <!-- CI whiskers -->
-          <line x1="${xL}" y1="${cy}" x2="${xU}" y2="${cy}" stroke="${ciColor}" stroke-width="4" stroke-linecap="round"/>
-          <!-- Tails -->
-          <line x1="${xL}" y1="${cy - 4}" x2="${xL}" y2="${cy + 4}" stroke="${dotColor}" stroke-width="2"/>
-          <line x1="${xU}" y1="${cy - 4}" x2="${xU}" y2="${cy + 4}" stroke="${dotColor}" stroke-width="2"/>
+             xmlns="http://www.w3.org/2000/svg" role="img"
+             aria-label="Forest plot: ${escapeHtml(fullLabel)}"
+             data-fp-estimate="${estimate}" data-fp-lower="${lower}" data-fp-upper="${upper}"
+             data-fp-label="${escapeHtml(label)}" data-fp-prefix="${escapeHtml(prefix || '')}"
+             data-fp-pvalue="${escapeHtml(pValue || '')}" data-fp-issig="${isSig}"
+             data-fp-isbenefit="${isBenefit}" data-fp-isharm="${isHarm}"
+             style="cursor:default;">
+          <defs>
+            <linearGradient id="fp-grad-green-${animId}" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#15803d" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="#4ade80" stop-opacity="0.7"/>
+            </linearGradient>
+            <linearGradient id="fp-grad-red-${animId}" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#f87171" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#dc2626" stop-opacity="0.9"/>
+            </linearGradient>
+            <linearGradient id="fp-grad-gray-${animId}" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#94a3b8" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#64748b" stop-opacity="0.8"/>
+            </linearGradient>
+            <linearGradient id="fp-bg-green-${animId}" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#dcfce7" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#dcfce7" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="fp-bg-red-${animId}" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#fee2e2" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#fee2e2" stop-opacity="0.8"/>
+            </linearGradient>
+            <filter id="fp-glow-${animId}" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="fp-shadow-${animId}" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="${dotColor}" flood-opacity="0.3"/>
+            </filter>
+          </defs>
+
+          <!-- Background benefit/harm zones -->
+          <rect x="${PAD_L}" y="8" width="${Math.max(0, x0 - PAD_L)}" height="${PLOT_Y + 12}" fill="url(#fp-bg-green-${animId})" rx="3"/>
+          <rect x="${x0}" y="8" width="${Math.max(0, W - PAD_R - x0)}" height="${PLOT_Y + 12}" fill="url(#fp-bg-red-${animId})" rx="3"/>
+
+          <!-- Zone labels -->
+          <text x="${Math.max(PAD_L + 4, x0 / 2 + PAD_L / 2)}" y="19" text-anchor="middle" font-size="7" fill="#16a34a" font-family="Inter,sans-serif" font-weight="600" opacity="0.8">Có lợi ←</text>
+          <text x="${Math.min(W - PAD_R - 4, x0 + (W - PAD_R - x0) / 2)}" y="19" text-anchor="middle" font-size="7" fill="#dc2626" font-family="Inter,sans-serif" font-weight="600" opacity="0.8">→ Bất lợi</text>
+
+          <!-- Axis baseline -->
+          <line x1="${PAD_L}" y1="${PLOT_Y}" x2="${W - PAD_R}" y2="${PLOT_Y}" stroke="#cbd5e1" stroke-width="1"/>
+
+          <!-- Null line (HR=1 or MD=0) -->
+          <line x1="${x0.toFixed(1)}" y1="${PLOT_Y - 16}" x2="${x0.toFixed(1)}" y2="${PLOT_Y + 14}"
+                stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+          <!-- CI bar with gradient -->
+          <line x1="${xL.toFixed(1)}" y1="${PLOT_Y}" x2="${xU.toFixed(1)}" y2="${PLOT_Y}"
+                stroke="url(#${isBenefit ? 'fp-grad-green' : isHarm ? 'fp-grad-red' : 'fp-grad-gray'}-${animId})"
+                stroke-width="5.5" stroke-linecap="round"
+                class="fp-ci-bar">
+            <animate attributeName="opacity" from="0" to="1" dur="0.45s" begin="0.1s" fill="freeze"/>
+          </line>
+
+          <!-- CI tail caps -->
+          <line x1="${xL.toFixed(1)}" y1="${PLOT_Y - 5}" x2="${xL.toFixed(1)}" y2="${PLOT_Y + 5}"
+                stroke="${dotColor}" stroke-width="2" stroke-linecap="round"/>
+          <line x1="${xU.toFixed(1)}" y1="${PLOT_Y - 5}" x2="${xU.toFixed(1)}" y2="${PLOT_Y + 5}"
+                stroke="${dotColor}" stroke-width="2" stroke-linecap="round"/>
+
+          <!-- Glow halo behind diamond -->
+          <circle cx="${xE.toFixed(1)}" cy="${PLOT_Y}" r="9" fill="${glowColor}" opacity="0.55"
+                  filter="url(#fp-glow-${animId})">
+            <animate attributeName="r" from="0" to="9" dur="0.35s" begin="0.25s" fill="freeze"/>
+          </circle>
+
+          <!-- Significance dashed ring -->
+          ${sigRing}
+
           <!-- Estimate diamond -->
-          <polygon points="${xE},${cy - 6} ${xE + 6},${cy} ${xE},${cy + 6} ${xE - 6},${cy}"
-                   fill="${dotColor}" opacity="0.95"/>
-          <!-- Label text -->
-          <text x="${W / 2}" y="${H - 2}" text-anchor="middle"
-                font-family="monospace" font-size="9" fill="${dotColor}" font-weight="700">${labelText}</text>
-          <!-- Axis ticks labels -->
-          <text x="${PAD_L}" y="${cy - 6}" font-family="monospace" font-size="7.5" fill="#94a3b8">${axisMin.toFixed(2)}</text>
-          <text x="${x0}" y="${cy - 6}" text-anchor="middle" font-family="monospace" font-size="7.5" fill="#94a3b8">${nullVal.toFixed(1)}</text>
-          <text x="${W - PAD_R}" y="${cy - 6}" text-anchor="end" font-family="monospace" font-size="7.5" fill="#94a3b8">${axisMax.toFixed(2)}</text>
-        </svg>
-      `;
+          <polygon points="${xE.toFixed(1)},${PLOT_Y - 7} ${(xE + 7.5).toFixed(1)},${PLOT_Y} ${xE.toFixed(1)},${PLOT_Y + 7} ${(xE - 7.5).toFixed(1)},${PLOT_Y}"
+                   fill="${dotColor}" filter="url(#fp-shadow-${animId})">
+            <animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="0.2s" fill="freeze"/>
+          </polygon>
+
+          <!-- Effect size % label above diamond -->
+          ${effectLabel}
+
+          <!-- Label row -->
+          <text x="${PAD_L}" y="${H - 10}" font-family="Inter,monospace" font-size="9.5" font-weight="700"
+                fill="${dotColor}">${escapeHtml(pfxStr)}${escapeHtml(metricVal)}</text>
+          ${pStr ? `<text x="${W - PAD_R}" y="${H - 10}" text-anchor="end" font-family="Inter,sans-serif" font-size="9" fill="${isSig ? dotColor : '#94a3b8'}" font-weight="${isSig ? '700' : '500'}">${escapeHtml(pStr)}${isSig ? ' ✓' : ''}</text>` : ''}
+
+          <!-- Axis tick labels -->
+          <text x="${PAD_L}" y="${PLOT_Y + 14}" font-family="monospace" font-size="7.5" fill="#94a3b8">${axisMin.toFixed(2)}</text>
+          <text x="${x0.toFixed(1)}" y="${PLOT_Y + 14}" text-anchor="middle" font-family="monospace" font-size="7.5" fill="#94a3b8" font-weight="600">${nullVal.toFixed(isDiff ? 1 : 0)}</text>
+          <text x="${(W - PAD_R).toFixed(1)}" y="${PLOT_Y + 14}" text-anchor="end" font-family="monospace" font-size="7.5" fill="#94a3b8">${axisMax.toFixed(2)}</text>
+        </svg>`;
+    }
+
+    /**
+     * Render toàn bộ danh sách biểu đồ Forest Plot HTML (1 hoặc nhiều kết quả)
+     */
+    function renderForestPlotsHTML(keyResults) {
+      const list = parseAllForestData(keyResults);
+      if (!list || list.length === 0) return '';
+
+      const svgs = list.map((fd, index) => {
+        const svg = renderForestPlotSVG(fd);
+        if (list.length > 1) {
+          return `<div class="forest-plot-item${index > 0 ? ' forest-plot-item-sep' : ''}">${svg}</div>`;
+        }
+        return svg;
+      }).join('');
+
+      // Build tooltip HTML from the list
+      const tooltipHtml = buildForestTooltipHTML(list);
+
+      return `<div class="forest-plot-inline${list.length > 1 ? ' forest-plot-multi' : ''}">${svgs}${tooltipHtml}</div>`;
+    }
+
+    /**
+     * Build rich HTML tooltip from a list of forest data items
+     */
+    function buildForestTooltipHTML(list) {
+      if (!list || list.length === 0) return '';
+
+      const rows = list.map(fd => {
+        const { prefix, label, estimate, lower, upper, pValue, isSig } = fd;
+        const isDiff  = ['MD', 'SMD', 'WMD', 'RD', 'ARR'].includes(label);
+        const isBen   = isDiff ? estimate < 0 : estimate < 1;
+        const isHrm   = isDiff ? estimate > 0 : estimate > 1;
+
+        const pct = !isDiff && estimate > 0
+          ? (isBen ? `↓ ${Math.round((1-estimate)*100)}%` : `↑ ${Math.round((estimate-1)*100)}%`)
+          : '';
+        const verdictClass = isBen ? 'fp-verdict-benefit' : isHrm ? 'fp-verdict-harm' : 'fp-verdict-neutral';
+        const verdictText  = isBen
+          ? `🟢 Có lợi — giảm nguy cơ${pct ? ' ' + pct : ''}`
+          : isHrm ? `🔴 Bất lợi — tăng nguy cơ${pct ? ' ' + pct : ''}`
+          : '⚪ Không có hiệu quả rõ ràng';
+        const sigClass = isSig ? 'sig' : 'ns';
+        const sigText  = isSig ? '✓ p<0.05' : '✗ n.s.';
+
+        const ciStr = `${lower.toFixed(2)} – ${upper.toFixed(2)}`;
+        const metStr = `${label} ${estimate.toFixed(3)}`;
+        const pfxRow = prefix ? `<div class="fp-tooltip-row"><span class="fp-tooltip-lbl">Endpoint</span><span class="fp-tooltip-val" style="color:#c7d2fe;font-weight:700;">${escapeHtml(prefix)}</span></div>` : '';
+
+        return `
+          ${pfxRow}
+          <div class="fp-tooltip-row">
+            <span class="fp-tooltip-lbl">${label}</span>
+            <span class="fp-tooltip-val">${estimate.toFixed(3)}</span>
+            <span class="fp-sig-badge ${sigClass}">${sigText}</span>
+          </div>
+          <div class="fp-tooltip-row">
+            <span class="fp-tooltip-lbl">95% CI</span>
+            <span class="fp-tooltip-val">${ciStr}</span>
+          </div>
+          ${pValue ? `<div class="fp-tooltip-row"><span class="fp-tooltip-lbl">p-value</span><span class="fp-tooltip-val">${escapeHtml(pValue)}</span></div>` : ''}
+          <div class="fp-tooltip-verdict ${verdictClass}">${verdictText}</div>
+        `;
+      }).join('<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:0.3rem 0;">');
+
+      return `
+        <div class="fp-tooltip-wrap">
+          <div class="fp-tooltip-box">
+            ${rows}
+          </div>
+        </div>`;
     }
 
     // ════════════════════════════
@@ -2282,8 +2568,7 @@
         const isSelected = selectedIds.has(study.id);
         const isExpanded = expandedIds.has(study.id);
         const staleBadge = getStaleAlertBadge(study);
-        const forestData = parseForestData(study.keyResults);
-
+        const forestPlotHtml = renderForestPlotsHTML(study.keyResults);
         const sgCount = (study.subgroups && typeof study.subgroups === 'object') ? Object.keys(study.subgroups).length : 0;
         const sgInlineBadge = sgCount > 0 ? `<button type="button" class="badge-subgroup-inline" onclick="event.stopPropagation(); openSubgroupModal('${study.id}', event)" title="Xem phân tích ${sgCount} phân nhóm" style="margin-left:4px; font-size:0.7rem; padding: 2px 6px;">🧬 Subgroup</button>` : '';
         const summaryBadge = study.file ? `<a href="${resolveStudyFile(study.file)}" class="badge-summary-inline" onclick="event.stopPropagation()" title="Mở bài viết tóm tắt chi tiết" style="margin-left: auto; font-size:0.7rem; padding: 2px 6px;">📝 Tóm tắt</a>` : '';
@@ -2329,7 +2614,7 @@
             <div class="mc-results" onclick="toggleExpandRow('${study.id}', event)">
               <span class="mc-results-label">Kết quả chính:</span>
               <span class="mc-results-val">${escapeHtml(study.keyResults)}</span>
-              ${forestData ? `<div class="mc-forest-wrap">${renderForestPlotSVG(forestData)}</div>` : ''}
+              ${forestPlotHtml ? `<div class="mc-forest-wrap">${forestPlotHtml}</div>` : ''}
             </div>` : ''}
 
             <!-- Summary (always visible) -->
@@ -2593,7 +2878,7 @@
                 const imp  = IMPACTS[study.impact]||{name:study.impact||'N/A',color:'#6b7280'};
                 const src  = SOURCE_TYPES[study.sourceType]||{name:study.sourceType||'',color:'#6b7280'};
                 const stale = getStaleAlertBadge(study);
-                const fd = parseForestData(study.keyResults);
+                const tlForestHtml = renderForestPlotsHTML(study.keyResults);
                 const detailLink = study.file ? `<a href="${study.file}" target="_blank" class="btn btn-small" style="font-size:0.7rem;padding:0.2rem 0.5rem;" onclick="event.stopPropagation()">📄 Chi tiết</a>` : '';
                 return `
                   <div class="tl-item" style="--tl-color:${spec.color};" onclick="jumpToStudy('${study.id}')">
@@ -2613,7 +2898,7 @@
                       ${study.keyResults?`
                       <div class="tl-results-row">
                         <code class="tl-results-code">${escapeHtml(study.keyResults)}</code>
-                        ${fd?`<div class="tl-forest">${renderForestPlotSVG(fd)}</div>`:''}
+                        ${tlForestHtml ? `<div class="tl-forest">${tlForestHtml}</div>` : ''}
                       </div>`:''}  
                       <div class="tl-item-footer">
                         <span>${escapeHtml(study.drug||'')}${study.drug&&study.organization?' · ':''}${escapeHtml(study.organization||'')} (${study.year||''})</span>
@@ -2746,42 +3031,73 @@
 
     function renderSubgroupForestRow(fd, overall) {
       if (!fd) return '';
-      const W = 280, H = 34, PL = 12, PR = 12;
-      const cy = (H / 2) - 2;
+      const W = 296, H = 46, PL = 12, PR = 12;
+      const cy = 24;
       const plotW = W - PL - PR;
 
-      const isGreen = fd.estimate < 1.0;
-      const dotColor = isGreen ? '#16a34a' : (fd.estimate > 1.0 ? '#dc2626' : '#6b7280');
-      const ciColor  = isGreen ? '#86efac' : (fd.estimate > 1.0 ? '#fca5a5' : '#cbd5e1');
+      const isDiff   = ['MD', 'SMD', 'WMD', 'RD', 'ARR'].includes(fd.label || '');
+      const isBen    = isDiff ? fd.estimate < 0 : fd.estimate < 1.0;
+      const isHrm    = isDiff ? fd.estimate > 0 : fd.estimate > 1.0;
+      const dotColor = isBen ? '#15803d' : (isHrm ? '#dc2626' : '#64748b');
+      const glowClr  = isBen ? '#bbf7d0' : (isHrm ? '#fecaca' : '#e2e8f0');
+      const animId   = `sg-${Math.random().toString(36).slice(2,7)}`;
+      const nullRef  = isDiff ? 0 : 1.0;
 
-      const allVals = [fd.ciLow || fd.lower || fd.estimate, fd.estimate, fd.ciHigh || fd.upper || fd.estimate];
+      const allVals = [fd.lower ?? fd.estimate, fd.estimate, fd.upper ?? fd.estimate];
       if (overall && overall.estimate) allVals.push(overall.estimate);
-      const axisMin = Math.max(0.05, Math.min(...allVals) * 0.75);
-      const axisMax = Math.max(...allVals) * 1.25;
-      const axisRange = axisMax - axisMin || 1;
+      const axisMin  = isDiff ? Math.min(...allVals) - 0.05 : Math.max(0.05, Math.min(...allVals) * 0.8);
+      const axisMax  = Math.max(...allVals) * 1.2;
+      const axisRange = (axisMax - axisMin) || 1;
 
       const toX = v => PL + ((Math.max(axisMin, Math.min(axisMax, v)) - axisMin) / axisRange) * plotW;
-      const x1 = toX(1.0);
-      const xE = toX(fd.estimate);
-      const xL = toX(fd.ciLow || fd.lower || fd.estimate);
-      const xU = toX(fd.ciHigh || fd.upper || fd.estimate);
+      const x1  = toX(nullRef);
+      const xE  = toX(fd.estimate);
+      const xL  = toX(fd.lower ?? fd.estimate);
+      const xU  = toX(fd.upper ?? fd.estimate);
 
       const overallLine = (overall && overall.estimate)
-        ? `<line x1="${toX(overall.estimate).toFixed(1)}" y1="${cy-10}" x2="${toX(overall.estimate).toFixed(1)}" y2="${cy+10}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,2"/>`
+        ? `<line x1="${toX(overall.estimate).toFixed(1)}" y1="${cy - 11}" x2="${toX(overall.estimate).toFixed(1)}" y2="${cy + 11}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.7"/>`
+        : '';
+
+      const benZoneW = Math.max(0, x1 - PL);
+      const hrmZoneW = Math.max(0, (W - PR) - x1);
+      const pct = !isDiff && fd.estimate > 0
+        ? (isBen ? `-${Math.round((1-fd.estimate)*100)}%` : `+${Math.round((fd.estimate-1)*100)}%`)
         : '';
 
       return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" class="sg-forest-svg" style="display:block;overflow:visible;">
-          <line x1="${PL}" y1="${cy}" x2="${W-PR}" y2="${cy}" stroke="#cbd5e1" stroke-width="1"/>
-          <line x1="${x1.toFixed(1)}" y1="${cy-10}" x2="${x1.toFixed(1)}" y2="${cy+10}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,2"/>
-          ${overallLine}
-          <line x1="${xL.toFixed(1)}" y1="${cy}" x2="${xU.toFixed(1)}" y2="${cy}" stroke="${ciColor}" stroke-width="4" stroke-linecap="round"/>
-          <line x1="${xL.toFixed(1)}" y1="${cy-4}" x2="${xL.toFixed(1)}" y2="${cy+4}" stroke="${dotColor}" stroke-width="1.5"/>
-          <line x1="${xU.toFixed(1)}" y1="${cy-4}" x2="${xU.toFixed(1)}" y2="${cy+4}" stroke="${dotColor}" stroke-width="1.5"/>
-          <polygon points="${xE.toFixed(1)},${(cy-6).toFixed(1)} ${(xE+6).toFixed(1)},${cy} ${xE.toFixed(1)},${(cy+6).toFixed(1)} ${(xE-6).toFixed(1)},${cy}" fill="${dotColor}" opacity="0.95"/>
-          <text x="${PL}" y="${H-2}" font-size="7.5" fill="#94a3b8" font-family="monospace">${axisMin.toFixed(2)}</text>
-          <text x="${x1.toFixed(1)}" y="${H-2}" text-anchor="middle" font-size="7.5" fill="#94a3b8" font-family="monospace">1.0</text>
-          <text x="${W-PR}" y="${H-2}" text-anchor="end" font-size="7.5" fill="#94a3b8" font-family="monospace">${axisMax.toFixed(2)}</text>
-        </svg>`;
+        <defs>
+          <linearGradient id="sgg-${animId}" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="${isBen ? '#15803d' : isHrm ? '#f87171' : '#94a3b8'}" stop-opacity="${isBen ? '0.9' : '0.7'}"/>
+            <stop offset="100%" stop-color="${isBen ? '#4ade80' : isHrm ? '#dc2626' : '#64748b'}" stop-opacity="${isBen ? '0.7' : '0.9'}"/>
+          </linearGradient>
+          <filter id="sgglow-${animId}" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <rect x="${PL}" y="6" width="${benZoneW.toFixed(1)}" height="${cy + 8}" fill="#dcfce7" opacity="0.4" rx="2"/>
+        <rect x="${x1.toFixed(1)}" y="6" width="${hrmZoneW.toFixed(1)}" height="${cy + 8}" fill="#fee2e2" opacity="0.35" rx="2"/>
+        <line x1="${PL}" y1="${cy}" x2="${W - PR}" y2="${cy}" stroke="#cbd5e1" stroke-width="1"/>
+        <line x1="${x1.toFixed(1)}" y1="${cy - 12}" x2="${x1.toFixed(1)}" y2="${cy + 12}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,2"/>
+        ${overallLine}
+        <line x1="${xL.toFixed(1)}" y1="${cy}" x2="${xU.toFixed(1)}" y2="${cy}"
+              stroke="url(#sgg-${animId})" stroke-width="5" stroke-linecap="round">
+          <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.1s" fill="freeze"/>
+        </line>
+        <line x1="${xL.toFixed(1)}" y1="${cy - 4}" x2="${xL.toFixed(1)}" y2="${cy + 4}" stroke="${dotColor}" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="${xU.toFixed(1)}" y1="${cy - 4}" x2="${xU.toFixed(1)}" y2="${cy + 4}" stroke="${dotColor}" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="${xE.toFixed(1)}" cy="${cy}" r="7" fill="${glowClr}" opacity="0.45" filter="url(#sgglow-${animId})">
+          <animate attributeName="r" from="0" to="7" dur="0.3s" begin="0.2s" fill="freeze"/>
+        </circle>
+        <polygon points="${xE.toFixed(1)},${cy - 6} ${(xE + 6.5).toFixed(1)},${cy} ${xE.toFixed(1)},${cy + 6} ${(xE - 6.5).toFixed(1)},${cy}" fill="${dotColor}">
+          <animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="0.22s" fill="freeze"/>
+        </polygon>
+        ${pct ? `<text x="${xE.toFixed(1)}" y="${cy - 9}" text-anchor="middle" font-size="7.5" font-weight="700" fill="${dotColor}" font-family="Inter,sans-serif">${pct}</text>` : ''}
+        <text x="${PL}" y="${H - 2}" font-size="7" fill="#94a3b8" font-family="monospace">${axisMin.toFixed(2)}</text>
+        <text x="${x1.toFixed(1)}" y="${H - 2}" text-anchor="middle" font-size="7" fill="#94a3b8" font-family="monospace" font-weight="600">${nullRef.toFixed(isDiff ? 1 : 0)}</text>
+        <text x="${W - PR}" y="${H - 2}" text-anchor="end" font-size="7" fill="#94a3b8" font-family="monospace">${axisMax.toFixed(2)}</text>
+      </svg>`;
     }
 
     function openSubgroupModal(id, event) {

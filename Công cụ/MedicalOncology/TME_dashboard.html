@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bản đồ Môi trường Vi mô Khối u & Phân loại Thể Miễn dịch (TME Dashboard)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0284c7 100%);
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            .card-box { border: 1px solid #e2e8f0; box-shadow: none !important; }
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg transition" title="Về trang chủ">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <div class="flex items-center gap-2">
+                    <div class="bg-sky-600 text-white p-2 rounded-lg font-bold text-lg">
+                        <i class="fa-solid fa-viruses"></i>
+                    </div>
+                    <div>
+                        <span class="font-black text-lg text-white tracking-tight">Onco<span class="text-sky-400">TME Dashboard</span></span>
+                        <span class="text-xs block text-slate-400 font-medium">Bản đồ Môi trường Vi mô & Phân loại Thể Miễn dịch U</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="window.print()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i class="fa-solid fa-print"></i> In Báo cáo MDT
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="gradient-header text-white py-8 px-4 no-print shadow-inner">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 bg-sky-500/20 border border-sky-400/40 text-sky-300 text-xs font-bold px-3 py-1 rounded-full mb-2">
+                    <i class="fa-solid fa-dna"></i> Khảo sát Miễn dịch Học Ung thư (Immuno-Oncology Profiling)
+                </div>
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Bản đồ Môi trường Vi mô Khối u & Phân loại Thể Miễn dịch</h1>
+                <p class="text-slate-300 text-sm mt-1 max-w-3xl">
+                    Tích hợp các chỉ số bộc lộ PD-L1, TMB, MSI/MMR, tế bào T thâm nhiễm (TILs) và đột biến gen kháng thuốc để phân loại thể u (U Nóng, U Lạnh, Miễn dịch bị loại trừ) và gợi ý phác đồ phối hợp.
+                </p>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-3.5 rounded-xl flex items-center gap-4 text-xs">
+                <div>
+                    <div class="text-slate-300 font-medium">Thể Miễn dịch U</div>
+                    <div id="quick-tme-type" class="text-lg font-black text-sky-300">Đang phân loại</div>
+                </div>
+                <div class="h-8 w-px bg-white/20"></div>
+                <div>
+                    <div class="text-slate-300 font-medium">Chiến lược Phối hợp</div>
+                    <div id="quick-tme-strategy" class="text-xs font-bold text-white mt-0.5">--</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col gap-6">
+
+        <!-- Grid 2 Cột: Nhập chỉ số Dấu ấn Miễn dịch + Radar Chart & Kết luận -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Cột Trái (5 cols): Nhập Dấu ấn Miễn dịch & Đột biến Gen -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+
+                <!-- Thẻ 1: Chỉ số Miễn dịch Học Khối U -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-vial-circle-check text-sky-600"></i> 1. Dấu ấn Sinh học Miễn dịch (Immuno-Biomarkers)
+                    </h2>
+
+                    <div class="space-y-4 text-xs">
+                        <!-- PD-L1 -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            <label class="block font-bold text-slate-800 mb-1.5">Bộc lộ PD-L1 (Mức độ bộc lộ):</label>
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <select id="pdl1-type" onchange="calculateTME()" class="bg-white border border-slate-200 rounded px-2 py-1 font-semibold focus:outline-none">
+                                    <option value="tps">TPS (Tumor Proportion Score)</option>
+                                    <option value="cps">CPS (Combined Positive Score)</option>
+                                </select>
+                                <input type="number" id="pdl1-val" value="60" min="0" max="100" oninput="calculateTME()" class="bg-white border border-slate-200 rounded px-2 py-1 font-bold text-right focus:outline-none focus:border-sky-500">
+                            </div>
+                            <span class="text-[10px] text-slate-500 block">* TPS ≥ 50% hoặc CPS ≥ 20 được coi là Bộc lộ Cao.</span>
+                        </div>
+
+                        <!-- TMB -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="font-bold text-slate-800">Chỉ số TMB (Tumor Mutational Burden):</label>
+                                <span id="tmb-val-display" class="font-black text-sky-700">12 mut/Mb</span>
+                            </div>
+                            <input type="range" id="tmb-range" min="0" max="40" value="12" step="1" oninput="updateTMBDisplay(); calculateTME();" class="w-full accent-sky-600">
+                            <span class="text-[10px] text-slate-500 block mt-1">* TMB ≥ 10 mut/Mb được coi là TMB-High (Chỉ định Pembrolizumab).</span>
+                        </div>
+
+                        <!-- MSI / MMR -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            <label class="block font-bold text-slate-800 mb-1">Trạng thái Vi vệ tinh (MSI / MMR):</label>
+                            <select id="msi-status" onchange="calculateTME()" class="w-full bg-white border border-slate-200 rounded px-2 py-1.5 font-bold focus:outline-none">
+                                <option value="mss">MSS / pMMR (Vi vệ tinh ổn định - Mức độ thường)</option>
+                                <option value="msih">MSI-H / dMMR (Mất ổn định vi vệ tinh cao - Thiếu hụt dMMR)</option>
+                            </select>
+                        </div>
+
+                        <!-- TILs -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="font-bold text-slate-800">Tế bào T thâm nhiễm U (TILs):</label>
+                                <span id="tils-val-display" class="font-black text-sky-700">55%</span>
+                            </div>
+                            <input type="range" id="tils-range" min="0" max="100" value="55" step="5" oninput="updateTILsDisplay(); calculateTME();" class="w-full accent-sky-600">
+                            <span class="text-[10px] text-slate-500 block mt-1">* Mức độ thâm nhiễm bạch cầu T trong mô đệm u.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ 2: Đột biến Gen Kháng thuốc & Nguy cơ HPD -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-shield-virus text-amber-500"></i> 2. Đột biến Kháng Miễn dịch & Nguy cơ HPD
+                    </h2>
+
+                    <div class="space-y-2 text-xs">
+                        <label class="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg transition">
+                            <input type="checkbox" id="mark-mdm2" onchange="calculateTME()" class="w-4 h-4 text-amber-600 rounded">
+                            <span class="font-medium text-slate-700">Khuếch đại MDM2 / MDM4 (Nguy cơ Tiến triển Siêu tốc HPD)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg transition">
+                            <input type="checkbox" id="mark-egfr-alk" onchange="calculateTME()" class="w-4 h-4 text-amber-600 rounded">
+                            <span class="font-medium text-slate-700">Đột biến EGFR / ALK (Đáp ứng kém với đơn trị liệu Miễn dịch)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg transition">
+                            <input type="checkbox" id="mark-stk11" onchange="calculateTME()" class="w-4 h-4 text-amber-600 rounded">
+                            <span class="font-medium text-slate-700">Đột biến STK11 / KEAP1 (Kháng miễn dịch nguyên phát)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg transition">
+                            <input type="checkbox" id="mark-vegf" onchange="calculateTME()" class="w-4 h-4 text-amber-600 rounded">
+                            <span class="font-medium text-slate-700">Tăng bộc lộ VEGF / TGF-β (Rào cản mạch máu bọc U)</span>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cột Phải (7 cols): Radar Chart Bản đồ TME & Khuyến cáo Phác đồ -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+
+                <!-- Thẻ Hiển thị Phân loại Thể U & Biểu đồ Radar -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-chart-radar text-sky-600"></i> Phân loại Thể Miễn dịch & Bản đồ TME
+                        </h2>
+                        <span id="tme-badge-type" class="text-xs font-black px-2.5 py-1 rounded shadow-sm bg-emerald-500 text-white">
+                            HOT TUMOR (U NÓNG)
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                        <div class="h-60 relative">
+                            <canvas id="tmeRadarChart"></canvas>
+                        </div>
+                        <div id="tme-classification-details" class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs space-y-2">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ Chiến lược Phối hợp Thuốc Khuyên Dùng (Therapeutic Recommendations) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box flex-1 flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-prescription text-emerald-600"></i> Chiến lược Điều trị Khuyên dùng (Precision IO Strategy)
+                        </h2>
+
+                        <div id="therapy-recommendation-box" class="space-y-3">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-xl">
+                        <strong class="text-slate-700 block mb-0.5"><i class="fa-solid fa-circle-info text-sky-600"></i> Nguyên lý Đáp ứng Miễn dịch:</strong>
+                        • <strong>U Nóng (Hot Tumor)</strong>: Có sẵn tế bào T thâm nhiễm và bộc lộ PD-L1/TMB cao → Đáp ứng rất tốt với Đơn trị liệu Miễn dịch (Anti-PD-1 / Anti-PD-L1).<br>
+                        • <strong>U Lạnh (Cold Tumor)</strong>: Thiếu vắng tế bào T → Cần phối hợp Hóa chất để gây chết tế bào u sinh miễn dịch (ICD) thu hút T-cell.<br>
+                        • <strong>U Loại trừ (Immune Excluded)</strong>: T-cell bị chặn ở mô đệm ngoài u do VEGF → Cần phối hợp Anti-VEGF (Bevacizumab/Lenvatinib) để mở đường cho T-cell vào lõi u.
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-10 no-print text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-medium text-slate-300">Hệ thống Phân loại Môi trường Vi mô Khối u & Thể Miễn dịch Ung thư</p>
+            <p class="text-slate-500 mt-1">Dành cho Bác sĩ Ung bướu & Chuyên gia Miễn dịch Y khoa. Dựa trên Tiêu chuẩn Đồng thuận Tumor Immunogenomics Framework.</p>
+        </div>
+    </footer>
+
+    <script>
+        let radarChartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateTME();
+        });
+
+        function updateTMBDisplay() {
+            const val = document.getElementById('tmb-range').value;
+            document.getElementById('tmb-val-display').textContent = `${val} mut/Mb`;
+        }
+
+        function updateTILsDisplay() {
+            const val = document.getElementById('tils-range').value;
+            document.getElementById('tils-val-display').textContent = `${val}%`;
+        }
+
+        function calculateTME() {
+            const pdl1Type = document.getElementById('pdl1-type').value;
+            const pdl1Val = parseFloat(document.getElementById('pdl1-val').value) || 0;
+            const tmbVal = parseFloat(document.getElementById('tmb-range').value) || 0;
+            const msiStatus = document.getElementById('msi-status').value;
+            const tilsVal = parseFloat(document.getElementById('tils-range').value) || 0;
+
+            const mdm2 = document.getElementById('mark-mdm2').checked;
+            const egfrAlk = document.getElementById('mark-egfr-alk').checked;
+            const stk11 = document.getElementById('mark-stk11').checked;
+            const vegf = document.getElementById('mark-vegf').checked;
+
+            // Score evaluation
+            const isPDL1High = (pdl1Type === 'tps' && pdl1Val >= 50) || (pdl1Type === 'cps' && pdl1Val >= 20);
+            const isTMBHigh = tmbVal >= 10;
+            const isMSIH = msiStatus === 'msih';
+            const isTILsHigh = tilsVal >= 40;
+            const isTILsLow = tilsVal < 15;
+
+            let tmeType = 'cold';
+            let typeName = 'COLD TUMOR (U LẠNH)';
+            let typeBadgeClass = 'bg-slate-700 text-white';
+            let strategyShort = 'Phối hợp Hóa chất + Miễn dịch';
+
+            if ((isTILsHigh || isMSIH) && (isPDL1High || isTMBHigh || isMSIH)) {
+                tmeType = 'hot';
+                typeName = 'HOT TUMOR (U NÓNG)';
+                typeBadgeClass = 'bg-emerald-600 text-white';
+                strategyShort = 'Đơn trị liệu Miễn dịch (Anti-PD-1)';
+            } else if ((isTMBHigh || isPDL1High) && isTILsLow && vegf) {
+                tmeType = 'excluded';
+                typeName = 'IMMUNE-EXCLUDED (MIỄN DỊCH BỊ LOẠI TRỪ)';
+                typeBadgeClass = 'bg-amber-600 text-white';
+                strategyShort = 'Phối hợp Anti-VEGF + Miễn dịch';
+            } else if (isTILsLow && !isPDL1High && !isTMBHigh && !isMSIH) {
+                tmeType = 'cold';
+                typeName = 'COLD TUMOR (U LẠNH)';
+                typeBadgeClass = 'bg-sky-700 text-white';
+                strategyShort = 'Phối hợp Hóa chất + Miễn dịch';
+            } else {
+                tmeType = 'suppressed';
+                typeName = 'IMMUNE-SUPPRESSED (BỊ ỨC CHẾ MIỄN DỊCH)';
+                typeBadgeClass = 'bg-purple-700 text-white';
+                strategyShort = 'Phối hợp Miễn dịch đúp (Anti-PD-1 + Anti-CTLA-4)';
+            }
+
+            // Quick display
+            document.getElementById('quick-tme-type').textContent = typeName.split(' ')[0];
+            document.getElementById('quick-tme-strategy').textContent = strategyShort;
+
+            // Badge Update
+            const badge = document.getElementById('tme-badge-type');
+            badge.className = `text-xs font-black px-2.5 py-1 rounded shadow-sm ${typeBadgeClass}`;
+            badge.textContent = typeName;
+
+            // Render Details
+            const detailsBox = document.getElementById('tme-classification-details');
+            detailsBox.innerHTML = `
+                <div class="font-bold text-slate-800 text-xs border-b border-slate-200 pb-1 mb-1">
+                    Đặc điểm Thể Miễn dịch: <span class="text-sky-700">${typeName}</span>
+                </div>
+                <p class="text-slate-600 leading-relaxed text-[11px]">
+                    ${tmeType === 'hot' ? 'Khối u thâm nhiễm dồi dào tế bào T (TILs ≥ 40%), tín hiệu Interferon-gamma hoạt động mạnh và bộc lộ PD-L1/TMB cao. Tế bào miễn dịch đã tiếp cận trực tiếp tế bào u.' : ''}
+                    ${tmeType === 'cold' ? 'Khối u hoàn toàn vắng bóng tế bào T thâm nhiễm (Immune Desert), TMB và PD-L1 thấp. Khối u "ẩn nấp" khỏi sự nhận diện của hệ miễn dịch.' : ''}
+                    ${tmeType === 'excluded' ? 'Tế bào T có xuất hiện nhưng bị chặn lại ở rìa vỏ đệm ngoài u do mạch máu dị thường (VEGF) và xơ hóa đệm (TGF-β), không xâm nhập được vào lõi u.' : ''}
+                    ${tmeType === 'suppressed' ? 'Có tế bào T thâm nhiễm mức độ trung bình nhưng bị ức chế bởi các tế bào điều hòa miễn dịch (Treg, MDSC, IDO1, TIGIT).' : ''}
+                </p>
+            `;
+
+            // Render Therapy Recommendations Box
+            const recBox = document.getElementById('therapy-recommendation-box');
+            let recsHTML = '';
+
+            if (mdm2) {
+                recsHTML += `
+                    <div class="bg-red-50 border border-red-300 text-red-950 rounded-xl p-3 text-xs">
+                        <strong class="text-red-900 block mb-0.5 flex items-center gap-1 font-bold">
+                            <i class="fa-solid fa-skull-crossbones text-red-600"></i> CẢNH BÁO TIẾN TRUYỂN SIÊU TỐC (HYPERPROGRESSION - HPD):
+                        </strong>
+                        Ghi nhận khuếch đại gen MDM2/MDM4. Thận trọng tối đa khi chỉ định Đơn trị liệu Miễn dịch Anti-PD-1 vì nguy cơ bùng phát u bùng nổ (HPD)!
+                    </div>
+                `;
+            }
+
+            if (egfrAlk) {
+                recsHTML += `
+                    <div class="bg-amber-50 border border-amber-300 text-amber-950 rounded-xl p-3 text-xs">
+                        <strong class="text-amber-900 block mb-0.5 flex items-center gap-1 font-bold">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-600"></i> ĐỘT BIẾN EGFR / ALK:
+                        </strong>
+                        Bệnh nhân có đột biến gen EGFR/ALK thường đáp ứng kém với Đơn trị liệu Miễn dịch. Ưu tiên Thuốc đích TKI hoặc Hóa chất + Anti-VEGF.
+                    </div>
+                `;
+            }
+
+            if (tmeType === 'hot') {
+                recsHTML += `
+                    <div class="bg-emerald-50 border border-emerald-300 text-emerald-950 rounded-xl p-3 text-xs">
+                        <strong class="text-emerald-900 block mb-1 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-circle-check text-emerald-600"></i> ƯU TIÊN HÀNG ĐẦU: ĐƠN TRỊ LIỆU MIỄN DỊCH (Anti-PD-1 / Anti-PD-L1)
+                        </strong>
+                        • <strong>Chỉ định</strong>: Pembrolizumab (200mg mỗi 3 tuần), Nivolumab, Cemiplimab hoặc Atezolizumab.<br>
+                        • <strong>Hiệu quả</strong>: Tỷ lệ đáp ứng u cao (ORR &gt; 45%), thời gian đáp ứng kéo dài (Durable Response).
+                    </div>
+                `;
+            } else if (tmeType === 'cold') {
+                recsHTML += `
+                    <div class="bg-sky-50 border border-sky-300 text-sky-950 rounded-xl p-3 text-xs">
+                        <strong class="text-sky-900 block mb-1 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-hand-holding-medical text-sky-600"></i> CHIẾN LƯỢC PHỐI HỢP: HÓA CHẤT + MIỄN DỊCH (Immuno-Chemotherapy)
+                        </strong>
+                        • <strong>Chỉ định</strong>: Pembrolizumab + Platinum-Doublet (Hóa chất) hoặc Xạ trị kết hợp Miễn dịch.<br>
+                        • <strong>Cơ chế</strong>: Hóa trị giúp giải phóng kháng nguyên u (Chết tế bào sinh miễn dịch ICD), biến "U Lạnh" thành "U Nóng".
+                    </div>
+                `;
+            } else if (tmeType === 'excluded') {
+                recsHTML += `
+                    <div class="bg-amber-50 border border-amber-300 text-amber-950 rounded-xl p-3 text-xs">
+                        <strong class="text-amber-900 block mb-1 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-shield-cat text-amber-600"></i> CHIẾN LƯỢC PHỐI HỢP: KHÁNG MẠCH (Anti-VEGF) + MIỄN DỊCH
+                        </strong>
+                        • <strong>Chỉ định</strong>: Atezolizumab + Bevacizumab + Hóa trị (Phác đồ IMpower150) hoặc Pembrolizumab + Lenvatinib.<br>
+                        • <strong>Cơ chế</strong>: Anti-VEGF giúp bình thường hóa mạch máu u, phá vỡ vỏ đệm xơ để T-cell xâm nhập vào vùng trung tâm khối u.
+                    </div>
+                `;
+            } else {
+                recsHTML += `
+                    <div class="bg-purple-50 border border-purple-300 text-purple-950 rounded-xl p-3 text-xs">
+                        <strong class="text-purple-900 block mb-1 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-disease text-purple-600"></i> CHIẾN LƯỢC PHỐI HỢP: MIỄN DỊCH ĐÚP (Anti-PD-1 + Anti-CTLA-4)
+                        </strong>
+                        • <strong>Chỉ định</strong>: Nivolumab + Ipilimumab (CheckMate Trial) hoặc phối hợp thuốc ức chế TIGIT/LAG-3.<br>
+                        • <strong>Cơ chế</strong>: Anti-CTLA-4 giúp kích thích tăng sinh tế bào T ở hạch bạch huyết và loại bỏ tế bào ức chế Treg.
+                    </div>
+                `;
+            }
+
+            recBox.innerHTML = recsHTML;
+
+            // Update Radar Chart
+            renderRadarChart(pdl1Val, tmbVal, tilsVal, isMSIH ? 100 : 30, (pdl1Val * 0.4 + tilsVal * 0.6));
+        }
+
+        function renderRadarChart(pdl1, tmb, tils, msi, activation) {
+            const ctx = document.getElementById('tmeRadarChart').getContext('2d');
+
+            const dataPoints = [
+                Math.min(100, pdl1),
+                Math.min(100, tmb * 4), // scale 0-25 mut/mb to 0-100
+                Math.min(100, tils),
+                Math.min(100, msi),
+                Math.min(100, activation)
+            ];
+
+            if (radarChartInstance) {
+                radarChartInstance.destroy();
+            }
+
+            radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['PD-L1', 'TMB', 'TILs (T-cell)', 'MSI / Neoantigen', 'Hoạt hóa Miễn dịch'],
+                    datasets: [{
+                        label: 'Chỉ số Miễn dịch U',
+                        data: dataPoints,
+                        backgroundColor: 'rgba(2, 132, 199, 0.2)',
+                        borderColor: '#0284c7',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#0369a1',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#e2e8f0' },
+                            grid: { color: '#f1f5f9' },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            ticks: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

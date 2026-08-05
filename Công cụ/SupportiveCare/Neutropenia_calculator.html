@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công cụ Đánh giá Nguy cơ Hạ Bạch cầu Hạt & Khuyến cáo G-CSF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #059669 100%);
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            .card-box { border: 1px solid #e2e8f0; box-shadow: none !important; }
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg transition" title="Về trang chủ">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <div class="flex items-center gap-2">
+                    <div class="bg-emerald-600 text-white p-2 rounded-lg font-bold text-lg">
+                        <i class="fa-solid fa-shield-virus"></i>
+                    </div>
+                    <div>
+                        <span class="font-black text-lg text-white tracking-tight">Neutro<span class="text-emerald-400">Risk & G-CSF</span></span>
+                        <span class="text-xs block text-slate-400 font-medium">Đánh giá Hạ Bạch cầu Hạt & Chỉ định G-CSF Dự phòng</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i class="fa-solid fa-print"></i> In Báo cáo Đánh giá
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="gradient-header text-white py-8 px-4 no-print shadow-inner">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full mb-2">
+                    <i class="fa-solid fa-microscope"></i> Hướng dẫn Dự phòng Hóa trị ASCO / NCCN / EORTC
+                </div>
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Đánh giá Nguy cơ Sốt Hạ Bạch cầu Hạt (FN) & Khuyến cáo G-CSF</h1>
+                <p class="text-slate-300 text-sm mt-1 max-w-3xl">
+                    Xác định nguy cơ Sốt hạ bạch cầu hạt theo phác đồ hóa trị & yếu tố tích lũy của bệnh nhân, đưa ra khuyến cáo dùng G-CSF dự phòng Cấp 1/Cấp 2 và tính thang điểm MASCC khi có sốt cấp cứu.
+                </p>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-3.5 rounded-xl flex items-center gap-4 text-xs">
+                <div>
+                    <div class="text-slate-300 font-medium">Nguy cơ Phác đồ</div>
+                    <div id="quick-regimen-risk" class="text-lg font-black text-emerald-300">Đang đánh giá</div>
+                </div>
+                <div class="h-8 w-px bg-white/20"></div>
+                <div>
+                    <div class="text-slate-300 font-medium">Khuyến cáo G-CSF</div>
+                    <div id="quick-gcsf-rec" class="text-xs font-bold text-white mt-0.5">--</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col gap-6">
+
+        <!-- Grid 2 Cột: Đánh giá Dự phòng G-CSF + Thang điểm MASCC Cấp cứu -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Cột Trái (5 cols): Chọn Phác đồ Hóa trị & Yếu tố Nguy cơ Bệnh nhân -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+
+                <!-- Thẻ 1: Mức Nguy cơ Phác đồ Hóa chất -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-pills text-emerald-600"></i> 1. Phác đồ Hóa trị & Nguy cơ Nguyên phát (FN Incidence)
+                    </h2>
+
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Chọn Nhóm Nguy cơ Phác đồ:</label>
+                            <select id="regimen-risk-select" onchange="calculateGCSFProphylaxis()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-bold text-slate-800 focus:outline-none focus:border-emerald-500">
+                                <option value="high">Nguy cơ CAO (> 20% Tỷ lệ Sốt hạ bạch cầu hạt)</option>
+                                <option value="intermediate" selected>Nguy cơ TRUNG BÌNH (10% - 20% Tỷ lệ FN)</option>
+                                <option value="low">Nguy cơ THẤP (< 10% Tỷ lệ FN)</option>
+                            </select>
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] leading-relaxed text-slate-600">
+                            <strong class="text-slate-800 block mb-0.5"><i class="fa-solid fa-circle-info text-emerald-600"></i> Ví dụ phác đồ lâm sàng:</strong>
+                            * <strong>Cao (&gt;20%)</strong>: AC-T, TAC, Dose-dense MVAC, Topotecan, ICE, ESHAP, HyperCVAD.<br>
+                            * <strong>Trung bình (10-20%)</strong>: TC (Docetaxel+Cyclo), FOLFOX, FOLFIRI, PE (Cisplatin+Etoposide), PacCarbo.<br>
+                            * <strong>Thấp (&lt;10%)</strong>: CMF, 5-FU/Leucovorin, Capecitabine đơn trị, Pemetrexed.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ 2: Yếu tố Nguy cơ Bệnh nhân Tích lũy -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-user-check text-sky-600"></i> 2. Yếu tố Nguy cơ Bệnh nhân Tích lũy (Patient Factors)
+                    </h2>
+
+                    <div class="space-y-2 text-xs">
+                        <label class="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg transition">
+                            <input type="checkbox" id="rf-age" onchange="calculateGCSFProphylaxis()" class="w-4 h-4 text-emerald-600 rounded">
+                            <span class="font-medium text-slate-700">Tuổi &gt; 65 tuổi</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg transition">
+                            <input type="checkbox" id="rf-prev-fn" onchange="calculateGCSFProphylaxis()" class="w-4 h-4 text-emerald-600 rounded">
+                            <span class="font-medium text-slate-700">Tiền sử bị FN hoặc hạ bạch cầu nặng chu kỳ trước</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg transition">
+                            <input type="checkbox" id="rf-renal" onchange="calculateGCSFProphylaxis()" class="w-4 h-4 text-emerald-600 rounded">
+                            <span class="font-medium text-slate-700">Suy thận (CrCl &lt; 50 mL/min) hoặc Suy gan</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg transition">
+                            <input type="checkbox" id="rf-baseline-anc" onchange="calculateGCSFProphylaxis()" class="w-4 h-4 text-emerald-600 rounded">
+                            <span class="font-medium text-slate-700">Bạch cầu hạt khởi điểm thấp (ANC &lt; 1.5 G/L)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg transition">
+                            <input type="checkbox" id="rf-ps" onchange="calculateGCSFProphylaxis()" class="w-4 h-4 text-emerald-600 rounded">
+                            <span class="font-medium text-slate-700">Thể trạng suy kiệt (ECOG PS ≥ 2)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg transition">
+                            <input type="checkbox" id="rf-albumin" onchange="calculateGCSFProphylaxis()" class="w-4 h-4 text-emerald-600 rounded">
+                            <span class="font-medium text-slate-700">Albumin máu giảm (&lt; 3.5 g/dL)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg transition">
+                            <input type="checkbox" id="rf-infection" onchange="calculateGCSFProphylaxis()" class="w-4 h-4 text-emerald-600 rounded">
+                            <span class="font-medium text-slate-700">Có nhiễm trùng hoặc vết thương hở đang tiến triển</span>
+                        </label>
+                    </div>
+
+                    <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700">
+                        <span>Tổng số yếu tố nguy cơ tích lũy:</span>
+                        <span id="patient-rf-count" class="text-emerald-700 font-extrabold text-sm">0 yếu tố</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cột Phải (7 cols): Kết quả Chỉ định G-CSF & Thang điểm MASCC Cấp cứu -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+
+                <!-- Thẻ Kết quả Khuyến cáo Chỉ định G-CSF Dự phòng -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-prescription-bottle-medical text-emerald-600"></i> 3. Kết luận Chỉ định G-CSF Dự phòng (ASCO/NCCN)
+                        </h2>
+                    </div>
+
+                    <!-- Display Box kết quả -->
+                    <div id="gcsf-recommendation-box" class="rounded-2xl p-4 mb-4 border transition duration-200">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <!-- Hướng dẫn Liều dùng G-CSF -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-3">
+                        <h3 class="font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                            <i class="fa-solid fa-syringe text-emerald-600"></i> Hướng dẫn Liều & Thời điểm Tiêm G-CSF Lâm sàng:
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                                <span class="font-bold text-emerald-800 block mb-1">1. Filgrastim (G-CSF Ngắn hạn)</span>
+                                <p class="text-slate-600 leading-relaxed text-[11px]">
+                                    • <strong>Liều</strong>: 5 µg/kg/ngày (300 µg hoặc 480 µg tiêm dưới da hàng ngày).<br>
+                                    • <strong>Thời điểm</strong>: Bắt đầu <strong>24–72 giờ</strong> sau khi hoàn thành hóa trị.<br>
+                                    • <strong>Thời gian dùng</strong>: Dùng liên tục đến khi bạch cầu ANC &gt; 2.0-3.0 G/L qua điểm đáy (Nadir).
+                                </p>
+                            </div>
+                            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                                <span class="font-bold text-purple-800 block mb-1">2. Pegfilgrastim (G-CSF Tác dụng dài)</span>
+                                <p class="text-slate-600 leading-relaxed text-[11px]">
+                                    • <strong>Liều</strong>: 6 mg tiêm dưới da <strong>1 liều duy nhất</strong> cho 1 chu kỳ hóa chất.<br>
+                                    • <strong>Thời điểm</strong>: Tiêm <strong>24–72 giờ</strong> sau khi hoàn thành hóa trị.<br>
+                                    • <em>Lưu ý</em>: Không tiêm trong vòng 14 ngày trước chu kỳ hóa trị tiếp theo.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ Tính Thang điểm MASCC Risk Index khi có Sốt cấp cứu -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-temperature-arrow-up text-red-500"></i> 4. Thang điểm MASCC Risk Index (Khi có Sốt Cấp cứu FN)
+                        </h2>
+                        <span class="text-xs font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                            Phân loại Nguy cơ Biến chứng
+                        </span>
+                    </div>
+
+                    <div class="space-y-2 text-xs mb-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-0.5">Mức độ Triệu chứng Sốt FN:</label>
+                                <select id="mascc-symptoms" onchange="calculateMASCC()" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:outline-none">
+                                    <option value="5">Không có hoặc triệu chứng nhẹ (+5 điểm)</option>
+                                    <option value="3">Triệu chứng trung bình (+3 điểm)</option>
+                                    <option value="0">Triệu chứng nặng / Suy hô hấp / Tụt huyết áp (0 điểm)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-0.5">Huyết áp tâm thu &gt; 90 mmHg:</label>
+                                <select id="mascc-bp" onchange="calculateMASCC()" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:outline-none">
+                                    <option value="5">Có (&gt; 90 mmHg) (+5 điểm)</option>
+                                    <option value="0">Không (&le; 90 mmHg - Tụt HA) (0 điểm)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-0.5">Không mắc COPD mạn:</label>
+                                <select id="mascc-copd" onchange="calculateMASCC()" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:outline-none">
+                                    <option value="4">Không có COPD (+4 điểm)</option>
+                                    <option value="0">Có bệnh COPD (0 điểm)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-0.5">Ung thư U đặc (Solid tumor):</label>
+                                <select id="mascc-cancer" onchange="calculateMASCC()" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:outline-none">
+                                    <option value="4">U đặc hoặc không nhiễm nấm trước đó (+4 điểm)</option>
+                                    <option value="0">Ung thư máu / Tiền sử nhiễm nấm (0 điểm)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-0.5">Không mất nước nặng:</label>
+                                <select id="mascc-dehydration" onchange="calculateMASCC()" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:outline-none">
+                                    <option value="3">Không mất nước (+3 điểm)</option>
+                                    <option value="0">Mất nước cần truyền dịch (0 điểm)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-0.5">Khởi phát sốt ở ngoại trú:</label>
+                                <select id="mascc-outpatient" onchange="calculateMASCC()" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:outline-none">
+                                    <option value="3">Đang ở nhà / Ngoại trú (+3 điểm)</option>
+                                    <option value="0">Sốt khi đang nằm viện nội trú (0 điểm)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-0.5">Tuổi bệnh nhân &lt; 60 tuổi:</label>
+                                <select id="mascc-age" onchange="calculateMASCC()" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:outline-none">
+                                    <option value="2">&lt; 60 tuổi (+2 điểm)</option>
+                                    <option value="0">&ge; 60 tuổi (0 điểm)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MASCC Result Display -->
+                    <div id="mascc-result-box" class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs flex items-center justify-between">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-10 no-print text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-medium text-slate-300">Công cụ Đánh giá Nguy cơ Sốt Hạ Bạch cầu Hạt & Chỉ định G-CSF</p>
+            <p class="text-slate-500 mt-1">Dành cho Bác sĩ Ung bướu Lâm sàng. Dựa trên Hướng dẫn ASCO 2018, NCCN Myeloid Growth Factors & MASCC Risk Index.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateGCSFProphylaxis();
+            calculateMASCC();
+        });
+
+        function calculateGCSFProphylaxis() {
+            const riskCategory = document.getElementById('regimen-risk-select').value;
+            
+            // Count patient risk factors
+            const rfIDs = ['rf-age', 'rf-prev-fn', 'rf-renal', 'rf-baseline-anc', 'rf-ps', 'rf-albumin', 'rf-infection'];
+            let rfCount = 0;
+            rfIDs.forEach(id => {
+                if (document.getElementById(id).checked) rfCount++;
+            });
+
+            document.getElementById('patient-rf-count').textContent = `${rfCount} yếu tố`;
+
+            const box = document.getElementById('gcsf-recommendation-box');
+            const quickRisk = document.getElementById('quick-regimen-risk');
+            const quickRec = document.getElementById('quick-gcsf-rec');
+
+            if (riskCategory === 'high') {
+                quickRisk.textContent = 'Nguy cơ CAO (>20%)';
+                quickRec.innerHTML = `<span class="badge-cr text-emerald-400 font-extrabold">CHỈ ĐỊNH DỰ PHÒNG CẤP 1</span>`;
+
+                box.className = 'bg-emerald-50 border border-emerald-300 text-emerald-950 rounded-2xl p-4 shadow-sm';
+                box.innerHTML = `
+                    <div class="flex items-center gap-2 font-black text-sm text-emerald-900 mb-1">
+                        <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i> CHỈ ĐỊNH BẮT BUỘC G-CSF DỰ PHÒNG CẤP 1 (PRIMARY PROPHYLAXIS)
+                    </div>
+                    <p class="text-xs text-emerald-800 leading-relaxed">
+                        Phác đồ hóa chất có nguy cơ gây Sốt hạ bạch cầu hạt (FN) <strong>&gt; 20%</strong>. Khuyến cáo chỉ định <strong>G-CSF (Filgrastim hoặc Pegfilgrastim)</strong> dự phòng ngay từ <strong>Chu kỳ 1</strong> cho tất cả bệnh nhân.
+                    </p>
+                `;
+            } else if (riskCategory === 'intermediate') {
+                quickRisk.textContent = 'Nguy cơ TRUNG BÌNH (10-20%)';
+
+                if (rfCount >= 1) {
+                    quickRec.innerHTML = `<span class="text-emerald-400 font-extrabold">CHỈ ĐỊNH DỰ PHÒNG CẤP 1</span>`;
+
+                    box.className = 'bg-emerald-50 border border-emerald-300 text-emerald-950 rounded-2xl p-4 shadow-sm';
+                    box.innerHTML = `
+                        <div class="flex items-center gap-2 font-black text-sm text-emerald-900 mb-1">
+                            <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i> KHUYÊN DÙNG G-CSF DỰ PHÒNG CẤP 1 (PRIMARY PROPHYLAXIS)
+                        </div>
+                        <p class="text-xs text-emerald-800 leading-relaxed">
+                            Phác đồ nguy cơ Trung bình (10 - 20%) kết hợp với bệnh nhân có <strong>${rfCount} yếu tố nguy cơ tích lũy</strong> (Tuổi, thể trạng, chức năng gan/thận...). Chỉ định G-CSF dự phòng Cấp 1 ngay từ Chu kỳ 1 để hạn chế biến chứng nguy hiểm.
+                        </p>
+                    `;
+                } else {
+                    quickRec.innerHTML = `<span class="text-amber-300 font-bold">Theo dõi (Observe)</span>`;
+
+                    box.className = 'bg-amber-50 border border-amber-300 text-amber-950 rounded-2xl p-4 shadow-sm';
+                    box.innerHTML = `
+                        <div class="flex items-center gap-2 font-bold text-sm text-amber-900 mb-1">
+                            <i class="fa-solid fa-eye text-amber-600 text-lg"></i> THEO DÕI LÂM SÀNG (NO PRIMARY PROPHYLAXIS)
+                        </div>
+                        <p class="text-xs text-amber-800 leading-relaxed">
+                            Phác đồ nguy cơ Trung bình (10 - 20%) và bệnh nhân <strong>chưa có yếu tố nguy cơ tích lũy nào</strong>. Không bắt buộc chỉ định G-CSF dự phòng Cấp 1 ngay từ đầu. Theo dõi sát công thức máu ở điểm đáy (Nadir). Nếu chu kỳ 1 bị FN → Chỉ định G-CSF dự phòng Cấp 2 ở chu kỳ tiếp theo.
+                        </p>
+                    `;
+                }
+            } else {
+                // Low Risk
+                quickRisk.textContent = 'Nguy cơ THẤP (<10%)';
+                quickRec.innerHTML = `<span class="text-slate-300 font-medium">Không khuyến cáo</span>`;
+
+                box.className = 'bg-slate-50 border border-slate-300 text-slate-800 rounded-2xl p-4 shadow-sm';
+                box.innerHTML = `
+                    <div class="flex items-center gap-2 font-bold text-sm text-slate-800 mb-1">
+                        <i class="fa-solid fa-circle-minus text-slate-500 text-lg"></i> KHÔNG KHUYÊN DÙNG G-CSF DỰ PHÒNG CẤP 1
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Phác đồ có nguy cơ Sốt hạ bạch cầu hạt thấp (&lt; 10%). Không khuyến cáo dùng G-CSF dự phòng thường quy cho chu kỳ 1.
+                    </p>
+                `;
+            }
+        }
+
+        function calculateMASCC() {
+            const symp = parseInt(document.getElementById('mascc-symptoms').value);
+            const bp = parseInt(document.getElementById('mascc-bp').value);
+            const copd = parseInt(document.getElementById('mascc-copd').value);
+            const cancer = parseInt(document.getElementById('mascc-cancer').value);
+            const deh = parseInt(document.getElementById('mascc-dehydration').value);
+            const outp = parseInt(document.getElementById('mascc-outpatient').value);
+            const age = parseInt(document.getElementById('mascc-age').value);
+
+            const score = symp + bp + copd + cancer + deh + outp + age;
+            const resBox = document.getElementById('mascc-result-box');
+
+            if (score >= 21) {
+                resBox.className = 'bg-emerald-50 border border-emerald-300 rounded-xl p-3 text-xs flex items-center justify-between text-emerald-950';
+                resBox.innerHTML = `
+                    <div>
+                        <span class="font-black text-sm text-emerald-900 block">MASCC Score: ${score} / 26 điểm → NGUY CƠ THẤP (Low Risk)</span>
+                        <span class="text-[11px] text-emerald-800">Tỷ lệ biến chứng nặng thấp (&lt; 5%). Thích hợp điều trị ngoại trú với kháng sinh uống (Ciprofloxacin + Amoxicillin/Clavulanate).</span>
+                    </div>
+                    <span class="bg-emerald-600 text-white font-extrabold text-xs px-2.5 py-1 rounded shadow-sm shrink-0">Ngoại trú (Oral ABX)</span>
+                `;
+            } else {
+                resBox.className = 'bg-red-50 border border-red-300 rounded-xl p-3 text-xs flex items-center justify-between text-red-950';
+                resBox.innerHTML = `
+                    <div>
+                        <span class="font-black text-sm text-red-900 block">MASCC Score: ${score} / 26 điểm → NGUY CƠ CAO (High Risk)</span>
+                        <span class="text-[11px] text-red-800">Nguy cơ biến chứng nặng và tử vong cao. BẮT BUỘC nhập viện cấp cứu, tiêm kháng sinh tĩnh mạch phổ rộng (Piperacillin/Tazobactam hoặc Cefepime).</span>
+                    </div>
+                    <span class="bg-red-600 text-white font-extrabold text-xs px-2.5 py-1 rounded shadow-sm shrink-0">Nhập viện (IV ABX)</span>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>

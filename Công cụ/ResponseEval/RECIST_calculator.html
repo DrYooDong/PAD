@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công cụ Đánh giá Đáp ứng Điều trị RECIST 1.1 & iRECIST</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f766e 100%);
+        }
+
+        .badge-cr { background-color: #10b981; color: white; }
+        .badge-pr { background-color: #0284c7; color: white; }
+        .badge-sd { background-color: #f59e0b; color: white; }
+        .badge-pd { background-color: #ef4444; color: white; }
+        .badge-iupd { background-color: #8b5cf6; color: white; }
+        .badge-icpd { background-color: #dc2626; color: white; }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            .print-only { display: block !important; }
+            .card-box { border: 1px solid #e2e8f0; shadow: none; }
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg transition" title="Về trang chủ">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <div class="flex items-center gap-2">
+                    <div class="bg-teal-500 text-white p-2 rounded-lg font-bold text-lg">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <span class="font-black text-lg text-white tracking-tight">RECIST <span class="text-teal-400">1.1 & iRECIST</span></span>
+                        <span class="text-xs block text-slate-400 font-medium">Đánh giá & Theo dõi Đáp ứng Ung bướu</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="savePatientData()" class="bg-teal-600 hover:bg-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu hồ sơ
+                </button>
+                <button onclick="createNewPatient()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-plus"></i> Bệnh nhân mới
+                </button>
+                <button onclick="window.print()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i class="fa-solid fa-print"></i> In Báo cáo
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Header Banner -->
+    <section class="gradient-header text-white py-8 px-4 no-print shadow-inner">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 bg-teal-500/20 border border-teal-500/40 text-teal-300 text-xs font-bold px-3 py-1 rounded-full mb-2">
+                    <i class="fa-solid fa-microscope"></i> Tiêu chuẩn Đánh giá Lâm sàng Ung bướu
+                </div>
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Hệ thống Đánh giá Đáp ứng RECIST 1.1 & iRECIST</h1>
+                <p class="text-slate-300 text-sm mt-1 max-w-3xl">
+                    Tự động tính Tổng đường kính (SoD), phần trăm thay đổi so với Ban đầu (Baseline) & Nhỏ nhất (Nadir), tự động phân loại đáp ứng CR, PR, SD, PD theo RECIST 1.1 và giả tiến triển iUPD / iCPD theo iRECIST.
+                </p>
+            </div>
+            
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl flex items-center gap-4 text-xs">
+                <div>
+                    <div class="text-slate-400">Baseline SoD</div>
+                    <div id="summary-baseline-sod" class="text-lg font-black text-teal-300">0 mm</div>
+                </div>
+                <div class="h-8 w-px bg-white/20"></div>
+                <div>
+                    <div class="text-slate-400">Nadir SoD</div>
+                    <div id="summary-nadir-sod" class="text-lg font-black text-amber-300">0 mm</div>
+                </div>
+                <div class="h-8 w-px bg-white/20"></div>
+                <div>
+                    <div class="text-slate-400">Đáp ứng gần nhất</div>
+                    <div id="summary-latest-response" class="text-sm font-bold text-white mt-0.5">--</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col gap-6">
+
+        <!-- Thông tin bệnh nhân & Cấu hình -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
+                    <i class="fa-solid fa-id-card text-teal-600"></i> Thông tin Bệnh nhân & Đợt Đánh giá
+                </h2>
+                <span class="text-xs text-slate-400 italic">* Các trường tự động lưu trong trình duyệt</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Mã Bệnh nhân / Họ tên</label>
+                    <input type="text" id="patient-id" placeholder="VD: BN-10928 / Nguyễn Văn A" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500 focus:bg-white transition" onchange="updateSummaryHeader()">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Loại Ung thư (Chẩn đoán)</label>
+                    <input type="text" id="cancer-type" placeholder="VD: Ung thư Phổi tế bào không nhỏ" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500 focus:bg-white transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Liệu pháp Điều trị</label>
+                    <select id="treatment-type" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500 focus:bg-white transition" onchange="calculateAllTimepoints()">
+                        <option value="recist">Liệu pháp Chuẩn / Hóa chất / Đích (RECIST 1.1)</option>
+                        <option value="irecist">Liệu pháp Miễn dịch (iRECIST - IO Therapy)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Ghi chú Lâm sàng</label>
+                    <input type="text" id="patient-notes" placeholder="VD: Đang dùng Pembrolizumab chu kỳ 4" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500 focus:bg-white transition">
+                </div>
+            </div>
+        </div>
+
+        <!-- Layout 2 cột: Danh sách Tổn thương + Các thời điểm theo dõi -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Cột Trái (4 col): Quản lý Khởi điểm Baseline & Danh sách Tổn thương -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+
+                <!-- Thẻ Danh sách Tổn thương Đích (Target Lesions) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                                <i class="fa-solid fa-bullseye text-red-500"></i> Tổn thương Đích (Target Lesions)
+                            </h3>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Tối đa 5 tổn thương tổng cộng, tối đa 2 tổn thương/cơ quan</p>
+                        </div>
+                        <button onclick="addTargetLesion()" id="btn-add-target" class="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+                            <i class="fa-solid fa-plus text-xs"></i> Thêm tổn thương
+                        </button>
+                    </div>
+
+                    <div id="target-lesions-list" class="space-y-3 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
+                        <!-- Rendered by JavaScript -->
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-700">
+                        <span>Tổng số lượng: <strong id="target-count-badge" class="text-teal-600 font-bold">0 / 5</strong></span>
+                        <span>Đường kính Baseline (SoD): <strong id="target-baseline-sod-text" class="text-slate-900 font-extrabold text-sm">0 mm</strong></span>
+                    </div>
+                </div>
+
+                <!-- Thẻ Danh sách Tổn thương Không Đích (Non-Target Lesions) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                                <i class="fa-solid fa-circle-dot text-amber-500"></i> Tổn thương Không Đích (Non-Target)
+                            </h3>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Tràn dịch màng phổi, căn xương, hạch 10-14mm...</p>
+                        </div>
+                        <button onclick="addNonTargetLesion()" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+                            <i class="fa-solid fa-plus text-xs"></i> Thêm tổn thương
+                        </button>
+                    </div>
+
+                    <div id="nontarget-lesions-list" class="space-y-2 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
+                        <!-- Rendered by JavaScript -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cột Phải (7 col): Các Thời điểm Đánh giá (Timepoints) & Kết quả -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box flex-1 flex flex-col">
+                    <div class="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 mb-4 gap-2">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                                <i class="fa-solid fa-timeline text-sky-600"></i> Diễn tiến Các Thời điểm Đánh giá (Timepoints)
+                            </h3>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Nhập kích thước đo được tại mỗi thời điểm tái khám (CT/MRI)</p>
+                        </div>
+                        <button onclick="addTimepoint()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
+                            <i class="fa-solid fa-calendar-plus"></i> Thêm Thời điểm (Timepoint)
+                        </button>
+                    </div>
+
+                    <!-- Containers cho các Timepoint Tabs / Accordion -->
+                    <div id="timepoints-container" class="space-y-4 flex-1">
+                        <!-- Rendered by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Thẻ Biểu đồ & Tóm tắt Diễn tiến Đáp ứng -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-chart-area text-teal-600"></i> Biểu đồ Tổng Đường kính SoD & Ngưỡng Đáp ứng
+                        </h3>
+                        <div class="flex items-center gap-3 text-[11px] font-semibold">
+                            <span class="inline-flex items-center gap-1 text-sky-600"><span class="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block"></span> SoD (mm)</span>
+                            <span class="inline-flex items-center gap-1 text-emerald-600"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Ngưỡng PR (-30%)</span>
+                            <span class="inline-flex items-center gap-1 text-red-600"><span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> Ngưỡng PD (+20%)</span>
+                        </div>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="responseChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Bảng Tóm tắt Tổng hợp Đánh giá & Hướng dẫn Tiêu chuẩn -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- Bảng tóm tắt kết quả theo thời điểm -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-table text-indigo-600"></i> Bảng Tóm tắt Đáp ứng Theo Thời điểm
+                </h3>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 border-b border-slate-200 font-bold">
+                                <th class="p-2.5">Thời điểm</th>
+                                <th class="p-2.5">Ngày chụp</th>
+                                <th class="p-2.5 text-right">SoD (mm)</th>
+                                <th class="p-2.5 text-right">% vs Baseline</th>
+                                <th class="p-2.5 text-right">% vs Nadir</th>
+                                <th class="p-2.5 text-center">RECIST 1.1</th>
+                                <th class="p-2.5 text-center">iRECIST</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-table-body" class="divide-y divide-slate-100">
+                            <!-- Rendered by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Khung Quy tắc Tóm tắt Hướng dẫn RECIST 1.1 vs iRECIST -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box flex flex-col justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-book-medical text-teal-600"></i> Tóm tắt Tiêu chuẩn Ngưỡng RECIST 1.1 & iRECIST
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                            <div class="font-bold text-emerald-800 mb-1"><i class="fa-solid fa-circle-check"></i> CR (Complete Response)</div>
+                            <p class="text-emerald-700 text-[11px] leading-relaxed">
+                                Đột ngột/Biến mất hoàn toàn tất cả tổn thương đích phi hạch (0 mm), tất cả hạch bạch huyết &lt; 10 mm trục ngắn, tổn thương không đích biến mất.
+                            </p>
+                        </div>
+                        <div class="bg-sky-50 border border-sky-200 rounded-xl p-3">
+                            <div class="font-bold text-sky-800 mb-1"><i class="fa-solid fa-arrow-down-short-wide"></i> PR (Partial Response)</div>
+                            <p class="text-sky-700 text-[11px] leading-relaxed">
+                                Giảm ≥ 30% Tổng đường kính (SoD) tổn thương đích so với <strong>SoD Baseline ban đầu</strong>. Không có tổn thương mới.
+                            </p>
+                        </div>
+                        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                            <div class="font-bold text-amber-800 mb-1"><i class="fa-solid fa-minus"></i> SD (Stable Disease)</div>
+                            <p class="text-amber-700 text-[11px] leading-relaxed">
+                                Không đủ mức thu nhỏ để đạt PR, cũng không đủ mức tăng kích thước để đạt PD.
+                            </p>
+                        </div>
+                        <div class="bg-red-50 border border-red-200 rounded-xl p-3">
+                            <div class="font-bold text-red-800 mb-1"><i class="fa-solid fa-arrow-up-right-dots"></i> PD (Progressive Disease)</div>
+                            <p class="text-red-700 text-[11px] leading-relaxed">
+                                Tăng ≥ 20% SoD so với <strong>Nadir (SoD nhỏ nhất từng đo)</strong> và tăng tuyệt đối ≥ 5 mm, Hoặc có tổn thương mới, Hoặc tổn thương không đích tiến triển rõ rệt.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 pt-3 border-t border-slate-100 bg-purple-50 border border-purple-200 rounded-xl p-3 text-xs">
+                    <div class="font-bold text-purple-900 mb-0.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-shield-virus"></i> Điểm khác biệt cốt lõi iRECIST (Liệu pháp Miễn dịch):
+                    </div>
+                    <p class="text-purple-800 text-[11px] leading-relaxed">
+                        Lần đầu đạt tiêu chuẩn PD sẽ xếp loại là <strong>iUPD (Chưa xác nhận tiến triển)</strong> để theo dõi hiện tượng giả tiến triển (pseudoprogression). Tiến triển chỉ được xác nhận thành <strong>iCPD (Đã xác nhận tiến triển)</strong> nếu lần chụp tiếp theo (sau 4-8 tuần) u tiếp tục tăng kích thước hoặc xuất hiện thêm tổn thương mới.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-10 no-print text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-medium text-slate-300">Công cụ Đánh giá Đáp ứng Ung bướu RECIST 1.1 & iRECIST</p>
+            <p class="text-slate-500 mt-1">Dành riêng cho Bác sĩ & Chuyên gia Y tế Thực hành Lâm sàng. Dựa trên tài liệu đồng thuận RECIST 1.1 (EORTC/NCI) & iRECIST (Lancet Oncol 2017).</p>
+        </div>
+    </footer>
+
+    <!-- Application Script -->
+    <script>
+        // Data Structure
+        let patientData = {
+            id: '',
+            cancerType: '',
+            treatmentType: 'recist',
+            notes: '',
+            targetLesions: [
+                { id: 1, name: 'Tổn thương 1 (Phổi Phải)', type: 'non-nodal', organ: 'Phổi', baseline: 35 },
+                { id: 2, name: 'Tổn thương 2 (Gan Phân thùy VI)', type: 'non-nodal', organ: 'Gan', baseline: 25 }
+            ],
+            nonTargetLesions: [
+                { id: 1, name: 'Tràn dịch màng phổi phải lượng ít' }
+            ],
+            timepoints: [
+                {
+                    id: 1,
+                    title: 'Lần 1 (Sau 2 chu kỳ)',
+                    date: '2026-03-15',
+                    targetSizes: { 1: 22, 2: 15 },
+                    nonTargetStatus: 'non-cr-non-pd',
+                    newLesions: 'none',
+                    newLesionDetails: ''
+                },
+                {
+                    id: 2,
+                    title: 'Lần 2 (Sau 4 chu kỳ)',
+                    date: '2026-06-10',
+                    targetSizes: { 1: 18, 2: 10 },
+                    nonTargetStatus: 'non-cr-non-pd',
+                    newLesions: 'none',
+                    newLesionDetails: ''
+                }
+            ]
+        };
+
+        let chartInstance = null;
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSavedPatientData();
+            renderTargetLesions();
+            renderNonTargetLesions();
+            renderTimepoints();
+            calculateAllTimepoints();
+        });
+
+        // Add Target Lesion
+        function addTargetLesion() {
+            if (patientData.targetLesions.length >= 5) {
+                alert('Quy chuẩn RECIST 1.1 cho phép tối đa 5 tổn thương đích tổng cộng (tối đa 2 tổn thương mỗi cơ quan).');
+                return;
+            }
+            const newId = Date.now();
+            patientData.targetLesions.push({
+                id: newId,
+                name: `Tổn thương ${patientData.targetLesions.length + 1}`,
+                type: 'non-nodal',
+                organ: '',
+                baseline: 20
+            });
+            renderTargetLesions();
+            renderTimepoints();
+            calculateAllTimepoints();
+        }
+
+        // Remove Target Lesion
+        function removeTargetLesion(id) {
+            if (patientData.targetLesions.length <= 1) {
+                alert('Cần có ít nhất 1 tổn thương đích để tính toán SoD.');
+                return;
+            }
+            patientData.targetLesions = patientData.targetLesions.filter(l => l.id !== id);
+            renderTargetLesions();
+            renderTimepoints();
+            calculateAllTimepoints();
+        }
+
+        // Add Non-Target Lesion
+        function addNonTargetLesion() {
+            const newId = Date.now();
+            patientData.nonTargetLesions.push({
+                id: newId,
+                name: `Tổn thương không đích ${patientData.nonTargetLesions.length + 1}`
+            });
+            renderNonTargetLesions();
+            calculateAllTimepoints();
+        }
+
+        function removeNonTargetLesion(id) {
+            patientData.nonTargetLesions = patientData.nonTargetLesions.filter(l => l.id !== id);
+            renderNonTargetLesions();
+            calculateAllTimepoints();
+        }
+
+        // Render Target Lesions List
+        function renderTargetLesions() {
+            const container = document.getElementById('target-lesions-list');
+            document.getElementById('target-count-badge').textContent = `${patientData.targetLesions.length} / 5`;
+            
+            container.innerHTML = patientData.targetLesions.map((lesion, index) => `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 relative group hover:border-teal-300 transition">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded">Tổn thương #${index + 1}</span>
+                        <button onclick="removeTargetLesion(${lesion.id})" class="text-slate-400 hover:text-red-500 text-xs transition" title="Xóa tổn thương">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div class="sm:col-span-2">
+                            <input type="text" value="${lesion.name}" onchange="updateLesionProperty(${lesion.id}, 'name', this.value)" placeholder="Tên / Vị trí tổn thương" class="w-full text-xs bg-white border border-slate-200 rounded px-2 py-1 focus:outline-none focus:border-teal-500">
+                        </div>
+                        <div>
+                            <select onchange="updateLesionProperty(${lesion.id}, 'type', this.value)" class="w-full text-xs bg-white border border-slate-200 rounded px-1.5 py-1 focus:outline-none focus:border-teal-500">
+                                <option value="non-nodal" ${lesion.type === 'non-nodal' ? 'selected' : ''}>Phi hạch (Trục dài ≥10mm)</option>
+                                <option value="nodal" ${lesion.type === 'nodal' ? 'selected' : ''}>Hạch (Trục ngắn ≥15mm)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between">
+                        <label class="text-[11px] font-semibold text-slate-600">Đường kính Baseline (mm):</label>
+                        <input type="number" min="0" value="${lesion.baseline}" onchange="updateLesionProperty(${lesion.id}, 'baseline', parseFloat(this.value) || 0)" class="w-24 text-xs font-bold text-right bg-white border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-teal-500">
+                    </div>
+                </div>
+            `).join('');
+
+            // Disable add button if >= 5
+            document.getElementById('btn-add-target').disabled = patientData.targetLesions.length >= 5;
+        }
+
+        // Render Non-Target Lesions List
+        function renderNonTargetLesions() {
+            const container = document.getElementById('nontarget-lesions-list');
+            if (patientData.nonTargetLesions.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic py-2">Không có tổn thương không đích được ghi nhận.</p>`;
+                return;
+            }
+            container.innerHTML = patientData.nonTargetLesions.map((lesion, index) => `
+                <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
+                    <span class="text-[11px] font-bold text-slate-500">#${index + 1}</span>
+                    <input type="text" value="${lesion.name}" onchange="updateNonTargetName(${lesion.id}, this.value)" class="flex-1 text-xs bg-white border border-slate-200 rounded px-2 py-1 focus:outline-none focus:border-teal-500">
+                    <button onclick="removeNonTargetLesion(${lesion.id})" class="text-slate-400 hover:text-red-500 text-xs px-1">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Update Lesion Property
+        function updateLesionProperty(id, prop, value) {
+            const lesion = patientData.targetLesions.find(l => l.id === id);
+            if (lesion) {
+                lesion[prop] = value;
+                calculateAllTimepoints();
+            }
+        }
+
+        function updateNonTargetName(id, name) {
+            const lesion = patientData.nonTargetLesions.find(l => l.id === id);
+            if (lesion) lesion.name = name;
+        }
+
+        // Add Timepoint
+        function addTimepoint() {
+            const newId = Date.now();
+            const tpIndex = patientData.timepoints.length + 1;
+            
+            // Build default size copying from last timepoint or baseline
+            const defaultSizes = {};
+            const lastTp = patientData.timepoints[patientData.timepoints.length - 1];
+            patientData.targetLesions.forEach(l => {
+                defaultSizes[l.id] = lastTp && lastTp.targetSizes[l.id] !== undefined ? lastTp.targetSizes[l.id] : l.baseline;
+            });
+
+            patientData.timepoints.push({
+                id: newId,
+                title: `Lần ${tpIndex} (Tái khám)`,
+                date: new Date().toISOString().split('T')[0],
+                targetSizes: defaultSizes,
+                nonTargetStatus: 'non-cr-non-pd',
+                newLesions: 'none',
+                newLesionDetails: ''
+            });
+
+            renderTimepoints();
+            calculateAllTimepoints();
+        }
+
+        function removeTimepoint(id) {
+            if (patientData.timepoints.length <= 1) {
+                alert('Cần ít nhất 1 thời điểm tái khám.');
+                return;
+            }
+            patientData.timepoints = patientData.timepoints.filter(t => t.id !== id);
+            renderTimepoints();
+            calculateAllTimepoints();
+        }
+
+        // Render Timepoints Cards
+        function renderTimepoints() {
+            const container = document.getElementById('timepoints-container');
+            
+            container.innerHTML = patientData.timepoints.map((tp, tpIdx) => `
+                <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/50 hover:bg-white hover:border-sky-300 transition duration-200 shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between border-b border-slate-200 pb-2.5 mb-3 gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-sky-600 text-white font-bold text-xs px-2 py-0.5 rounded-md">Timepoint #${tpIdx + 1}</span>
+                            <input type="text" value="${tp.title}" onchange="updateTpProperty(${tp.id}, 'title', this.value)" class="text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded px-2 py-1 focus:outline-none focus:border-sky-500 w-44">
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-1 text-xs">
+                                <label class="text-slate-500 font-medium">Ngày chụp:</label>
+                                <input type="date" value="${tp.date}" onchange="updateTpProperty(${tp.id}, 'date', this.value)" class="text-xs bg-white border border-slate-200 rounded px-2 py-1 focus:outline-none">
+                            </div>
+                            <button onclick="removeTimepoint(${tp.id})" class="text-slate-400 hover:text-red-500 text-xs px-1" title="Xóa thời điểm này">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Input kích thước tổn thương đích tại thời điểm này -->
+                    <div class="mb-3">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Kích thước Tổn thương Đích (mm):</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            ${patientData.targetLesions.map(lesion => {
+                                const val = tp.targetSizes[lesion.id] !== undefined ? tp.targetSizes[lesion.id] : lesion.baseline;
+                                return `
+                                    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs">
+                                        <span class="truncate max-w-[160px] font-medium text-slate-700" title="${lesion.name}">${lesion.name}</span>
+                                        <div class="flex items-center gap-1">
+                                            <input type="number" min="0" value="${val}" onchange="updateTpTargetSize(${tp.id}, ${lesion.id}, parseFloat(this.value) || 0)" class="w-16 text-right font-bold bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-sky-500">
+                                            <span class="text-slate-400 text-[10px]">mm</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Tổn thương Không Đích & Tổn thương Mới -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Tổn thương Không Đích:</label>
+                            <select onchange="updateTpProperty(${tp.id}, 'nonTargetStatus', this.value)" class="w-full text-xs bg-white border border-slate-200 rounded px-2 py-1 focus:outline-none focus:border-sky-500">
+                                <option value="non-cr-non-pd" ${tp.nonTargetStatus === 'non-cr-non-pd' ? 'selected' : ''}>Còn tồn tại (Non-CR / Non-PD)</option>
+                                <option value="cr" ${tp.nonTargetStatus === 'cr' ? 'selected' : ''}>Biến mất hoàn toàn (CR)</option>
+                                <option value="pd" ${tp.nonTargetStatus === 'pd' ? 'selected' : ''}>Tiến triển rõ rệt (Unequivocal PD)</option>
+                                <option value="not-eval" ${tp.nonTargetStatus === 'not-eval' ? 'selected' : ''}>Không đánh giá (NE)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Tổn thương Mới (New Lesion):</label>
+                            <select onchange="updateTpProperty(${tp.id}, 'newLesions', this.value)" class="w-full text-xs bg-white border border-slate-200 rounded px-2 py-1 focus:outline-none focus:border-sky-500">
+                                <option value="none" ${tp.newLesions === 'none' ? 'selected' : ''}>Không có (No New Lesions)</option>
+                                <option value="present" ${tp.newLesions === 'present' ? 'selected' : ''}>Xuất hiện tổn thương mới (Unequivocal New Lesion)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Khung Hiển thị Kết quả Đánh giá tự động cho Timepoint này -->
+                    <div id="tp-result-badge-${tp.id}" class="mt-3 pt-2.5 border-t border-slate-200 flex flex-wrap items-center justify-between text-xs">
+                        <!-- Calculated dynamically -->
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Helper to update Timepoint property
+        function updateTpProperty(tpId, prop, val) {
+            const tp = patientData.timepoints.find(t => t.id === tpId);
+            if (tp) {
+                tp[prop] = val;
+                calculateAllTimepoints();
+            }
+        }
+
+        function updateTpTargetSize(tpId, lesionId, val) {
+            const tp = patientData.timepoints.find(t => t.id === tpId);
+            if (tp) {
+                if (!tp.targetSizes) tp.targetSizes = {};
+                tp.targetSizes[lesionId] = val;
+                calculateAllTimepoints();
+            }
+        }
+
+        // Calculation Engine Core
+        function calculateAllTimepoints() {
+            // 1. Calculate Baseline SoD
+            const baselineSoD = patientData.targetLesions.reduce((sum, l) => sum + (parseFloat(l.baseline) || 0), 0);
+            document.getElementById('target-baseline-sod-text').textContent = `${baselineSoD} mm`;
+            document.getElementById('summary-baseline-sod').textContent = `${baselineSoD} mm`;
+
+            let smallestSoD = baselineSoD; // Nadir tracks smallest SoD starting from Baseline
+            const results = [];
+
+            // Track previous RECIST response for iRECIST iUPD confirmation logic
+            let previousRecistPD = false;
+
+            patientData.timepoints.forEach((tp, index) => {
+                // Calculate current SoD for this timepoint
+                let currentSoD = 0;
+                let allNonNodalZero = true;
+                let allNodalNormal = true;
+
+                patientData.targetLesions.forEach(l => {
+                    const sz = tp.targetSizes[l.id] !== undefined ? parseFloat(tp.targetSizes[l.id]) || 0 : l.baseline;
+                    currentSoD += sz;
+
+                    if (l.type === 'non-nodal' && sz > 0) {
+                        allNonNodalZero = false;
+                    }
+                    if (l.type === 'nodal' && sz >= 10) {
+                        allNodalNormal = false;
+                    }
+                });
+
+                // Update Nadir (smallest SoD recorded so far up to this timepoint)
+                const nadirSoD = Math.min(smallestSoD, currentSoD);
+                smallestSoD = nadirSoD; // update for next timepoints
+
+                // Percent change vs Baseline
+                const pctChangeBaseline = baselineSoD > 0 ? ((currentSoD - baselineSoD) / baselineSoD) * 100 : 0;
+                
+                // Percent change vs Nadir
+                const pctChangeNadir = nadirSoD > 0 ? ((currentSoD - nadirSoD) / nadirSoD) * 100 : 0;
+                const absoluteIncreaseNadir = currentSoD - nadirSoD;
+
+                // RECIST 1.1 Classification Logic
+                let recistResponse = 'SD'; // Default Stable Disease
+
+                // Check CR
+                const targetCR = (patientData.targetLesions.length === 0) || (allNonNodalZero && allNodalNormal);
+                const nonTargetCR = tp.nonTargetStatus === 'cr';
+                const noNewLesions = tp.newLesions === 'none';
+
+                if (targetCR && (nonTargetCR || patientData.nonTargetLesions.length === 0) && noNewLesions) {
+                    recistResponse = 'CR';
+                }
+                // Check PD
+                else if (
+                    (pctChangeNadir >= 20 && absoluteIncreaseNadir >= 5) ||
+                    tp.nonTargetStatus === 'pd' ||
+                    tp.newLesions === 'present'
+                ) {
+                    recistResponse = 'PD';
+                }
+                // Check PR
+                else if (pctChangeBaseline <= -30 && tp.nonTargetStatus !== 'pd' && noNewLesions) {
+                    recistResponse = 'PR';
+                }
+                // SD
+                else {
+                    recistResponse = 'SD';
+                }
+
+                // iRECIST Classification Logic (Immunotherapy extension)
+                let irecistResponse = recistResponse;
+                if (recistResponse === 'PD') {
+                    if (!previousRecistPD) {
+                        irecistResponse = 'iUPD'; // Unconfirmed Progressive Disease first time
+                    } else {
+                        irecistResponse = 'iCPD'; // Confirmed Progressive Disease on subsequent scan
+                    }
+                    previousRecistPD = true;
+                } else {
+                    previousRecistPD = false;
+                    if (recistResponse === 'CR') irecistResponse = 'iCR';
+                    else if (recistResponse === 'PR') irecistResponse = 'iPR';
+                    else if (recistResponse === 'SD') irecistResponse = 'iSD';
+                }
+
+                results.push({
+                    tp,
+                    index,
+                    currentSoD,
+                    nadirSoD,
+                    pctChangeBaseline,
+                    pctChangeNadir,
+                    absoluteIncreaseNadir,
+                    recistResponse,
+                    irecistResponse
+                });
+            });
+
+            // Update Nadir Badge Header
+            document.getElementById('summary-nadir-sod').textContent = `${smallestSoD} mm`;
+
+            // Update latest response badge in top header
+            if (results.length > 0) {
+                const latest = results[results.length - 1];
+                const mode = document.getElementById('treatment-type').value;
+                const respText = mode === 'irecist' ? latest.irecistResponse : latest.recistResponse;
+                document.getElementById('summary-latest-response').innerHTML = getResponseBadgeHTML(respText);
+            }
+
+            // Render Results inside each Timepoint card
+            results.forEach(res => {
+                const badgeContainer = document.getElementById(`tp-result-badge-${res.tp.id}`);
+                if (badgeContainer) {
+                    const isIO = document.getElementById('treatment-type').value === 'irecist';
+                    badgeContainer.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div><strong>SoD:</strong> ${res.currentSoD} mm</div>
+                            <div class="${res.pctChangeBaseline <= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}">
+                                vs Baseline: ${res.pctChangeBaseline >= 0 ? '+' : ''}${res.pctChangeBaseline.toFixed(1)}%
+                            </div>
+                            <div class="text-slate-500">
+                                vs Nadir (${res.nadirSoD}mm): ${res.pctChangeNadir >= 0 ? '+' : ''}${res.pctChangeNadir.toFixed(1)}%
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-400">RECIST 1.1: ${getResponseBadgeHTML(res.recistResponse)}</span>
+                            ${isIO ? `<span class="text-slate-400">iRECIST: ${getResponseBadgeHTML(res.irecistResponse)}</span>` : ''}
+                        </div>
+                    `;
+                }
+            });
+
+            // Render Table & Chart
+            renderSummaryTable(results);
+            renderChart(baselineSoD, results);
+        }
+
+        // Helper to format badge HTML
+        function getResponseBadgeHTML(code) {
+            switch (code) {
+                case 'CR': return `<span class="badge-cr text-xs font-extrabold px-2 py-0.5 rounded shadow-sm">CR (Đáp ứng hoàn toàn)</span>`;
+                case 'PR': return `<span class="badge-pr text-xs font-extrabold px-2 py-0.5 rounded shadow-sm">PR (Đáp ứng một phần)</span>`;
+                case 'SD': return `<span class="badge-sd text-xs font-extrabold px-2 py-0.5 rounded shadow-sm">SD (Bệnh ổn định)</span>`;
+                case 'PD': return `<span class="badge-pd text-xs font-extrabold px-2 py-0.5 rounded shadow-sm">PD (Bệnh tiến triển)</span>`;
+                case 'iCR': return `<span class="badge-cr text-xs font-extrabold px-2 py-0.5 rounded shadow-sm">iCR</span>`;
+                case 'iPR': return `<span class="badge-pr text-xs font-extrabold px-2 py-0.5 rounded shadow-sm">iPR</span>`;
+                case 'iSD': return `<span class="badge-sd text-xs font-extrabold px-2 py-0.5 rounded shadow-sm">iSD</span>`;
+                case 'iUPD': return `<span class="badge-iupd text-xs font-extrabold px-2 py-0.5 rounded shadow-sm"><i class="fa-solid fa-triangle-exclamation"></i> iUPD (Tiến triển Chưa xác nhận)</span>`;
+                case 'iCPD': return `<span class="badge-icpd text-xs font-extrabold px-2 py-0.5 rounded shadow-sm"><i class="fa-solid fa-skull-crossbones"></i> iCPD (Tiến triển Đã xác nhận)</span>`;
+                default: return `<span class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded">${code}</span>`;
+            }
+        }
+
+        // Render Summary Table
+        function renderSummaryTable(results) {
+            const tbody = document.getElementById('summary-table-body');
+            const baselineSoD = patientData.targetLesions.reduce((sum, l) => sum + (parseFloat(l.baseline) || 0), 0);
+
+            let rowsHTML = `
+                <tr class="bg-teal-50/50 font-medium">
+                    <td class="p-2.5 font-bold text-teal-800">Baseline (Ban đầu)</td>
+                    <td class="p-2.5 text-slate-500">Ban đầu</td>
+                    <td class="p-2.5 text-right font-extrabold text-slate-900">${baselineSoD} mm</td>
+                    <td class="p-2.5 text-right text-slate-400">0.0%</td>
+                    <td class="p-2.5 text-right text-slate-400">0.0%</td>
+                    <td class="p-2.5 text-center"><span class="text-slate-400 text-[11px] italic">Baseline</span></td>
+                    <td class="p-2.5 text-center"><span class="text-slate-400 text-[11px] italic">Baseline</span></td>
+                </tr>
+            `;
+
+            rowsHTML += results.map(r => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-2.5 font-semibold text-slate-800">${r.tp.title}</td>
+                    <td class="p-2.5 text-slate-500">${r.tp.date}</td>
+                    <td class="p-2.5 text-right font-bold text-slate-900">${r.currentSoD} mm</td>
+                    <td class="p-2.5 text-right font-bold ${r.pctChangeBaseline <= 0 ? 'text-emerald-600' : 'text-red-600'}">
+                        ${r.pctChangeBaseline >= 0 ? '+' : ''}${r.pctChangeBaseline.toFixed(1)}%
+                    </td>
+                    <td class="p-2.5 text-right text-slate-600">
+                        ${r.pctChangeNadir >= 0 ? '+' : ''}${r.pctChangeNadir.toFixed(1)}%
+                    </td>
+                    <td class="p-2.5 text-center">${getResponseBadgeHTML(r.recistResponse)}</td>
+                    <td class="p-2.5 text-center">${getResponseBadgeHTML(r.irecistResponse)}</td>
+                </tr>
+            `).join('');
+
+            tbody.innerHTML = rowsHTML;
+        }
+
+        // Render Chart.js
+        function renderChart(baselineSoD, results) {
+            const ctx = document.getElementById('responseChart').getContext('2d');
+
+            const labels = ['Baseline', ...results.map(r => r.tp.title)];
+            const dataSoD = [baselineSoD, ...results.map(r => r.currentSoD)];
+            
+            const prThreshold = baselineSoD * 0.7; // -30%
+            const pdThreshold = baselineSoD * 1.2; // +20%
+
+            const prData = labels.map(() => prThreshold);
+            const pdData = labels.map(() => pdThreshold);
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Tổng Đường kính SoD (mm)',
+                            data: dataSoD,
+                            borderColor: '#0284c7',
+                            backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#0369a1',
+                            pointRadius: 5,
+                            fill: true,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Ngưỡng PR (-30%)',
+                            data: prData,
+                            borderColor: '#10b981',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        },
+                        {
+                            label: 'Ngưỡng PD (+20%)',
+                            data: pdData,
+                            borderColor: '#ef4444',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw} mm`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Tổng đường kính SoD (mm)', font: { size: 11, weight: 'bold' } },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Header Patient Update
+        function updateSummaryHeader() {
+            patientData.id = document.getElementById('patient-id').value;
+            patientData.cancerType = document.getElementById('cancer-type').value;
+            patientData.notes = document.getElementById('patient-notes').value;
+        }
+
+        // Local Storage Persistence
+        function savePatientData() {
+            updateSummaryHeader();
+            patientData.treatmentType = document.getElementById('treatment-type').value;
+            localStorage.setItem('recist_patient_data', JSON.stringify(patientData));
+            alert('Đã lưu dữ liệu hồ sơ bệnh nhân vào bộ nhớ trình duyệt!');
+        }
+
+        function loadSavedPatientData() {
+            const saved = localStorage.getItem('recist_patient_data');
+            if (saved) {
+                try {
+                    patientData = JSON.parse(saved);
+                    document.getElementById('patient-id').value = patientData.id || '';
+                    document.getElementById('cancer-type').value = patientData.cancerType || '';
+                    document.getElementById('treatment-type').value = patientData.treatmentType || 'recist';
+                    document.getElementById('patient-notes').value = patientData.notes || '';
+                } catch(e) {
+                    console.error('Lỗi đọc dữ liệu đã lưu:', e);
+                }
+            }
+        }
+
+        function createNewPatient() {
+            if (confirm('Tạo hồ sơ bệnh nhân mới sẽ xóa dữ liệu đang nhập trên màn hình. Bạn có chắc chắn?')) {
+                patientData = {
+                    id: '',
+                    cancerType: '',
+                    treatmentType: 'recist',
+                    notes: '',
+                    targetLesions: [
+                        { id: 1, name: 'Tổn thương 1', type: 'non-nodal', organ: '', baseline: 25 }
+                    ],
+                    nonTargetLesions: [],
+                    timepoints: [
+                        {
+                            id: 1,
+                            title: 'Lần 1 (Tái khám)',
+                            date: new Date().toISOString().split('T')[0],
+                            targetSizes: { 1: 25 },
+                            nonTargetStatus: 'non-cr-non-pd',
+                            newLesions: 'none',
+                            newLesionDetails: ''
+                        }
+                    ]
+                };
+                document.getElementById('patient-id').value = '';
+                document.getElementById('cancer-type').value = '';
+                document.getElementById('patient-notes').value = '';
+                renderTargetLesions();
+                renderNonTargetLesions();
+                renderTimepoints();
+                calculateAllTimepoints();
+            }
+        }
+    </script>
+</body>
+
+</html>

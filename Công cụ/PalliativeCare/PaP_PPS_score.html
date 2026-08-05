@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thang Điểm Tiên Lượng Sống Còn PaP & PPS | OncoPortal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body class="text-slate-800 p-4 md:p-8 min-h-screen">
+    <div class="max-w-4xl mx-auto space-y-6">
+
+        <!-- Header Bar -->
+        <header class="bg-slate-800 text-white p-5 rounded-2xl shadow-md border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-500 text-slate-900 p-3 rounded-xl shadow-inner text-xl">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white">Thang Điểm Tiên Lượng Sống Còn PaP & PPS</h1>
+                    <p class="text-xs text-slate-300 font-medium mt-0.5">Palliative Prognostic Score (PaP) & Palliative Performance Scale (PPS) Chăm Sóc Giảm Nhẹ</p>
+                </div>
+            </div>
+            <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-slate-600 transition">
+                <i class="fa-solid fa-print"></i> In kết quả
+            </button>
+        </header>
+
+        <!-- Main Form Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- PaP Score Input Card -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
+                    <i class="fa-solid fa-calculator text-amber-600"></i>
+                    Chỉ Số Tiên Lượng PaP (Palliative Prognostic Score)
+                </h2>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">1. Khó thở khi nghỉ ngơi (Dyspnea at rest)</label>
+                    <select id="pap-dyspnea" onchange="calculatePaP()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="0" selected>Không có khó thở (0 điểm)</option>
+                        <option value="1.5">Có khó thở khi nghỉ ngơi (+1.5 điểm)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">2. Chán ăn / Chán ăn nặng (Anorexia)</label>
+                    <select id="pap-anorexia" onchange="calculatePaP()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="0" selected>Ăn uống bình thường / Giảm nhẹ (0 điểm)</option>
+                        <option value="1.5">Chán ăn rõ rệt / Không muốn ăn (+1.5 điểm)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">3. Chỉ số thể trạng Karnofsky (KPS)</label>
+                    <select id="pap-kps" onchange="calculatePaP()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="0" selected>KPS 50 - 100% (Tự đi lại hoặc di chuyển nhẹ) (0 điểm)</option>
+                        <option value="1.5">KPS 30 - 40% (Hầu như nằm giường / Cần trợ giúp nhiều) (+1.5 điểm)</option>
+                        <option value="2.5">KPS 10 - 20% (Nằm giường hoàn toàn / Bán mê) (+2.5 điểm)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">4. Ước tính thời gian sống lâm sàng của Bác sĩ (Clinical Prediction of Survival)</label>
+                    <select id="pap-cps" onchange="calculatePaP()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="0" selected>Dự đoán > 12 tuần (0 điểm)</option>
+                        <option value="2.0">Dự đoán 9 - 12 tuần (+2.0 điểm)</option>
+                        <option value="2.5">Dự đoán 5 - 8 tuần (+2.5 điểm)</option>
+                        <option value="4.5">Dự đoán 3 - 4 tuần (+4.5 điểm)</option>
+                        <option value="6.0">Dự đoán 1 - 2 tuần (+6.0 điểm)</option>
+                        <option value="8.5">Dự đoán < 1 tuần (+8.5 điểm)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">5. Số lượng Bạch cầu toàn phần (Total WBC count / mcL)</label>
+                    <select id="pap-wbc" onchange="calculatePaP()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="0" selected>Bình thường (< 8,500 / mcL) (0 điểm)</option>
+                        <option value="0.5">Tăng nhẹ (8,500 - 11,000 / mcL) (+0.5 điểm)</option>
+                        <option value="1.5">Tăng cao (> 11,000 / mcL) (+1.5 điểm)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">6. Tỷ lệ Bạch cầu Lympho (%)</label>
+                    <select id="pap-lymph" onchange="calculatePaP()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="0" selected>Bình thường (>= 20%) (0 điểm)</option>
+                        <option value="1.0">Giảm nhẹ (12.0% - 19.9%) (+1.0 điểm)</option>
+                        <option value="2.5">Giảm nặng (< 12.0%) (+2.5 điểm)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- PPS & Result Summary Card -->
+            <div class="space-y-6">
+
+                <!-- Result Card -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
+                        <i class="fa-solid fa-chart-pie text-teal-600"></i>
+                        Dự Báo Xác Suất Sống Còn 30 Ngày (30-Day Survival)
+                    </h2>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div>
+                            <div class="text-xs text-slate-500 font-semibold">Tổng điểm PaP Score:</div>
+                            <div id="pap-total-score" class="text-3xl font-black text-slate-800">0.0</div>
+                        </div>
+                        <div id="pap-group-badge" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            Nhóm A (Nguy cơ thấp)
+                        </div>
+                    </div>
+
+                    <div class="bg-teal-50 border border-teal-200 p-4 rounded-xl space-y-2">
+                        <div class="text-xs font-bold text-teal-900">Xác suất sinh tồn trong 30 ngày:</div>
+                        <div id="survival-prob" class="text-2xl font-black text-teal-900">> 70%</div>
+                        <p id="survival-desc" class="text-xs text-teal-800 font-medium">Thời gian sống thêm trung vị ước tính: 70 - 90 ngày.</p>
+                    </div>
+                </div>
+
+                <!-- PPS Tool Card -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b pb-2">
+                        <i class="fa-solid fa-child text-indigo-600"></i>
+                        Thang Điểm Thể Trạng Giảm Nhẹ PPS (Palliative Performance Scale)
+                    </h2>
+                    <p class="text-xs text-slate-500">Đánh giá nhanh mức độ phụ thuộc và chức năng vận động:</p>
+
+                    <select id="pps-select" onchange="updatePPS()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="100">PPS 100%: Đi lại bình thường, Không có dấu hiệu bệnh, Tự chăm sóc hoàn toàn, Ăn uống bình thường, Tri giác tỉnh táo.</option>
+                        <option value="90">PPS 90%: Đi lại bình thường, Có dấu hiệu bệnh nhẹ, Tự chăm sóc hoàn toàn, Ăn uống bình thường, Tri giác tỉnh táo.</option>
+                        <option value="80">PPS 80%: Đi lại được nhưng mệt khi gắng sức, Tự chăm sóc hoàn toàn, Tri giác tỉnh táo.</option>
+                        <option value="70">PPS 70%: Giảm khả năng đi lại / Mệt mỏi, Cần hỗ trợ nhẹ tự chăm sóc, Tỉnh táo.</option>
+                        <option value="60">PPS 60%: Không thể đi lại nhiều / Ngồi ghế nhiều, Cần hỗ trợ thi thoảng, Tỉnh táo hoặc lơ mơ nhẹ.</option>
+                        <option value="50" selected>PPS 50%: Nằm giường/ngồi ghế hầu như cả ngày, Cần trợ giúp nhiều tự chăm sóc, Ăn uống giảm nhẹ.</option>
+                        <option value="40">PPS 40%: Nằm giường hầu như hoàn toàn, Phụ thuộc hoàn toàn tự chăm sóc, Ăn uống giảm nhiều.</option>
+                        <option value="30">PPS 30%: Nằm giường hoàn toàn, Phụ thuộc hoàn toàn, Ăn uống rất ít, Thường xuyên ngủ lơ mơ.</option>
+                        <option value="20">PPS 20%: Nằm giường hoàn toàn, Không thể tự chăm sóc, Chỉ nuốt được hụm nước nhỏ, Lơ mơ / Bán mê.</option>
+                        <option value="10">PPS 10%: Nằm giường hoàn toàn, Phụ thuộc hoàn toàn, Không thể ăn uống, Hôn mê.</option>
+                    </select>
+
+                    <div id="pps-advice" class="bg-indigo-50 border border-indigo-200 p-3 rounded-xl text-xs font-medium text-indigo-900 leading-relaxed">
+                        PPS 50%: Bệnh nhân mất khả năng lao động, phụ thuộc trợ giúp sinh hoạt. Tiên lượng thời gian còn lại tính bằng tuần tới vài tháng.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Clinical Guidelines & ACP -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b pb-2">
+                <i class="fa-solid fa-heart-pulse text-rose-600"></i>
+                Khuyến Cáo Định Hướng Điều Trị & Lập Kế Hoạch Chăm Sóc Trước (Advance Care Planning)
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900">
+                    <div class="font-bold mb-1"><i class="fa-solid fa-circle-check mr-1"></i> Nhóm A (PaP 0.0 - 5.5)</div>
+                    <p>Tiếp tục duy trì các điều trị nâng đỡ thể trạng, kiểm soát triệu chứng tích cực. Có thể cân nhắc các đợt hóa trị giảm nhẹ nếu thể trạng cho phép.</p>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900">
+                    <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Nhóm B (PaP 5.6 - 11.0)</div>
+                    <p>Cân nhắc ngừng các can thiệp xâm lấn không cần thiết. Thảo luận với gia đình về nguyện vọng cuối đời và kế hoạch chăm sóc tại nhà (Home Hospice).</p>
+                </div>
+                <div class="bg-rose-50 border border-rose-200 p-3 rounded-xl text-rose-900">
+                    <div class="font-bold mb-1"><i class="fa-solid fa-ban mr-1"></i> Nhóm C (PaP 11.1 - 17.5)</div>
+                    <p>Tập trung tối đa vào chăm sóc êm dịu: Giảm đau bằng Morphine, chống nghẹt thở, chống co giật và hỗ trợ tinh thần cho người thân.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function calculatePaP() {
+            const dyspnea = parseFloat(document.getElementById('pap-dyspnea').value) || 0;
+            const anorexia = parseFloat(document.getElementById('pap-anorexia').value) || 0;
+            const kps = parseFloat(document.getElementById('pap-kps').value) || 0;
+            const cps = parseFloat(document.getElementById('pap-cps').value) || 0;
+            const wbc = parseFloat(document.getElementById('pap-wbc').value) || 0;
+            const lymph = parseFloat(document.getElementById('pap-lymph').value) || 0;
+
+            const totalScore = dyspnea + anorexia + kps + cps + wbc + lymph;
+            document.getElementById('pap-total-score').textContent = totalScore.toFixed(1);
+
+            const badge = document.getElementById('pap-group-badge');
+            const prob = document.getElementById('survival-prob');
+            const desc = document.getElementById('survival-desc');
+
+            if (totalScore <= 5.5) {
+                badge.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-100 text-emerald-800 border border-emerald-300';
+                badge.textContent = 'Nhóm A (Tiên lượng khả quan)';
+                prob.textContent = '> 70%';
+                prob.className = 'text-2xl font-black text-emerald-700';
+                desc.textContent = 'Xác suất sống thêm 30 ngày cao (> 70%). Thời gian sống thêm trung vị ước tính: 70 – 90 ngày.';
+            } else if (totalScore <= 11.0) {
+                badge.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-amber-100 text-amber-800 border border-amber-300';
+                badge.textContent = 'Nhóm B (Tiên lượng trung bình)';
+                prob.textContent = '30% - 70%';
+                prob.className = 'text-2xl font-black text-amber-700';
+                desc.textContent = 'Xác suất sống thêm 30 ngày trung bình (30–70%). Thời gian sống thêm trung vị ước tính: 30 – 45 ngày.';
+            } else {
+                badge.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-100 text-rose-800 border border-rose-300';
+                badge.textContent = 'Nhóm C (Tiên lượng nặng / Cuối đời)';
+                prob.textContent = '< 30%';
+                prob.className = 'text-2xl font-black text-rose-700';
+                desc.textContent = 'Xác suất sống thêm 30 ngày rất thấp (< 30%). Thời gian sống thêm trung vị ước tính: 7 – 14 ngày.';
+            }
+        }
+
+        function updatePPS() {
+            const val = parseInt(document.getElementById('pps-select').value);
+            const adviceEl = document.getElementById('pps-advice');
+
+            if (val >= 80) {
+                adviceEl.textContent = `PPS ${val}%: Thể trạng bệnh nhân khá tốt, còn khả năng tự chăm sóc sinh hoạt. Phù hợp tiếp tục các phác đồ điều trị đặc hiệu.`;
+            } else if (val >= 50) {
+                adviceEl.textContent = `PPS ${val}%: Mức độ phụ thuộc trung bình, mệt mỏi nhiều. Cần chú trọng nâng đỡ dinh dưỡng và kiểm soát triệu chứng đau, chán ăn.`;
+            } else if (val >= 30) {
+                adviceEl.textContent = `PPS ${val}%: Thể trạng suy kiệt nặng, nằm giường hầu như cả ngày. Cân nhắc tư vấn chăm sóc giảm nhẹ chuyên sâu tại nhà hoặc khoa Hospice.`;
+            } else {
+                adviceEl.textContent = `PPS ${val}%: Giai đoạn cận tử (End of Life). Tập trung tối đa vào sự êm dịu, kiểm soát đau và hỗ trợ tâm lý gia đình.`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            calculatePaP();
+            updatePPS();
+        });
+    </script>
+</body>
+</html>

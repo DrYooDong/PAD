@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Máy Tính Chuyển Đổi Liều Opioid & Liều Cứu Hộ | OncoPortal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="text-slate-800 p-4 md:p-8 min-h-screen">
+    <div class="max-w-4xl mx-auto space-y-6">
+
+        <!-- Header Bar -->
+        <header class="bg-slate-800 text-white p-5 rounded-2xl shadow-md border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-500 text-slate-900 p-3 rounded-xl shadow-inner text-xl">
+                    <i class="fa-solid fa-capsules"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white">Chuyển Đổi Liều Opioid & Tính Liều Cứu Hộ</h1>
+                    <p class="text-xs text-slate-300 font-medium mt-0.5">NCCN Adult Cancer Pain Guidelines & Tỷ lệ Equianalgesic Tương đương</p>
+                </div>
+            </div>
+            <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-slate-600 transition">
+                <i class="fa-solid fa-print"></i> In kết quả
+            </button>
+        </header>
+
+        <!-- Main Form Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Source Opioid Input Card -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
+                    <i class="fa-solid fa-prescription-bottle-medical text-amber-600"></i>
+                    Liều Opioid Hiện Tại (Source Opioid)
+                </h2>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Loại Opioid & Đường dùng</label>
+                    <select id="source-opioid" onchange="calculateOpioid()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="morphine_po" selected>Morphine (Đường uống - PO)</option>
+                        <option value="morphine_iv">Morphine (Tiêm tĩnh mạch / Tiêm dưới da - IV/SC)</option>
+                        <option value="oxycodone_po">Oxycodone (Đường uống - PO)</option>
+                        <option value="fentanyl_td">Fentanyl (Dán qua da - Transdermal mcg/h)</option>
+                        <option value="fentanyl_iv">Fentanyl (Tiêm tĩnh mạch - IV mcg/ngày)</option>
+                        <option value="hydromorphone_po">Hydromorphone (Đường uống - PO)</option>
+                        <option value="hydromorphone_iv">Hydromorphone (Tiêm tĩnh mạch - IV)</option>
+                        <option value="codeine_po">Codeine (Đường uống - PO)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tổng liều đang dùng mỗi ngày (TDD)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="source-dose" value="60" min="0" step="any" oninput="calculateOpioid()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <span id="source-unit" class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-2.5 rounded-xl border shrink-0">mg/ngày</span>
+                    </div>
+                </div>
+
+                <!-- Adjustment Factor -->
+                <div class="bg-amber-50/70 border border-amber-200 p-3.5 rounded-xl space-y-2">
+                    <label class="block text-xs font-bold text-amber-900">Giảm liều do Dung nạp chéo không hoàn toàn (Cross-Tolerance Reduction)</label>
+                    <p class="text-[11px] text-amber-800">Khi chuyển sang loại Opioid mới, NCCN khuyến cáo giảm liều 25-50% để tránh ngộ độc bất ngờ.</p>
+                    <select id="reduction-percent" onchange="calculateOpioid()" class="w-full bg-white border border-amber-300 rounded-lg p-2 text-xs font-bold text-amber-900">
+                        <option value="0">Không giảm liều (0% reduction)</option>
+                        <option value="25" selected>Giảm 25% liều (An toàn nhẹ)</option>
+                        <option value="30">Giảm 30% liều (NCCN khuyến cáo chuẩn)</option>
+                        <option value="50">Giảm 50% liều (Bệnh nhân già yếu / Suy gan thận)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Target Opioid Selection Card -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
+                    <i class="fa-solid fa-arrows-rotate text-teal-600"></i>
+                    Opioid Mục Tiêu Muốn Chuyển Đổi (Target Opioid)
+                </h2>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Loại Opioid Muốn Đổi Sang</label>
+                    <select id="target-opioid" onchange="calculateOpioid()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        <option value="fentanyl_td" selected>Fentanyl (Miếng dán da - Transdermal Patch mcg/h)</option>
+                        <option value="morphine_po">Morphine (Đường uống - PO mg/ngày)</option>
+                        <option value="morphine_iv">Morphine (Tiêm IV/SC mg/ngày)</option>
+                        <option value="oxycodone_po">Oxycodone (Đường uống - PO mg/ngày)</option>
+                        <option value="hydromorphone_po">Hydromorphone (Đường uống - PO mg/ngày)</option>
+                        <option value="hydromorphone_iv">Hydromorphone (Tiêm IV mg/ngày)</option>
+                    </select>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                    <div class="text-xs text-slate-500 font-medium">Liều Morphine Tương Đương Uống (OME)</div>
+                    <div id="ome-display" class="text-2xl font-black text-slate-800">60 mg/ngày</div>
+                    <p class="text-[11px] text-slate-400">Oral Morphine Equivalent (OME) dùng làm chuẩn quy đổi.</p>
+                </div>
+
+                <div class="bg-teal-50 border border-teal-200 p-4 rounded-xl space-y-1">
+                    <div class="text-xs font-bold text-teal-800">Liều Opioid Mục Tiêu Đã Tính Toán (Mỗi 24 giờ):</div>
+                    <div id="target-result-dose" class="text-2xl font-black text-teal-900">25 mcg/giờ (Miếng dán)</div>
+                    <div id="target-note" class="text-[11px] font-semibold text-teal-700">Dán 1 miếng Fentanyl 25 mcg/h duy trì trong 72 giờ.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rescue Dose & Clinical Guidelines Card -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
+                <i class="fa-solid fa-kit-medical text-rose-600"></i>
+                Khuyến Cáo Liều Cứu Hộ Đau Đột Phá (Breakthrough Pain / Rescue Dose)
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl">
+                    <div class="text-xs font-bold text-rose-800 mb-1">Morphine Uống Nhanh (PO)</div>
+                    <div id="rescue-morphine-po" class="text-xl font-black text-rose-900">10 mg</div>
+                    <div class="text-[11px] text-rose-700 mt-1">Uống mỗi 3–4 giờ khi xuất hiện cơn đau đột phá (10–15% liều OME).</div>
+                </div>
+
+                <div class="bg-sky-50 border border-sky-200 p-4 rounded-xl">
+                    <div class="text-xs font-bold text-sky-800 mb-1">Morphine Tiêm (IV/SC)</div>
+                    <div id="rescue-morphine-iv" class="text-xl font-black text-sky-900">3.3 mg</div>
+                    <div class="text-[11px] text-sky-700 mt-1">Tiêm IV/SC chậm mỗi 2–3 giờ khi đau cấp tính mạnh.</div>
+                </div>
+
+                <div class="bg-purple-50 border border-purple-200 p-4 rounded-xl">
+                    <div class="text-xs font-bold text-purple-800 mb-1">Oxycodone Uống Nhanh</div>
+                    <div id="rescue-oxycodone-po" class="text-xl font-black text-purple-900">6.7 mg</div>
+                    <div class="text-[11px] text-purple-700 mt-1">Dạng phóng thích nhanh (IR) mỗi 4 giờ khi cần.</div>
+                </div>
+            </div>
+
+            <!-- Clinical Protocol Notes -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs text-slate-600 leading-relaxed">
+                <div class="font-bold text-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                    Lưu ý lâm sàng NCCN 2023 khi chuyển sang Fentanyl miếng dán:
+                </div>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>Miếng dán Fentanyl bắt đầu có tác dụng sau <strong>12 – 24 giờ</strong>. Trong 12 giờ đầu tiên sau khi dán, cần tiếp tục duy trì liều Opioid cũ hoặc cho liều cứu hộ Morphine uống.</li>
+                    <li>Thay miếng dán mỗi <strong>72 giờ</strong> (3 ngày). Nếu hiệu quả giảm đau suy giảm ở ngày thứ 3, có thể cân nhắc thay mỗi 48 giờ.</li>
+                    <li>Tuyệt đối <strong>không chườm nóng</strong> hoặc chiếu đèn hồng ngoại lên khu vực dán Fentanyl vì nhiệt độ cao làm tăng hấp thu thuốc đột ngột gây ngộ độc.</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Opioid factors to Oral Morphine Equivalent (OME)
+        // OME = Dose * Factor
+        const omeFactors = {
+            'morphine_po': 1.0,
+            'morphine_iv': 3.0,
+            'oxycodone_po': 1.5,
+            'fentanyl_td': 2.4, // 1 mcg/h patch approx = 2.4 mg PO Morphine / day (or 25 mcg/h = 60mg OME)
+            'fentanyl_iv': 0.1, // 100 mcg IV fentanyl approx = 10mg IV Morphine = 30mg PO Morphine -> factor = 0.3 per mcg? Standard: 100mcg IV Fentanyl = 10mg IV Morphine = 30mg OME -> 1mcg = 0.3 mg OME
+            'hydromorphone_po': 4.0,
+            'hydromorphone_iv': 20.0,
+            'codeine_po': 0.15
+        };
+
+        function calculateOpioid() {
+            const sourceType = document.getElementById('source-opioid').value;
+            const sourceDose = parseFloat(document.getElementById('source-dose').value) || 0;
+            const targetType = document.getElementById('target-opioid').value;
+            const reduction = parseFloat(document.getElementById('reduction-percent').value) || 0;
+
+            // Unit update
+            const unitEl = document.getElementById('source-unit');
+            if (sourceType === 'fentanyl_td') {
+                unitEl.textContent = 'mcg/giờ';
+            } else if (sourceType === 'fentanyl_iv') {
+                unitEl.textContent = 'mcg/ngày';
+            } else {
+                unitEl.textContent = 'mg/ngày';
+            }
+
+            // Calculate OME
+            let ome = 0;
+            if (sourceType === 'fentanyl_td') {
+                ome = sourceDose * 2.4; // 25 mcg/h * 2.4 = 60 mg OME
+            } else if (sourceType === 'fentanyl_iv') {
+                ome = sourceDose * 0.3;
+            } else {
+                ome = sourceDose * (omeFactors[sourceType] || 1);
+            }
+
+            document.getElementById('ome-display').textContent = ome.toFixed(1) + ' mg/ngày';
+
+            // Reduced OME for cross-tolerance
+            const reducedOme = ome * (1 - reduction / 100);
+
+            // Calculate Target Dose
+            let targetDoseText = '';
+            let targetNoteText = '';
+
+            if (targetType === 'fentanyl_td') {
+                // Fentanyl Patch mcg/h = Reduced OME / 2.4
+                const patchMcg = reducedOme / 2.4;
+                // Round to nearest standard patch size (12.5, 25, 50, 75, 100)
+                const standardPatches = [12.5, 25, 37.5, 50, 75, 100, 125, 150];
+                let closest = standardPatches.reduce((prev, curr) => Math.abs(curr - patchMcg) < Math.abs(prev - patchMcg) ? curr : prev);
+                
+                targetDoseText = closest + ' mcg/giờ (Miếng dán)';
+                targetNoteText = `Liều lý thuyết là ${patchMcg.toFixed(1)} mcg/h. Khuyến cáo dùng miếng dán chuẩn ${closest} mcg/h (thay mỗi 72 giờ).`;
+            } else if (targetType === 'morphine_po') {
+                const dose = reducedOme / omeFactors['morphine_po'];
+                targetDoseText = dose.toFixed(1) + ' mg/ngày';
+                targetNoteText = `Chia làm ${dose > 30 ? (dose/2).toFixed(0) + ' mg x 2 lần/ngày (dạng viên tác dụng kéo dài - Sustained Release)' : dose.toFixed(1) + ' mg/ngày'}.`;
+            } else if (targetType === 'morphine_iv') {
+                const dose = reducedOme / omeFactors['morphine_iv'];
+                targetDoseText = dose.toFixed(1) + ' mg/ngày';
+                targetNoteText = `Truyền IV liên tục (${(dose/24).toFixed(2)} mg/h) hoặc chia 6 cữ tiêm SC/IV (${(dose/6).toFixed(1)} mg mỗi 4 giờ).`;
+            } else if (targetType === 'oxycodone_po') {
+                const dose = reducedOme / omeFactors['oxycodone_po'];
+                targetDoseText = dose.toFixed(1) + ' mg/ngày';
+                targetNoteText = `OxyContin: ${(dose/2).toFixed(1)} mg x 2 lần/ngày (uống mỗi 12 giờ).`;
+            } else if (targetType === 'hydromorphone_po') {
+                const dose = reducedOme / omeFactors['hydromorphone_po'];
+                targetDoseText = dose.toFixed(1) + ' mg/ngày';
+                targetNoteText = `Chia làm ${(dose/4).toFixed(1)} mg x 4 lần/ngày.`;
+            } else if (targetType === 'hydromorphone_iv') {
+                const dose = reducedOme / omeFactors['hydromorphone_iv'];
+                targetDoseText = dose.toFixed(1) + ' mg/ngày';
+                targetNoteText = `Tiêm tĩnh mạch chậm hoặc bơm PCA chuyên dụng.`;
+            }
+
+            document.getElementById('target-result-dose').textContent = targetDoseText;
+            document.getElementById('target-note').textContent = targetNoteText;
+
+            // Rescue Dose Calculation (10-15% of OME)
+            const rescuePoMorphine = ome * 0.15; // ~ 10-15%
+            const rescueIvMorphine = rescuePoMorphine / 3;
+            const rescuePoOxycodone = rescuePoMorphine / 1.5;
+
+            document.getElementById('rescue-morphine-po').textContent = rescuePoMorphine.toFixed(1) + ' mg';
+            document.getElementById('rescue-morphine-iv').textContent = rescueIvMorphine.toFixed(1) + ' mg';
+            document.getElementById('rescue-oxycodone-po').textContent = rescuePoOxycodone.toFixed(1) + ' mg';
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', calculateOpioid);
+    </script>
+</body>
+</html>

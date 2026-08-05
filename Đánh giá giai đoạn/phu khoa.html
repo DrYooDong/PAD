@@ -1,4 +1,4 @@
-html_content = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -23,18 +23,18 @@ html_content = """<!DOCTYPE html>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
-    <header class="bg-white shadow-sm sticky top-0 z-50">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <div class="bg-teal-600 text-white p-2 rounded-lg">
+                <div class="bg-teal-600 text-white p-2 rounded-xl shadow-sm">
                     <i class="fa-solid fa-staff-snake text-xl"></i>
                 </div>
                 <span class="font-black text-xl text-teal-800 tracking-tight">Onco<span class="text-sky-500">Portal</span></span>
+                <span class="ml-2 text-xs font-semibold bg-teal-100 text-teal-800 px-2.5 py-1 rounded-full border border-teal-200 hidden sm:inline-block">Ung thư Phụ khoa FIGO</span>
             </div>
-            <nav class="hidden md:flex space-x-8">
-                <a href="../index.html" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition"><i class="fa-solid fa-house mr-1"></i> Trang chủ</a>
-                <a href="#" class="text-teal-600 font-bold border-b-2 border-teal-600 px-1 py-2">Công cụ TNM</a>
-            </nav>
+            <a href="../index.html" class="text-slate-500 hover:text-teal-600 font-medium transition flex items-center gap-2 text-sm bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl border border-slate-200">
+                <i class="fa-solid fa-arrow-left"></i> <span>Quay lại Portal</span>
+            </a>
         </div>
     </header>
 
@@ -42,7 +42,6 @@ html_content = """<!DOCTYPE html>
         
         <div class="w-full lg:w-2/3 flex flex-col">
             <div class="mb-4">
-                <a href="../index.html" class="text-teal-600 hover:text-teal-800 text-sm font-medium"><i class="fa-solid fa-arrow-left mr-1"></i> Quay lại</a>
                 <h1 class="text-3xl font-black text-slate-800 mt-2">Phân loại Giai đoạn Ung thư Phụ khoa</h1>
                 <p class="text-slate-500 mt-1">Dựa trên hệ thống phân loại FIGO mới nhất.</p>
             </div>
@@ -85,9 +84,12 @@ html_content = """<!DOCTYPE html>
                     </div>
                 </div>
 
-                <div class="mt-auto pt-4 border-t border-slate-700">
-                    <button onclick="resetSelection()" class="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition text-white">
-                        <i class="fa-solid fa-rotate-right mr-2"></i> Đặt lại lựa chọn
+                <div class="mt-auto pt-4 border-t border-slate-700 flex gap-2">
+                    <button onclick="copyPhuKhoaResult()" class="flex-1 py-2 bg-teal-600 hover:bg-teal-500 rounded-xl text-xs font-bold transition text-white flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-copy"></i> Sao chép
+                    </button>
+                    <button onclick="resetSelection()" class="py-2 px-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-medium transition text-white">
+                        <i class="fa-solid fa-rotate-right"></i>
                     </button>
                 </div>
             </div>
@@ -259,15 +261,26 @@ html_content = """<!DOCTYPE html>
             });
         }
 
+        function copyPhuKhoaResult() {
+            const stage = document.getElementById('result-stage').innerText;
+            const desc = document.getElementById('result-desc').innerText;
+            const tabName = currentType === 'ovarian' ? 'Ung thư Buồng trứng' : (currentType === 'cervical' ? 'Ung thư Cổ tử cung' : 'Ung thư Nội mạc tử cung');
+            
+            if (stage === '--') {
+                alert("Vui lòng chọn tổn thương bên trái trước khi sao chép!");
+                return;
+            }
+
+            const text = `[KẾT QUẢ PHÂN LOẠI UNG THƯ PHỤ KHOA (FIGO)]\n- Nhóm bệnh: ${tabName}\n- Giai đoạn: GIAI ĐOẠN ${stage}\n- Tiêu chuẩn mô tả: ${desc}`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert("✅ Đã sao chép tóm tắt chẩn đoán vào bộ nhớ tạm!");
+            });
+        }
+
         // Khởi tạo ban đầu
         renderList();
 
     </script>
 </body>
 </html>
-"""
-
-with open('tnm_ungthu.html', 'w', encoding='utf-8') as f:
-    f.write(html_content)
-
-print("[file-tag: tnm_ungthu.html]")

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Máy tính Thang điểm Thể trạng & Suy kiệt Ung thư (ECOG, KPS & Cachexia)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #d97706 100%);
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            .card-box { border: 1px solid #e2e8f0; box-shadow: none !important; }
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg transition" title="Về trang chủ">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <div class="flex items-center gap-2">
+                    <div class="bg-amber-600 text-white p-2 rounded-lg font-bold text-lg">
+                        <i class="fa-solid fa-weight-scale"></i>
+                    </div>
+                    <div>
+                        <span class="font-black text-lg text-white tracking-tight">Onco<span class="text-amber-400">Status & Cachexia</span></span>
+                        <span class="text-xs block text-slate-400 font-medium">Quy đổi Thể trạng ECOG/KPS & Chẩn đoán Suy kiệt Ung thư</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="window.print()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i class="fa-solid fa-print"></i> In Báo cáo Dinh dưỡng
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="gradient-header text-white py-8 px-4 no-print shadow-inner">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold px-3 py-1 rounded-full mb-2">
+                    <i class="fa-solid fa-apple-whole"></i> Tiêu chuẩn Đồng thuận Quốc tế (Fearon et al. Lancet Oncol)
+                </div>
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Thang điểm Thể trạng ECOG / KPS & Chẩn đoán Suy kiệt Ung thư</h1>
+                <p class="text-slate-300 text-sm mt-1 max-w-3xl">
+                    Quy đổi tương quan thang điểm thể trạng lâm sàng, chẩn đoán giai đoạn Hội chứng Suy kiệt Ung thư (Cancer Cachexia) và tính toán nhu cầu Năng lượng/Protein khuyến cáo cho bệnh nhân.
+                </p>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-3.5 rounded-xl flex items-center gap-4 text-xs">
+                <div>
+                    <div class="text-slate-300 font-medium">Chỉ số BMI</div>
+                    <div id="quick-bmi" class="text-xl font-black text-amber-300">0.0 kg/m²</div>
+                </div>
+                <div class="h-8 w-px bg-white/20"></div>
+                <div>
+                    <div class="text-slate-300 font-medium">% Giảm cân (6 tháng)</div>
+                    <div id="quick-wl" class="text-xl font-black text-rose-300">0.0%</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col gap-6">
+
+        <!-- Grid 2 Cột: Quy đổi Thể trạng ECOG/KPS + Chẩn đoán Suy kiệt -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Cột Trái (5 cols): Quy đổi Thang điểm Thể trạng ECOG vs KPS -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-person-walking text-amber-600"></i> 1. Quy đổi Thang điểm Thể trạng (Performance Status)
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Chọn Thang điểm ECOG PS (0 - 4):</label>
+                            <select id="ecog-select" onchange="updateFromECOG()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-black text-amber-900 focus:outline-none focus:border-amber-500">
+                                <option value="0">ECOG 0: Bình thường, sinh hoạt không hạn chế</option>
+                                <option value="1" selected>ECOG 1: Hạn chế sức nặng, làm việc nhẹ được</option>
+                                <option value="2">ECOG 2: Tự chăm sóc được, nằm giường < 50% thời gian</option>
+                                <option value="3">ECOG 3: Tự chăm sóc hạn chế, nằm giường > 50% thời gian</option>
+                                <option value="4">ECOG 4: Nằm giường 100%, tàn phế hoàn toàn</option>
+                            </select>
+                        </div>
+
+                        <!-- Card Tương đương KPS & Khả năng dung nạp điều trị -->
+                        <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 space-y-2 text-xs">
+                            <div class="flex items-center justify-between border-b border-amber-200/60 pb-2">
+                                <span class="font-bold text-amber-900">Karnofsky Scale (KPS):</span>
+                                <span id="kps-equivalent" class="font-black text-amber-800 text-sm">80% - 90%</span>
+                            </div>
+                            <div class="text-slate-700 leading-relaxed text-[11px]" id="ecog-desc">
+                                Bệnh nhân bị hạn chế khi hoạt động thể lực nặng nhưng vẫn đi lại được và có khả năng làm các công việc nhẹ nhàng (VD: việc nhà nhẹ, công việc bàn giấy).
+                            </div>
+                        </div>
+
+                        <div id="chemo-tolerance-alert" class="rounded-xl p-3 text-xs font-medium border">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cột Phải (7 cols): Chẩn đoán & Phân loại Suy kiệt Ung thư (Cachexia) -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-calculator text-amber-600"></i> 2. Chẩn đoán & Phân loại Suy kiệt Ung thư (Fearon et al. 2011)
+                    </h2>
+
+                    <!-- Nhập chiều cao cân nặng -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Chiều cao (cm)</label>
+                            <input type="number" id="height" value="165" min="100" max="230" oninput="calculateCachexia()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Cân nặng hiện tại (kg)</label>
+                            <input type="number" id="curr-weight" value="52" min="20" max="200" step="0.5" oninput="calculateCachexia()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Cân nặng 6 tháng trước (kg)</label>
+                            <input type="number" id="prev-weight" value="58" min="20" max="200" step="0.5" oninput="calculateCachexia()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-amber-500">
+                        </div>
+                    </div>
+
+                    <!-- Tùy chọn Sarcopenia / Mất cơ -->
+                    <div class="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs">
+                        <label class="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                            <input type="checkbox" id="sarcopenia-check" onchange="calculateCachexia()" class="w-4 h-4 text-amber-600 rounded">
+                            <span>Có tình trạng Teo cơ / Giảm khối lượng cơ bắp (Sarcopenia)</span>
+                        </label>
+                        <p class="text-[11px] text-slate-500 mt-0.5 ml-6">Đánh giá qua siêu âm cơ đùi, đo lực bóp tay hoặc DEXA scan.</p>
+                    </div>
+
+                    <!-- Kết quả Chẩn đoán Cachexia Display -->
+                    <div id="cachexia-result-box" class="rounded-2xl p-4 border transition duration-200 mb-4">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <!-- Khuyên dùng Dinh dưỡng & Thuốc -->
+                    <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 text-xs space-y-2">
+                        <h3 class="font-bold text-amber-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                            <i class="fa-solid fa-utensils text-amber-600"></i> Mục tiêu Dinh dưỡng & Can thiệp Y khoa Khuyên dùng:
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            <div class="bg-white border border-amber-200 rounded-lg p-2.5">
+                                <span class="font-bold text-slate-800 block text-[11px] mb-1">1. Mục tiêu Calo & Protein hàng ngày:</span>
+                                <div class="text-[11px] space-y-0.5 text-slate-700">
+                                    <div>• Năng lượng: <strong id="target-calories" class="text-amber-800">1300 - 1560 kcal/ngày</strong> (25-30 kcal/kg)</div>
+                                    <div>• Protein: <strong id="target-protein" class="text-amber-800">62 - 78 g/ngày</strong> (1.2-1.5 g/kg)</div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white border border-amber-200 rounded-lg p-2.5">
+                                <span class="font-bold text-slate-800 block text-[11px] mb-1">2. Thuốc Kích thích Thèm ăn & Kháng viêm:</span>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">
+                                    • <strong>Megestrol Acetate</strong>: 400 - 800 mg/ngày (Uống).<br>
+                                    • <strong>Dexamethasone</strong>: 4 mg/ngày (Dùng ngắn hạn 2-3 tuần).<br>
+                                    • <strong>Bổ sung Omega-3 (EPA)</strong>: 2 g/ngày từ ONS.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-10 no-print text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-medium text-slate-300">Công cụ Quy đổi Thể trạng & Chẩn đoán Suy kiệt Ung thư</p>
+            <p class="text-slate-500 mt-1">Dành cho Bác sĩ Ung bướu & Chuyên gia Dinh dưỡng Lâm sàng. Dựa trên Tiêu chuẩn Đồng thuận Fearon et al. Lancet Oncol 2011.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            updateFromECOG();
+            calculateCachexia();
+        });
+
+        function updateFromECOG() {
+            const val = document.getElementById('ecog-select').value;
+            const kpsText = document.getElementById('kps-equivalent');
+            const desc = document.getElementById('ecog-desc');
+            const alertBox = document.getElementById('chemo-tolerance-alert');
+
+            if (val === '0') {
+                kpsText.textContent = '90% - 100%';
+                desc.textContent = 'Bệnh nhân hoàn toàn bình thường, có khả năng thực hiện tất cả các hoạt động sinh hoạt trước khi mắc bệnh mà không bị hạn chế.';
+                alertBox.className = 'bg-emerald-50 border-emerald-300 text-emerald-900 rounded-xl p-3 text-xs font-medium';
+                alertBox.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> <strong>Thể trạng Tốt (ECOG 0):</strong> Dung nạp tốt với tất cả các phác đồ hóa trị liều chuẩn & hóa trị phối hợp.`;
+            } else if (val === '1') {
+                kpsText.textContent = '70% - 80%';
+                desc.textContent = 'Bệnh nhân bị hạn chế khi hoạt động thể lực nặng nhưng vẫn đi lại được và có khả năng làm các công việc nhẹ nhàng (việc nhà nhẹ, việc văn phòng).';
+                alertBox.className = 'bg-emerald-50 border-emerald-300 text-emerald-900 rounded-xl p-3 text-xs font-medium';
+                alertBox.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> <strong>Thể trạng Khá (ECOG 1):</strong> Dung nạp tốt với phác đồ hóa trị chuẩn.`;
+            } else if (val === '2') {
+                kpsText.textContent = '50% - 60%';
+                desc.textContent = 'Bệnh nhân đi lại được và tự chăm sóc bản thân hầu hết nhu cầu nhưng không làm được việc gì. Nằm giường hoặc ngồi ghế dưới 50% thời gian thức.';
+                alertBox.className = 'bg-amber-50 border-amber-300 text-amber-900 rounded-xl p-3 text-xs font-medium';
+                alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600"></i> <strong>Thể trạng Trung bình (ECOG 2):</strong> Đòi hỏi cân nhắc kỹ trước khi hóa trị liều cao. Cân nhắc giảm liều hoặc dùng hóa trị đơn chất / điều trị đích.`;
+            } else if (val === '3') {
+                kpsText.textContent = '30% - 40%';
+                desc.textContent = 'Bệnh nhân chỉ tự chăm sóc bản thân ở mức độ hạn chế. Phải nằm giường hoặc ngồi ghế trên 50% thời gian thức.';
+                alertBox.className = 'bg-red-50 border-red-300 text-red-900 rounded-xl p-3 text-xs font-medium';
+                alertBox.innerHTML = `<i class="fa-solid fa-hand-halt text-red-600"></i> <strong>Thể trạng Kém (ECOG 3):</strong> Thường CHỐNG CHỈ ĐỊNH hóa trị độc tế bào chuẩn. Ưu tiên Chăm sóc Giảm nhẹ (Best Supportive Care) hoặc Thuốc đích nhắm đến biomarker cụ thể.`;
+            } else {
+                kpsText.textContent = '10% - 20%';
+                desc.textContent = 'Bệnh nhân tàn phế hoàn toàn, không thể tự chăm sóc bản thân. Phải nằm giường 100% thời gian.';
+                alertBox.className = 'bg-red-50 border-red-300 text-red-900 rounded-xl p-3 text-xs font-medium';
+                alertBox.innerHTML = `<i class="fa-solid fa-ban text-red-600"></i> <strong>Thể trạng Nặng (ECOG 4):</strong> Chống chỉ định hóa trị độc tế bào. Tập trung hoàn toàn vào Chăm sóc Giảm nhẹ & Giảm đau.`;
+            }
+
+            calculateCachexia();
+        }
+
+        function calculateCachexia() {
+            const h = parseFloat(document.getElementById('height').value) || 165;
+            const wCurr = parseFloat(document.getElementById('curr-weight').value) || 50;
+            const wPrev = parseFloat(document.getElementById('prev-weight').value) || 55;
+            const sarcopenia = document.getElementById('sarcopenia-check').checked;
+            const ecogVal = parseInt(document.getElementById('ecog-select').value);
+
+            // BMI
+            const bmi = wCurr / Math.pow(h / 100, 2);
+            // % Weight Loss
+            const wlPct = wPrev > 0 ? ((wPrev - wCurr) / wPrev) * 100 : 0;
+
+            document.getElementById('quick-bmi').textContent = `${bmi.toFixed(1)} kg/m²`;
+            document.getElementById('quick-wl').textContent = `${wlPct >= 0 ? '+' : ''}${wlPct.toFixed(1)}%`;
+
+            // Caloric & Protein Needs
+            const calMin = Math.round(wCurr * 25);
+            const calMax = Math.round(wCurr * 30);
+            const proMin = Math.round(wCurr * 1.2);
+            const proMax = Math.round(wCurr * 1.5);
+
+            document.getElementById('target-calories').textContent = `${calMin} - ${calMax} kcal/ngày`;
+            document.getElementById('target-protein').textContent = `${proMin} - ${proMax} g/ngày`;
+
+            const box = document.getElementById('cachexia-result-box');
+
+            // Fearon Criteria
+            const critA = wlPct > 5.0; // > 5% loss over 6 months
+            const critB = wlPct > 2.0 && bmi < 20.0; // > 2% loss with low BMI
+            const critC = wlPct > 2.0 && sarcopenia; // > 2% loss with sarcopenia
+
+            const isCachexia = critA || critB || critC;
+            const isRefractory = isCachexia && (ecogVal >= 3);
+
+            if (isRefractory) {
+                box.className = 'bg-red-50 border border-red-300 text-red-950 rounded-2xl p-4 shadow-sm';
+                box.innerHTML = `
+                    <div class="flex items-center gap-2 font-black text-sm text-red-900 mb-1">
+                        <i class="fa-solid fa-skull-crossbones text-red-600 text-lg"></i> SUY KIỆT Ung THƯ GIAI ĐOẠN KHÁNG TRỊ (REFRACTORY CACHEXIA)
+                    </div>
+                    <p class="text-xs text-red-800 leading-relaxed">
+                        Bệnh nhân sút cân nặng (Mất ${wlPct.toFixed(1)}% trọng lượng) kết hợp thể trạng suy kiệt nặng (ECOG ${ecogVal}). Tình trạng dị hóa không còn đáp ứng với dinh dưỡng thông thường. Khuyên chuyển sang chăm sóc giảm nhẹ triệu chứng.
+                    </p>
+                `;
+            } else if (isCachexia) {
+                box.className = 'bg-amber-50 border border-amber-300 text-amber-950 rounded-2xl p-4 shadow-sm';
+                box.innerHTML = `
+                    <div class="flex items-center gap-2 font-black text-sm text-amber-900 mb-1">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg"></i> CHẨN ĐOÁN XÁC ĐỊNH: HỘI CHỨNG SUY KIỆT UNG THƯ (CANCER CACHEXIA)
+                    </div>
+                    <p class="text-xs text-amber-800 leading-relaxed">
+                        Bệnh nhân đạt tiêu chuẩn chẩn đoán Suy kiệt Ung thư (Sút ${wlPct.toFixed(1)}% cân nặng trong 6 tháng, BMI ${bmi.toFixed(1)} kg/m²). Cần can thiệp đa trị liệu ngay: Dinh dưỡng qua đường uống (ONS) + Thuốc kích thích thèm ăn Megestrol + Kháng viêm.
+                    </p>
+                `;
+            } else if (wlPct > 0) {
+                box.className = 'bg-sky-50 border border-sky-300 text-sky-950 rounded-2xl p-4 shadow-sm';
+                box.innerHTML = `
+                    <div class="flex items-center gap-2 font-bold text-sm text-sky-900 mb-1">
+                        <i class="fa-solid fa-triangle-exclamation text-sky-600 text-lg"></i> GIAI ĐOẠN TIỀN SUY KIỆT (PRE-CACHEXIA)
+                    </div>
+                    <p class="text-xs text-sky-800 leading-relaxed">
+                        Bệnh nhân có giảm nhẹ cân nặng (${wlPct.toFixed(1)}%). Chưa đủ tiêu chuẩn suy kiệt rõ nhưng cần tư vấn dinh dưỡng sớm để ngăn ngừa diễn tiến thành Cachexia thực sự.
+                    </p>
+                `;
+            } else {
+                box.className = 'bg-emerald-50 border border-emerald-300 text-emerald-950 rounded-2xl p-4 shadow-sm';
+                box.innerHTML = `
+                    <div class="flex items-center gap-2 font-bold text-sm text-emerald-900 mb-1">
+                        <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i> TÌNH TRẠNG DINH DƯỠNG BÌNH THƯỜNG
+                    </div>
+                    <p class="text-xs text-emerald-800 leading-relaxed">
+                        Không ghi nhận tình trạng sút cân bất thường hay hội chứng suy kiệt ung thư. Cân nặng ổn định (BMI ${bmi.toFixed(1)} kg/m²).
+                    </p>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>

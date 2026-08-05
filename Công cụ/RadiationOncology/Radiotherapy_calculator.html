@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công cụ Quy đổi Liều Xạ trị & Theo dõi Độc tính (LQ Model & QUANTEC)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #4338ca 100%);
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            .card-box { border: 1px solid #e2e8f0; box-shadow: none !important; }
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg transition" title="Về trang chủ">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <div class="flex items-center gap-2">
+                    <div class="bg-indigo-600 text-white p-2 rounded-lg font-bold text-lg">
+                        <i class="fa-solid fa-bolt flex items-center"></i>
+                    </div>
+                    <div>
+                        <span class="font-black text-lg text-white tracking-tight">RadOnco <span class="text-indigo-400">BED & EQD2</span></span>
+                        <span class="text-xs block text-slate-400 font-medium">Quy đổi Liều Xạ trị & Độc tính Cơ quan QUANTEC</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i class="fa-solid fa-print"></i> In Báo cáo Lâm sàng
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="gradient-header text-white py-8 px-4 no-print shadow-inner">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full mb-2">
+                    <i class="fa-solid fa-atom"></i> Mô hình Sinh học Xạ trị Linear-Quadratic (LQ Model)
+                </div>
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Quy đổi Liều Xạ trị EQD2 / BED & Theo dõi Độc tính QUANTEC</h1>
+                <p class="text-slate-300 text-sm mt-1 max-w-3xl">
+                    Tính toán Liều Sinh học Tương đương (BED), Liều Quy đổi Phân liều 2 Gy (EQD2), chuyển đổi chế độ Xạ trị Biến liều (Hypofractionation/SBRT), tính bù liều do gián đoạn và tra cứu giới hạn an toàn QUANTEC.
+                </p>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-3.5 rounded-xl flex items-center gap-4 text-xs">
+                <div>
+                    <div class="text-slate-300 font-medium">BED (Liều sinh học)</div>
+                    <div id="quick-bed" class="text-xl font-black text-indigo-300">0.0 Gy</div>
+                </div>
+                <div class="h-8 w-px bg-white/20"></div>
+                <div>
+                    <div class="text-slate-300 font-medium">EQD2 (Phân liều 2 Gy)</div>
+                    <div id="quick-eqd2" class="text-xl font-black text-emerald-300">0.0 Gy</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col gap-6">
+
+        <!-- Grid 2 Cột: Mô phỏng LQ & Quy đổi Phân liều -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Cột Trái (5 cols): Nhập thông số Phác đồ Gốc & Tỉ số alpha/beta -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+
+                <!-- Thẻ 1: Thông số Phác đồ Xạ trị Ban đầu -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-indigo-600"></i> 1. Phác đồ Xạ trị Ban đầu (Original)
+                    </h2>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tổng liều Vật lý D₁ (Gy)</label>
+                            <input type="number" id="orig-total-dose" value="60" step="0.5" min="1" oninput="calculateLQ()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Số phân liều n₁</label>
+                                <input type="number" id="orig-fx-count" value="30" min="1" oninput="updateOrigFxDose()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Liều / phân liều d₁ (Gy)</label>
+                                <input type="number" id="orig-fx-dose" value="2.0" step="0.1" min="0.1" oninput="updateOrigTotalDose()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tỉ số α/β (Gy) của Mô / Khối u</label>
+                            <select id="alpha-beta-preset" onchange="applyAlphaBetaPreset()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none mb-1.5">
+                                <option value="10">α/β = 10 Gy (Khối u thông thường / Tác dụng sớm)</option>
+                                <option value="3">α/β = 3 Gy (Mô lành muộn / Ung thư Tuyến tiền liệt)</option>
+                                <option value="2">α/β = 2 Gy (Tủy sống / Hệ thần kinh trung ương)</option>
+                                <option value="1.5">α/β = 1.5 Gy (Tác dụng muộn rất chậm)</option>
+                                <option value="custom">Tùy chỉnh giá trị α/β</option>
+                            </select>
+                            <input type="number" id="alpha-beta-val" value="10" step="0.1" min="0.1" oninput="calculateLQ()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-xs font-bold focus:outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Kết quả LQ Ban đầu -->
+                    <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-3 text-center">
+                        <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3">
+                            <span class="block text-[10px] text-indigo-700 font-bold uppercase tracking-wider">BED Ban đầu</span>
+                            <span id="res-orig-bed" class="text-base font-black text-indigo-900">72.0 Gy</span>
+                        </div>
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                            <span class="block text-[10px] text-emerald-700 font-bold uppercase tracking-wider">EQD2 Ban đầu</span>
+                            <span id="res-orig-eqd2" class="text-base font-black text-emerald-900">60.0 Gy</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ 2: Mô phỏng Bù liều do Gián đoạn Xạ trị (Unplanned Gap) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-amber-600"></i> 2. Bù liều do Gián đoạn Xạ trị (Gap)
+                    </h2>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Số ngày gián đoạn (T_gap)</label>
+                                <input type="number" id="gap-days" value="0" min="0" oninput="calculateLQ()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-bold focus:outline-none focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Tốc độ tái phát K (Gy/ngày)</label>
+                                <input type="number" id="repop-k" value="0.6" step="0.1" min="0" oninput="calculateLQ()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-bold focus:outline-none focus:border-amber-500">
+                            </div>
+                        </div>
+
+                        <div id="gap-compensation-result" class="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3 leading-relaxed">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cột Phải (7 cols): Quy đổi Sang Chế độ Phân liều Mới & Bảng QUANTEC -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+
+                <!-- Thẻ Quy đổi Sang Chế độ Phân liều Mới (Isoeffective Conversion) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-calculator text-emerald-600"></i> 3. Quy đổi Sang Chế độ Phân liều Mới (Biến liều / SBRT)
+                        </h2>
+                        <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                            Giữ nguyên BED / EQD2
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Cách quy đổi:</label>
+                            <div class="space-y-1 text-xs">
+                                <label class="flex items-center gap-2 cursor-pointer font-medium">
+                                    <input type="radio" name="conv-mode" value="by-dose" checked onchange="calculateLQ()"> Cho biết Liều / phân liều mới (d₂)
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer font-medium">
+                                    <input type="radio" name="conv-mode" value="by-fx" onchange="calculateLQ()"> Cho biết Số phân liều mới (n₂)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col justify-center">
+                            <label id="conv-input-label" class="block text-xs font-bold text-slate-700 mb-1">Nhập Liều / phân liều mới d₂ (Gy):</label>
+                            <input type="number" id="conv-input-val" value="3.0" step="0.1" min="0.1" oninput="calculateLQ()" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <!-- Kết quả Chế độ mới -->
+                    <div class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl p-4 shadow-md">
+                        <h3 class="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Chế độ Xạ trị Tương đương Kết quả:</h3>
+                        <div class="grid grid-cols-3 gap-3 text-center">
+                            <div>
+                                <span class="text-[10px] text-slate-400 block">Tổng liều mới D₂</span>
+                                <span id="res-target-total-dose" class="text-lg font-black text-emerald-400">52.5 Gy</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-400 block">Số phân liều n₂</span>
+                                <span id="res-target-fx-count" class="text-lg font-black text-sky-400">17.5</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-400 block">Liều / phân liều $d_2$</span>
+                                <span id="res-target-fx-dose" class="text-lg font-black text-amber-400">3.0 Gy</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ Tra cứu Giới hạn Liều Cơ quan Nguy cơ (OAR Constraints - QUANTEC) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box flex-1 flex flex-col">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-rose-600"></i> 4. Giới hạn An toàn Cơ quan Lành (QUANTEC Reference)
+                        </h2>
+                        <select id="quantec-filter" onchange="filterQuantecTable()" class="text-xs bg-slate-50 border border-slate-200 font-semibold rounded-lg px-2 py-1 focus:outline-none">
+                            <option value="all">Tất cả vùng cơ quan</option>
+                            <option value="cns">Hệ Thần kinh / Đầu-Cổ</option>
+                            <option value="thorax">Lồng ngực / Tim-Phổi</option>
+                            <option value="pelvis">Bụng - Chậu</option>
+                        </select>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar flex-1">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold">
+                                    <th class="p-2.5">Cơ quan (OAR)</th>
+                                    <th class="p-2.5">Chỉ số Giới hạn</th>
+                                    <th class="p-2.5 text-right">Giới hạn Chấp nhận</th>
+                                    <th class="p-2.5">Biến chứng Cảnh báo (Tác dụng muộn)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quantec-table-body" class="divide-y divide-slate-100 pr-1">
+                                <!-- Rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-10 no-print text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-medium text-slate-300">Công cụ Mô phỏng Liều Xạ trị Sinh học LQ Model & Giới hạn QUANTEC</p>
+            <p class="text-slate-500 mt-1">Dành cho Bác sĩ Xạ trị & Chuyên gia Vật lý Y khoa. Dựa trên công thức Linear-Quadratic & Báo cáo QUANTEC (Int J Radiat Oncol Biol Phys 2010).</p>
+        </div>
+    </footer>
+
+    <script>
+        const QUANTEC_DATA = [
+            { organ: 'Tủy sống (Spinal Cord)', category: 'cns', metric: 'Dmax (Liều tối đa)', limit: '≤ 45 - 50 Gy', risk: 'Bệnh lý tủy sống do xạ trị (Myelopathy < 0.2%)' },
+            { organ: 'Thân não (Brainstem)', category: 'cns', metric: 'Dmax', limit: '≤ 54 Gy', risk: 'Hoại tử thân não / Tổn thương thần kinh' },
+            { organ: 'Giao thoa thị giác / Dây II', category: 'cns', metric: 'Dmax', limit: '≤ 55 Gy', risk: 'Mất thị lực / Viêm dây thần kinh thị giác' },
+            { organ: 'Tuyến mang tai (Parotid)', category: 'cns', metric: 'Mean dose (Trung bình)', limit: '≤ 20 Gy (Cả 2 bên) hoặc ≤ 26 Gy (1 bên)', risk: 'Khô miệng vĩnh viễn (Xerostomia severe)' },
+            { organ: 'Phổi (Lungs - Cả 2 bên)', category: 'thorax', metric: 'Mean Dose / V20', limit: 'Mean ≤ 20 Gy / V20 < 30%', risk: 'Viêm phổi do xạ trị Grade ≥ 2 (< 20%)' },
+            { organ: 'Tim (Heart)', category: 'thorax', metric: 'Mean Dose / V25', limit: 'Mean ≤ 26 Gy / V25 < 10%', risk: 'Tử vong do thiếu máu cơ tim muộn (Pericarditis/CAD)' },
+            { organ: 'Thực quản (Esophagus)', category: 'thorax', metric: 'Mean Dose / Dmax', limit: 'Mean ≤ 34 Gy / Dmax < 74 Gy', risk: 'Hẹp thực quản / Viêm thực quản nặng' },
+            { organ: 'Trực tràng (Rectum)', category: 'pelvis', metric: 'V50 / V65 / V70', limit: 'V50 < 50%, V65 < 25%, V70 < 15%', risk: 'Chảy máu trực tràng hoại tử Grade ≥ 2' },
+            { organ: 'Bàng quang (Bladder)', category: 'pelvis', metric: 'V65 / V70 / V75', limit: 'V65 < 50%, V70 < 35%, V75 < 25%', risk: 'Viêm bàng quang chảy máu muộn' },
+            { organ: 'Chỏm xương đùi (Femoral Heads)', category: 'pelvis', metric: 'Dmax', limit: '≤ 50 Gy', risk: 'Hoại tử vô mạch chỏm xương đùi' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateLQ();
+            renderQuantecTable();
+        });
+
+        function updateOrigFxDose() {
+            const total = parseFloat(document.getElementById('orig-total-dose').value) || 0;
+            const count = parseFloat(document.getElementById('orig-fx-count').value) || 1;
+            if (count > 0) {
+                document.getElementById('orig-fx-dose').value = (total / count).toFixed(2);
+            }
+            calculateLQ();
+        }
+
+        function updateOrigTotalDose() {
+            const count = parseFloat(document.getElementById('orig-fx-count').value) || 0;
+            const fxDose = parseFloat(document.getElementById('orig-fx-dose').value) || 0;
+            document.getElementById('orig-total-dose').value = (count * fxDose).toFixed(1);
+            calculateLQ();
+        }
+
+        function applyAlphaBetaPreset() {
+            const val = document.getElementById('alpha-beta-preset').value;
+            if (val !== 'custom') {
+                document.getElementById('alpha-beta-val').value = val;
+            }
+            calculateLQ();
+        }
+
+        function calculateLQ() {
+            const D1 = parseFloat(document.getElementById('orig-total-dose').value) || 0;
+            const d1 = parseFloat(document.getElementById('orig-fx-dose').value) || 0;
+            const ab = parseFloat(document.getElementById('alpha-beta-val').value) || 10;
+
+            if (D1 <= 0 || d1 <= 0 || ab <= 0) return;
+
+            // BED1 = D1 * (1 + d1 / ab)
+            const bed = D1 * (1 + (d1 / ab));
+            
+            // EQD2 = D1 * (d1 + ab) / (2 + ab) = BED / (1 + 2 / ab)
+            const eqd2 = bed / (1 + (2 / ab));
+
+            document.getElementById('res-orig-bed').textContent = `${bed.toFixed(1)} Gy`;
+            document.getElementById('res-orig-eqd2').textContent = `${eqd2.toFixed(1)} Gy`;
+
+            document.getElementById('quick-bed').textContent = `${bed.toFixed(1)} Gy`;
+            document.getElementById('quick-eqd2').textContent = `${eqd2.toFixed(1)} Gy`;
+
+            // Gap Compensation Calculation
+            const gapDays = parseFloat(document.getElementById('gap-days').value) || 0;
+            const kVal = parseFloat(document.getElementById('repop-k').value) || 0.6;
+
+            const gapBox = document.getElementById('gap-compensation-result');
+            if (gapDays > 0) {
+                const effectiveGap = Math.max(0, gapDays - 7); // Usually after 7 days delay
+                const lostDose = effectiveGap * kVal;
+                const compensatedDose = D1 + lostDose;
+                gapBox.innerHTML = `
+                    <strong class="block text-amber-900 mb-0.5"><i class="fa-solid fa-triangle-exclamation"></i> Cảnh báo mất liều do tái phát tế bào u (Repopulation):</strong>
+                    Gián đoạn ${gapDays} ngày → Ước tính tổn thất ${lostDose.toFixed(1)} Gy.<br>
+                    <strong>Tổng liều sau khi bù khuyến cáo:</strong> <span class="font-extrabold text-amber-900 text-sm">${compensatedDose.toFixed(1)} Gy</span> (Cần thêm khoảng ${(lostDose / d1).toFixed(1)} phân liều).
+                `;
+            } else {
+                gapBox.innerHTML = `
+                    <span class="text-emerald-800 font-medium"><i class="fa-solid fa-circle-check"></i> Phác đồ xạ trị liên tục không bị gián đoạn.</span>
+                `;
+            }
+
+            // Target Conversion Mode
+            const mode = document.querySelector('input[name="conv-mode"]:checked').value;
+            const inputVal = parseFloat(document.getElementById('conv-input-val').value) || 1;
+            const label = document.getElementById('conv-input-label');
+
+            let D2 = 0;
+            let n2 = 0;
+            let d2 = 0;
+
+            if (mode === 'by-dose') {
+                label.textContent = 'Nhập Liều / phân liều mới d₂ (Gy):';
+                d2 = inputVal;
+                // D2 = BED / (1 + d2 / ab)
+                D2 = bed / (1 + (d2 / ab));
+                n2 = D2 / d2;
+            } else {
+                label.textContent = 'Nhập Số phân liều mới n₂:';
+                n2 = inputVal;
+                // Quadratic equation for d2: (n2 / ab) * d2^2 + n2 * d2 - BED = 0
+                const a = n2 / ab;
+                const b = n2;
+                const c = -bed;
+                const delta = (b * b) - (4 * a * c);
+                if (delta >= 0) {
+                    d2 = (-b + Math.sqrt(delta)) / (2 * a);
+                    D2 = n2 * d2;
+                }
+            }
+
+            document.getElementById('res-target-total-dose').textContent = `${D2.toFixed(1)} Gy`;
+            document.getElementById('res-target-fx-count').textContent = `${n2.toFixed(1)}`;
+            document.getElementById('res-target-fx-dose').textContent = `${d2.toFixed(2)} Gy`;
+        }
+
+        function filterQuantecTable() {
+            renderQuantecTable();
+        }
+
+        function renderQuantecTable() {
+            const filter = document.getElementById('quantec-filter').value;
+            const tbody = document.getElementById('quantec-table-body');
+
+            const filtered = filter === 'all' ? QUANTEC_DATA : QUANTEC_DATA.filter(item => item.category === filter);
+
+            tbody.innerHTML = filtered.map(item => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-2.5 font-bold text-slate-800">${item.organ}</td>
+                    <td class="p-2.5 text-slate-600 font-medium">${item.metric}</td>
+                    <td class="p-2.5 text-right font-extrabold text-indigo-700 bg-indigo-50/50">${item.limit}</td>
+                    <td class="p-2.5 text-slate-500 text-[11px]">${item.risk}</td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+
+</html>

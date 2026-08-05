@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình Mô phỏng Độc tính Chồng lấp Phác đồ Phối hợp Hóa Miễn dịch (IO Toxicity Simulator)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #dc2626 100%);
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            .card-box { border: 1px solid #e2e8f0; box-shadow: none !important; }
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg transition" title="Về trang chủ">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <div class="flex items-center gap-2">
+                    <div class="bg-red-600 text-white p-2 rounded-lg font-bold text-lg">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <span class="font-black text-lg text-white tracking-tight">Onco<span class="text-red-400">Tox Simulator</span></span>
+                        <span class="text-xs block text-slate-400 font-medium">Mô phỏng Độc tính Chồng lấp Hóa Miễn dịch</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="window.print()" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i class="fa-solid fa-print"></i> In Hướng dẫn Quản lý
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="gradient-header text-white py-8 px-4 no-print shadow-inner">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 bg-red-500/20 border border-red-400/40 text-red-300 text-xs font-bold px-3 py-1 rounded-full mb-2">
+                    <i class="fa-solid fa-capsules"></i> An toàn Dược lâm sàng & Độc tính Tác dụng phụ (CTCAE v5.0 / ASCO irAE)
+                </div>
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Trình Mô phỏng Độc tính Chồng lấp Phác đồ Phối hợp Hóa Miễn dịch</h1>
+                <p class="text-slate-300 text-sm mt-1 max-w-3xl">
+                    Đánh giá nguy cơ chồng lấp biến chứng (Viêm phổi kẽ, Viêm gan, Suy thận, Viêm đại tràng, Tăng huyết áp) và tính liều Corticosteroid / Kháng miễn dịch thế hệ 2 theo khuyến cáo ASCO/ESMO.
+                </p>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-3.5 rounded-xl flex items-center gap-4 text-xs">
+                <div>
+                    <div class="text-slate-300 font-medium">Độc tính Nguy cơ Cao nhất</div>
+                    <div id="quick-top-risk" class="text-lg font-black text-red-300">Đang đánh giá</div>
+                </div>
+                <div class="h-8 w-px bg-white/20"></div>
+                <div>
+                    <div class="text-slate-300 font-medium">Lịch Theo dõi Cận lâm sàng</div>
+                    <div id="quick-lab-count" class="text-xs font-bold text-white mt-0.5">5 xét nghiệm bắt buộc</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col gap-6">
+
+        <!-- Grid 2 Cột: Xây dựng Phác đồ + Bảng Độc tính & Tính liều Steroid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Cột Trái (5 cols): Chọn Phác đồ Mẫu & Tùy chọn Thuốc Phối hợp -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+
+                <!-- Thẻ 1: Chọn Phác đồ Phối hợp -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-pills text-red-600"></i> 1. Phác đồ Điều trị Phối hợp
+                        </h2>
+                        <select id="preset-combo" onchange="loadPresetCombo()" class="bg-red-50 border border-red-200 text-red-900 text-xs font-bold rounded-lg px-2 py-1 focus:outline-none">
+                            <option value="custom">-- Tùy chỉnh danh sách thuốc --</option>
+                            <option value="keynote189" selected>KEYNOTE-189 (Pembro + Pem + Carbo/Cis)</option>
+                            <option value="keynote407">KEYNOTE-407 (Pembro + Carbo + Pacli)</option>
+                            <option value="impower150">IMpower150 (Atezol + Beva + Carbo + Pacli)</option>
+                            <option value="checkmate9la">CheckMate 9LA (Nivo + Ipi + Chemo 2 chu kỳ)</option>
+                            <option value="clear">CLEAR (Pembrolizumab + Lenvatinib)</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-4 text-xs">
+                        <!-- Nhóm Thuốc Miễn dịch IO -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            <span class="font-bold text-slate-800 block mb-1.5 text-purple-900 flex items-center gap-1.5">
+                                <i class="fa-solid fa-shield-virus text-purple-600"></i> Thuốc Miễn dịch (Immune Checkpoint Inhibitors):
+                            </span>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-pembro" checked onchange="calculateToxicity()" class="w-3.5 h-3.5 text-purple-600 rounded">
+                                    <span>Pembrolizumab (Anti-PD-1)</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-nivo" onchange="calculateToxicity()" class="w-3.5 h-3.5 text-purple-600 rounded">
+                                    <span>Nivolumab (Anti-PD-1)</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-atezol" onchange="calculateToxicity()" class="w-3.5 h-3.5 text-purple-600 rounded">
+                                    <span>Atezolizumab (Anti-PD-L1)</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-ipi" onchange="calculateToxicity()" class="w-3.5 h-3.5 text-purple-600 rounded">
+                                    <span>Ipilimumab (Anti-CTLA-4)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Nhóm Thuốc Hóa chất Chemotherapy -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            <span class="font-bold text-slate-800 block mb-1.5 text-sky-900 flex items-center gap-1.5">
+                                <i class="fa-solid fa-flask text-sky-600"></i> Thuốc Hóa chất (Chemotherapy):
+                            </span>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-cis" onchange="calculateToxicity()" class="w-3.5 h-3.5 text-sky-600 rounded">
+                                    <span>Cisplatin</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-carbo" checked onchange="calculateToxicity()" class="w-3.5 h-3.5 text-sky-600 rounded">
+                                    <span>Carboplatin</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-pem" checked onchange="calculateToxicity()" class="w-3.5 h-3.5 text-sky-600 rounded">
+                                    <span>Pemetrexed</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-pacli" onchange="calculateToxicity()" class="w-3.5 h-3.5 text-sky-600 rounded">
+                                    <span>Paclitaxel / Nab-Paclitaxel</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-gem" onchange="calculateToxicity()" class="w-3.5 h-3.5 text-sky-600 rounded">
+                                    <span>Gemcitabine</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-5fu" onchange="calculateToxicity()" class="w-3.5 h-3.5 text-sky-600 rounded">
+                                    <span>5-FU / Capecitabine</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Nhóm Thuốc Kháng mạch & Nhắm đích -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            <span class="font-bold text-slate-800 block mb-1.5 text-emerald-900 flex items-center gap-1.5">
+                                <i class="fa-solid fa-dna text-emerald-600"></i> Thuốc Kháng mạch & Nhắm đích (Anti-VEGF / TKI):
+                            </span>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-beva" onchange="calculateToxicity()" class="w-3.5 h-3.5 text-emerald-600 rounded">
+                                    <span>Bevacizumab (Anti-VEGF)</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="drug-lenva" onchange="calculateToxicity()" class="w-3.5 h-3.5 text-emerald-600 rounded">
+                                    <span>Lenvatinib (Multi-TKI)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ 2: Máy tính Liều Corticosteroid Điều trị irAE -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-syringe text-indigo-600"></i> 2. Máy tính Liều Corticosteroid irAE (ASCO Guideline)
+                    </h2>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Cân nặng bệnh nhân (kg)</label>
+                                <input type="number" id="patient-weight" value="60" min="20" max="150" oninput="calculateSteroidDose()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-bold focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Độc tính Cơ quan</label>
+                                <select id="irae-organ" onchange="calculateSteroidDose()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-bold focus:outline-none">
+                                    <option value="pneumonitis">Viêm phổi kẽ (Pneumonitis)</option>
+                                    <option value="colitis">Viêm đại tràng / Tiêu chảy (Colitis)</option>
+                                    <option value="hepatitis">Viêm gan (Hepatitis - Tăng AST/ALT)</option>
+                                    <option value="nephritis">Viêm thận / Suy thận (Nephritis)</option>
+                                    <option value="skin">Độc tính da nặng (Rash / SJS)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Mức độ Độc tính (CTCAE Grade):</label>
+                            <select id="irae-grade" onchange="calculateSteroidDose()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-bold focus:outline-none">
+                                <option value="1">Grade 1 (Nhẹ - Không triệu chứng / Triệu chứng nhẹ)</option>
+                                <option value="2">Grade 2 (Vừa - Ảnh hưởng sinh hoạt nhẹ)</option>
+                                <option value="3" selected>Grade 3 (Nặng - Cần can thiệp y khoa tích cực)</option>
+                                <option value="4">Grade 4 (Đe dọa tính mạng - Cấp cứu)</option>
+                            </select>
+                        </div>
+
+                        <!-- Kết quả Liều Steroid Display -->
+                        <div id="steroid-result-box" class="rounded-xl p-3 bg-indigo-50 border border-indigo-200 text-indigo-950">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cột Phải (7 cols): Ma trận Độc tính Chồng lấp & Lịch Theo dõi -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+
+                <!-- Thẻ Ma trận Độc tính Chồng lấp theo Hệ cơ quan -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-red-600"></i> Ma trận Độc tính Chồng lấp (Overlapping Organ Toxicities)
+                        </h2>
+                    </div>
+
+                    <div id="toxicity-matrix-container" class="space-y-3">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Thẻ Lịch Kiểm tra Cận lâm sàng & Theo dõi Trước Chu kỳ (Pre-Cycle Lab Checklist) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box flex-1 flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-sky-600"></i> Lịch Xét nghiệm & Tầm soát Tác dụng phụ Bắt buộc
+                        </h2>
+
+                        <div id="lab-checklist-box" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-xl">
+                        <strong class="text-slate-700 block mb-0.5"><i class="fa-solid fa-circle-info text-red-600"></i> Lưu ý Quản lý irAE Lâm sàng:</strong>
+                        • <strong>Giảm liều Corticosteroid</strong>: Cần hạ liều từ từ trong ít nhất 4–6 tuần. Giảm quá nhanh có thể gây bùng phát lại độc tính (irAE Rebound).<br>
+                        • <strong>Kháng Steroid (Steroid-Refractory)</strong>: Nếu triệu chứng không cải thiện sau 48–72 giờ dùng Steroid liều cao (1-2 mg/kg), bắt buộc hội chẩn dùng ngay **Infliximab** hoặc **Vedolizumab** (Cho Colitis) hoặc **Mycophenolate Mofetil** (Cho Hepatitis - Chống chỉ định Infliximab trong viêm gan!).
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-10 no-print text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-medium text-slate-300">Hệ thống Phân tích & Mô phỏng Độc tính Chồng lấp Phác đồ Hóa Miễn dịch</p>
+            <p class="text-slate-500 mt-1">Dựa trên Hướng dẫn Xử trí Độc tính Miễn dịch ASCO/ESMO/NCCN & Tiêu chuẩn CTCAE v5.0.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateToxicity();
+            calculateSteroidDose();
+        });
+
+        function loadPresetCombo() {
+            const val = document.getElementById('preset-combo').value;
+
+            // Reset all
+            const ids = ['drug-pembro', 'drug-nivo', 'drug-atezol', 'drug-ipi', 'drug-cis', 'drug-carbo', 'drug-pem', 'drug-pacli', 'drug-gem', 'drug-5fu', 'drug-beva', 'drug-lenva'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.checked = false;
+            });
+
+            if (val === 'keynote189') {
+                document.getElementById('drug-pembro').checked = true;
+                document.getElementById('drug-pem').checked = true;
+                document.getElementById('drug-carbo').checked = true;
+            } else if (val === 'keynote407') {
+                document.getElementById('drug-pembro').checked = true;
+                document.getElementById('drug-carbo').checked = true;
+                document.getElementById('drug-pacli').checked = true;
+            } else if (val === 'impower150') {
+                document.getElementById('drug-atezol').checked = true;
+                document.getElementById('drug-beva').checked = true;
+                document.getElementById('drug-carbo').checked = true;
+                document.getElementById('drug-pacli').checked = true;
+            } else if (val === 'checkmate9la') {
+                document.getElementById('drug-nivo').checked = true;
+                document.getElementById('drug-ipi').checked = true;
+                document.getElementById('drug-carbo').checked = true;
+                document.getElementById('drug-pacli').checked = true;
+            } else if (val === 'clear') {
+                document.getElementById('drug-pembro').checked = true;
+                document.getElementById('drug-lenva').checked = true;
+            }
+
+            calculateToxicity();
+        }
+
+        function calculateToxicity() {
+            const ioPembro = document.getElementById('drug-pembro').checked;
+            const ioNivo = document.getElementById('drug-nivo').checked;
+            const ioAtezol = document.getElementById('drug-atezol').checked;
+            const ioIpi = document.getElementById('drug-ipi').checked;
+
+            const chemoCis = document.getElementById('drug-cis').checked;
+            const chemoCarbo = document.getElementById('drug-carbo').checked;
+            const chemoPem = document.getElementById('drug-pem').checked;
+            const chemoPacli = document.getElementById('drug-pacli').checked;
+            const chemoGem = document.getElementById('drug-gem').checked;
+            const chemo5fu = document.getElementById('drug-5fu').checked;
+
+            const targetBeva = document.getElementById('drug-beva').checked;
+            const targetLenva = document.getElementById('drug-lenva').checked;
+
+            const hasIO = ioPembro || ioNivo || ioAtezol || ioIpi;
+            const hasAntiCTLA4 = ioIpi;
+
+            // Toxicity Risk Scoring
+            let pneumonitisRisk = 2; // base %
+            let hepatitisRisk = 3;
+            let nephritisRisk = 2;
+            let colitisRisk = 4;
+            let vascularRisk = 1;
+            let endocrineRisk = 5;
+
+            let pneumonitisNotes = [];
+            let hepatitisNotes = [];
+            let nephritisNotes = [];
+            let colitisNotes = [];
+            let vascularNotes = [];
+            let endocrineNotes = [];
+
+            if (hasIO) {
+                pneumonitisRisk += 4;
+                pneumonitisNotes.push('Anti-PD-1/PD-L1 gây viêm phổi kẽ (3-5%)');
+                endocrineRisk += 10;
+                endocrineNotes.push('Anti-PD-1 gây viêm giáp/suy giáp (8-12%)');
+            }
+
+            if (hasAntiCTLA4) {
+                colitisRisk += 25;
+                colitisNotes.push('Ipilimumab (Anti-CTLA-4) nguy cơ viêm đại tràng nặng cao (20-30%)');
+                endocrineRisk += 10;
+                endocrineNotes.push('Anti-CTLA-4 nguy cơ viêm tuyến yên (Hypophysitis)');
+            }
+
+            if (chemoPem) {
+                pneumonitisRisk += 3;
+                pneumonitisNotes.push('Pemetrexed gây độc tính phổi tích lũy');
+                nephritisRisk += 5;
+                nephritisNotes.push('Pemetrexed đào thải qua thận');
+            }
+
+            if (chemoGem) {
+                pneumonitisRisk += 5;
+                pneumonitisNotes.push('Gemcitabine gây độc tính phổi kẽ nặng');
+            }
+
+            if (chemoCis) {
+                nephritisRisk += 20;
+                nephritisNotes.push('Cisplatin gây hoại tử ống thận cấp (20-30%)');
+                hepatitisRisk += 3;
+            }
+
+            if (targetLenva) {
+                hepatitisRisk += 15;
+                hepatitisNotes.push('Lenvatinib tăng Transaminase nặng (15-20%)');
+                vascularRisk += 25;
+                vascularNotes.push('Lenvatinib gây Tăng huyết áp nặng (20-30%)');
+            }
+
+            if (targetBeva) {
+                vascularRisk += 20;
+                vascularNotes.push('Bevacizumab gây Tăng huyết áp & Protein niệu');
+            }
+
+            if (chemo5fu) {
+                colitisRisk += 10;
+                colitisNotes.push('5-FU/Capecitabine gây viêm niêm mạc & tiêu chảy');
+            }
+
+            // Cap risks
+            pneumonitisRisk = Math.min(45, pneumonitisRisk);
+            hepatitisRisk = Math.min(50, hepatitisRisk);
+            nephritisRisk = Math.min(55, nephritisRisk);
+            colitisRisk = Math.min(60, colitisRisk);
+            vascularRisk = Math.min(65, vascularRisk);
+            endocrineRisk = Math.min(50, endocrineRisk);
+
+            // Matrix render
+            const matrixBox = document.getElementById('toxicity-matrix-container');
+            const organList = [
+                { name: 'Viêm phổi kẽ (Pneumonitis)', risk: pneumonitisRisk, notes: pneumonitisNotes, icon: 'fa-lungs text-red-500' },
+                { name: 'Viêm đại tràng & Tiêu chảy (Colitis)', risk: colitisRisk, notes: colitisNotes, icon: 'fa-stomach text-amber-500' },
+                { name: 'Độc tính Thận & Suy thận (Nephritis / AKI)', risk: nephritisRisk, notes: nephritisNotes, icon: 'fa-kidneys text-sky-500' },
+                { name: 'Viêm gan & Tăng Men gan (Hepatitis)', risk: hepatitisRisk, notes: hepatitisNotes, icon: 'fa-liver text-emerald-500' },
+                { name: 'Tăng huyết áp & Biến chứng mạch máu', risk: vascularRisk, notes: vascularNotes, icon: 'fa-heart-pulse text-purple-500' },
+                { name: 'Rối loạn Nội tiết (Tuyến giáp/Tuyến yên)', risk: endocrineRisk, notes: endocrineNotes, icon: 'fa-dna text-indigo-500' }
+            ];
+
+            // Sort by risk descending
+            organList.sort((a, b) => b.risk - a.risk);
+
+            // Set top risk display
+            document.getElementById('quick-top-risk').textContent = organList[0].name.split('(')[0];
+
+            let html = '';
+            organList.forEach(item => {
+                let badgeClass = 'bg-slate-100 text-slate-800';
+                let barColor = 'bg-slate-500';
+                if (item.risk >= 25) {
+                    badgeClass = 'bg-red-100 text-red-800 font-bold';
+                    barColor = 'bg-red-600';
+                } else if (item.risk >= 12) {
+                    badgeClass = 'bg-amber-100 text-amber-800 font-bold';
+                    barColor = 'bg-amber-500';
+                }
+
+                html += `
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid ${item.icon}"></i> ${item.name}
+                            </span>
+                            <span class="text-[11px] px-2 py-0.5 rounded ${badgeClass}">Ước tính nguy cơ: ${item.risk}%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2 mb-2">
+                            <div class="${barColor} h-2 rounded-full transition-all duration-300" style="width: ${item.risk}%"></div>
+                        </div>
+                        ${item.notes.length > 0 ? `<p class="text-[11px] text-slate-600 leading-tight">• ${item.notes.join('<br>• ')}</p>` : '<p class="text-[11px] text-slate-400">Nguy cơ thấp ở phác đồ hiện tại.</p>'}
+                    </div>
+                `;
+            });
+
+            matrixBox.innerHTML = html;
+
+            // Render Lab Checklist
+            const labBox = document.getElementById('lab-checklist-box');
+            let labs = [
+                { name: 'Công thức máu (CBC + ANC)', freq: 'Mỗi chu kỳ', icon: 'fa-vial text-sky-600' },
+                { name: 'Chức năng Gan (AST, ALT, Bilirubin)', freq: 'Mỗi chu kỳ', icon: 'fa-vial text-emerald-600' },
+                { name: 'Chức năng Thận (Creatinine, CrCl)', freq: 'Mỗi chu kỳ', icon: 'fa-vial text-indigo-600' },
+                { name: 'Hormone Tuyến giáp (TSH, FT4)', freq: 'Mỗi 1-2 chu kỳ', icon: 'fa-microscope text-purple-600' }
+            ];
+
+            if (targetBeva || targetLenva) {
+                labs.push({ name: 'Đo Huyết áp & Đạm niệu (Proteinuria)', freq: 'Trước mỗi đợt truyền', icon: 'fa-heart-pulse text-red-600' });
+            }
+            if (hasAntiCTLA4) {
+                labs.push({ name: 'Cortisol máu sáng (8h AM)', freq: 'Khi nghi ngờ Viêm tuyến yên', icon: 'fa-flask text-amber-600' });
+            }
+
+            document.getElementById('quick-lab-count').textContent = `${labs.length} xét nghiệm bắt buộc`;
+
+            let labHTML = '';
+            labs.forEach(lab => {
+                labHTML += `
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid ${lab.icon}"></i>
+                            <span class="font-bold text-slate-700">${lab.name}</span>
+                        </div>
+                        <span class="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded">${lab.freq}</span>
+                    </div>
+                `;
+            });
+            labBox.innerHTML = labHTML;
+        }
+
+        function calculateSteroidDose() {
+            const weight = parseFloat(document.getElementById('patient-weight').value) || 60;
+            const organ = document.getElementById('irae-organ').value;
+            const grade = parseInt(document.getElementById('irae-grade').value);
+
+            const resBox = document.getElementById('steroid-result-box');
+
+            if (grade === 1) {
+                resBox.className = 'rounded-xl p-3 bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs';
+                resBox.innerHTML = `
+                    <strong class="font-bold text-emerald-900 block mb-1"><i class="fa-solid fa-circle-check"></i> XỬ TRÍ GRADE 1 (NHẸ):</strong>
+                    • <strong>Hành động với Thuốc Miễn dịch IO</strong>: ĐƯỢC TIẾP TỤC điều trị IO dưới sự theo dõi sát.<br>
+                    • <strong>Corticosteroid</strong>: Chưa có chỉ định dùng Corticosteroid toàn thân.<br>
+                    • <strong>Xử trí tại chỗ</strong>: Điều trị triệu chứng (Thuốc bôi da tại chỗ cho Rash, Thuốc tiêu chảy loperamide nếu Colitis nhẹ).
+                `;
+            } else if (grade === 2) {
+                const doseMin = (0.5 * weight).toFixed(0);
+                const doseMax = (1.0 * weight).toFixed(0);
+                resBox.className = 'rounded-xl p-3 bg-amber-50 border border-amber-200 text-amber-950 text-xs';
+                resBox.innerHTML = `
+                    <strong class="font-bold text-amber-900 block mb-1"><i class="fa-solid fa-triangle-exclamation"></i> XỬ TRÍ GRADE 2 (VỪA):</strong>
+                    • <strong>Hành động với Thuốc Miễn dịch IO</strong>: TẠM HOÃN (Hold) điều trị IO cho đến khi độc tính giảm về Grade ≤1.<br>
+                    • <strong>Liều Prednisone Khuyên dùng</strong>: <strong>${doseMin} - ${doseMax} mg/ngày</strong> (0.5 - 1.0 mg/kg/ngày uống).<br>
+                    • <strong>Thời gian giảm liều</strong>: Giảm liều từ từ trong 4-6 tuần sau khi triệu chứng thuyên giảm.
+                `;
+            } else {
+                const doseMin = (1.0 * weight).toFixed(0);
+                const doseMax = (2.0 * weight).toFixed(0);
+                let secondLineDrug = 'Infliximab (5 mg/kg IV)';
+                if (organ === 'hepatitis') {
+                    secondLineDrug = 'Mycophenolate Mofetil (1g x 2 lần/ngày) - CHỐNG CHỈ ĐỊNH Infliximab trong viêm gan!';
+                }
+
+                resBox.className = 'rounded-xl p-3 bg-red-50 border border-red-200 text-red-950 text-xs';
+                resBox.innerHTML = `
+                    <strong class="font-bold text-red-900 block mb-1"><i class="fa-solid fa-circle-radiation"></i> XỬ TRÍ GRADE 3 - 4 (NẶNG / NGUY HIỂM):</strong>
+                    • <strong>Hành động với Thuốc Miễn dịch IO</strong>: NGỪNG ĐIỀU TRỊ VĨNH VIỄN (Permanently Discontinue IO).<br>
+                    • <strong>Liều Prednisone / Methylprednisolone IV</strong>: <strong>${doseMin} - ${doseMax} mg/ngày</strong> (1.0 - 2.0 mg/kg/ngày tiêm tĩnh mạch).<br>
+                    • <strong>Kháng Steroid (Steroid-Refractory)</strong>: Nếu không đỡ sau 48-72 giờ → Chuyển sang <strong>${secondLineDrug}</strong>.<br>
+                    • <strong>Thời gian hạ liều Steroid</strong>: Hạ liều cực kỳ từ từ trong tối thiểu 6 tuần.
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>

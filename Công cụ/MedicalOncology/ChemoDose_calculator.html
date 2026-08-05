@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công cụ Tính liều Hóa chất & Điều chỉnh theo Độc tính</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0369a1 100%);
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            .card-box { border: 1px solid #e2e8f0; box-shadow: none !important; }
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg transition" title="Về trang chủ">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <div class="flex items-center gap-2">
+                    <div class="bg-sky-500 text-white p-2 rounded-lg font-bold text-lg">
+                        <i class="fa-solid fa-calculator"></i>
+                    </div>
+                    <div>
+                        <span class="font-black text-lg text-white tracking-tight">Chemo<span class="text-sky-400">Dose & Toxicity</span></span>
+                        <span class="text-xs block text-slate-400 font-medium">Tính liều Hóa chất & Điều chỉnh theo Độc tính</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="resetCalculator()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-rotate-left"></i> Nhập mới
+                </button>
+                <button onclick="window.print()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                    <i class="fa-solid fa-print"></i> In Đơn liều / Báo cáo
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="gradient-header text-white py-8 px-4 no-print shadow-inner">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 bg-sky-500/20 border border-sky-400/40 text-sky-300 text-xs font-bold px-3 py-1 rounded-full mb-2">
+                    <i class="fa-solid fa-vial-virus"></i> Thước đo Tính liều Lâm sàng Ung bướu
+                </div>
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Tính liều Hóa trị & Điều chỉnh Độc tính Gan/Thận</h1>
+                <p class="text-slate-300 text-sm mt-1 max-w-3xl">
+                    Tự động tính Diện tích cơ thể (BSA), Độ thanh thải Creatinine (CrCl / Cockcroft-Gault), Liều Carboplatin theo AUC (Calvert formula) và khuyến cáo giảm liều theo độc tính NCI-CTCAE v5.0.
+                </p>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-3.5 rounded-xl flex items-center gap-4 text-xs">
+                <div>
+                    <div class="text-slate-300 font-medium">BSA (Mosteller / DuBois)</div>
+                    <div id="quick-bsa" class="text-xl font-black text-sky-300">0.00 m²</div>
+                </div>
+                <div class="h-8 w-px bg-white/20"></div>
+                <div>
+                    <div class="text-slate-300 font-medium">CrCl (Thận)</div>
+                    <div id="quick-crcl" class="text-xl font-black text-teal-300">0 mL/min</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col gap-6">
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Cột Trái (5 cols): Nhập thông tin Bệnh nhân, Chức năng Thận & Gan -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+
+                <!-- Thẻ 1: Thông số Nhân trắc & BSA -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-user-doctor text-sky-600"></i> 1. Thông số Bệnh nhân & BSA
+                    </h2>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Chiều cao (cm)</label>
+                            <input type="number" id="height" value="165" min="50" max="230" oninput="calculateAll()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Cân nặng (kg)</label>
+                            <input type="number" id="weight" value="60" min="20" max="250" oninput="calculateAll()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tuổi (Năm)</label>
+                            <input type="number" id="age" value="60" min="1" max="120" oninput="calculateAll()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Giới tính</label>
+                            <select id="gender" onchange="calculateAll()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-sky-500">
+                                <option value="male">Nam</option>
+                                <option value="female">Nữ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Công thức BSA & Capping -->
+                    <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Công thức BSA</label>
+                            <select id="bsa-formula" onchange="calculateAll()" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none">
+                                <option value="mosteller">Mosteller (Phổ biến)</option>
+                                <option value="dubois">DuBois & DuBois</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Giới hạn BSA Cap</label>
+                            <select id="bsa-cap" onchange="calculateAll()" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none">
+                                <option value="none">Không giới hạn (ASCO)</option>
+                                <option value="2.0">Giới hạn tối đa 2.0 m²</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 bg-sky-50 border border-sky-200 rounded-xl p-3 flex items-center justify-between text-xs">
+                        <span class="font-semibold text-sky-900">Diện tích cơ thể (BSA):</span>
+                        <span id="calculated-bsa" class="font-black text-sky-700 text-base">0.00 m²</span>
+                    </div>
+                </div>
+
+                <!-- Thẻ 2: Chức năng Thận & Gan -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-kidneys text-teal-600"></i> 2. Xét nghiệm Thận & Gan
+                    </h2>
+
+                    <!-- Thận -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="text-xs font-bold text-slate-700">Creatinine Huyết thanh (Scr)</label>
+                            <div class="flex items-center gap-2 text-[11px]">
+                                <label class="cursor-pointer font-medium"><input type="radio" name="scr-unit" value="mgdl" checked onchange="calculateAll()"> mg/dL</label>
+                                <label class="cursor-pointer font-medium"><input type="radio" name="scr-unit" value="umol" onchange="calculateAll()"> µmol/L</label>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="number" id="scr-val" value="1.0" step="0.1" min="0.1" oninput="calculateAll()" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:border-teal-500">
+                            <div class="bg-teal-50 border border-teal-200 rounded-lg p-2 flex flex-col justify-center text-center">
+                                <span class="text-[10px] text-teal-700 font-semibold">CrCl Cockcroft-Gault</span>
+                                <span id="calculated-crcl" class="text-sm font-black text-teal-800">0 mL/min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gan -->
+                    <div class="pt-3 border-t border-slate-100">
+                        <h3 class="text-xs font-bold text-slate-700 mb-2">Chức năng Gan (Bilirubin, Men gan)</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Bilirubin toàn phần (mg/dL)</label>
+                                <input type="number" id="bili-val" value="0.8" step="0.1" min="0.1" oninput="calculateAll()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-teal-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">AST / ALT (x lần ULN)</label>
+                                <input type="number" id="ast-val" value="1.0" step="0.1" min="0.1" oninput="calculateAll()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-teal-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ 3: Độc tính Chu kỳ trước (NCI-CTCAE v5.0) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> 3. Độc tính Chu kỳ trước & Mức giảm
+                    </h2>
+
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Độc tính Huyết học (Grade 3-4 Neutropenia / Tiểu cầu):</label>
+                            <select id="tox-heme" onchange="calculateAll()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none">
+                                <option value="none">Không có độc tính đáng kể (Grade 0-2)</option>
+                                <option value="g3_neutro">Bạch cầu hạt < 0.5 G/L hoặc Sốt hạ bạch cầu (Grade 3-4)</option>
+                                <option value="g3_platelet">Hạ tiểu cầu Grade 3-4 (< 50 G/L)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Độc tính Phi Huyết học (Tiêu chảy, Viêm miệng, Thần kinh):</label>
+                            <select id="tox-nonheme" onchange="calculateAll()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none">
+                                <option value="none">Không có độc tính đáng kể (Grade 0-1)</option>
+                                <option value="g2_neuro">Độc tính thần kinh Grade 2 (Oxaliplatin / Paclitaxel)</option>
+                                <option value="g3_organ">Tiêu chảy, Viêm miệng, Độc tính cơ quan Grade 3-4</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Cấp độ Giảm liều Chọn ngạch (Level Reduction):</label>
+                            <select id="selected-level" onchange="calculateAll()" class="w-full bg-slate-50 border border-slate-200 font-bold text-slate-800 rounded-lg px-2.5 py-1.5 focus:outline-none">
+                                <option value="1.0">100% Liều chuẩn (Full dose)</option>
+                                <option value="0.8">Level -1 (Giảm xuống 80% liều)</option>
+                                <option value="0.65">Level -2 (Giảm xuống 65% liều)</option>
+                                <option value="0.0">Tạm dừng / Hoãn điều trị (Hold)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Cột Phải (7 cols): Chọn Phác đồ Hóa trị & Bảng Tính toán Liều Khuyến cáo -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+
+                <!-- Thẻ Chọn Phác đồ Mẫu & Danh sách Thuốc -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box">
+                    <div class="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 mb-4 gap-2">
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                                <i class="fa-solid fa-pills text-sky-600"></i> Phác đồ Điều trị Hóa chất
+                            </h2>
+                            <p class="text-[11px] text-slate-500">Chọn phác đồ mẫu hoặc tùy chỉnh danh sách thuốc</p>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <select id="preset-regimen" onchange="loadPresetRegimen()" class="bg-sky-50 border border-sky-200 text-sky-900 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none">
+                                <option value="custom">-- Chọn phác đồ mẫu --</option>
+                                <option value="folFox">FOLFOX-6 (Ung thư Đại trực tràng)</option>
+                                <option value="ac">AC (Ung thư Vú: Doxorubicin + Cyclo)</option>
+                                <option value="pe">PE (Ung thư Phổi: Cisplatin + Etoposide)</option>
+                                <option value="gemCarbo">GemCarbo (Gemcitabine + Carboplatin)</option>
+                                <option value="pacCarbo">PacCarbo (Paclitaxel + Carboplatin AUC 6)</option>
+                                <option value="pemetrexedCis">Pemetrexed + Cisplatin (NSCLC / Màng phổi)</option>
+                            </select>
+                            <button onclick="addCustomDrug()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+                                <i class="fa-solid fa-plus"></i> Thêm thuốc
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Danh sách các Thuốc trong Phác đồ -->
+                    <div id="drugs-container" class="space-y-3">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Bảng Khuyến cáo Liều & Cảnh báo Lâm sàng -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 card-box flex-1 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                            <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                                <i class="fa-solid fa-file-prescription text-emerald-600"></i> Bảng Liều Khuyến cáo Thực hành Lâm sàng
+                            </h2>
+                            <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                                Dựa trên BSA, CrCl, Gan & CTCAE
+                            </span>
+                        </div>
+
+                        <!-- Cảnh báo Y khoa (Cấp độ Nguy cơ) -->
+                        <div id="alerts-container" class="space-y-2 mb-4">
+                            <!-- Rendered by JS -->
+                        </div>
+
+                        <!-- Bảng Tổng hợp Liều -->
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold">
+                                        <th class="p-2.5">Tên thuốc</th>
+                                        <th class="p-2.5">Liều cơ sở</th>
+                                        <th class="p-2.5 text-right">Liều chuẩn (mg)</th>
+                                        <th class="p-2.5 text-right">Liều chỉnh Gan/Thận</th>
+                                        <th class="p-2.5 text-right font-extrabold text-sky-700">Liều Khuyên Dùng</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dose-table-body" class="divide-y divide-slate-100">
+                                    <!-- Rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Ghi chú Lâm sàng & Hướng dẫn -->
+                    <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-xl">
+                        <strong class="text-slate-700 block mb-0.5"><i class="fa-solid fa-circle-info text-sky-600"></i> Lưu ý lâm sàng quan trọng:</strong>
+                        • Liều Carboplatin được tính theo công thức Calvert: <strong>Dose = Target AUC × (CrCl + 25)</strong>. Giá trị GFR/CrCl tối đa được giới hạn ở 125 mL/min theo khuyến cáo ASCO/NCCN.<br>
+                        • Luôn kiểm tra huyết đồ (Bạch cầu hạt ≥ 1.5 G/L, Tiểu cầu ≥ 100 G/L) trước khi bắt đầu chu kỳ hóa trị mới.
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-10 no-print text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-medium text-slate-300">Công cụ Tính liều Hóa chất & Điều chỉnh theo Độc tính Ung Bướu</p>
+            <p class="text-slate-500 mt-1">Dành cho Bác sĩ Ung bướu & Dược sĩ Lâm sàng. Tham khảo hướng dẫn ASCO, NCCN & NCI-CTCAE v5.0.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Preset Regimens Database
+        const PRESETS = {
+            folFox: {
+                name: 'FOLFOX-6',
+                drugs: [
+                    { name: 'Oxaliplatin', doseVal: 85, unit: 'mg_m2', type: 'oxaliplatin' },
+                    { name: 'Leucovorin', doseVal: 400, unit: 'mg_m2', type: 'generic' },
+                    { name: '5-FU (Bolus)', doseVal: 400, unit: 'mg_m2', type: '5fu' },
+                    { name: '5-FU (Truyền liên tục 46h)', doseVal: 2400, unit: 'mg_m2', type: '5fu' }
+                ]
+            },
+            ac: {
+                name: 'AC (Vú)',
+                drugs: [
+                    { name: 'Doxorubicin', doseVal: 60, unit: 'mg_m2', type: 'doxorubicin' },
+                    { name: 'Cyclophosphamide', doseVal: 600, unit: 'mg_m2', type: 'generic' }
+                ]
+            },
+            pe: {
+                name: 'PE (Phổi)',
+                drugs: [
+                    { name: 'Cisplatin', doseVal: 75, unit: 'mg_m2', type: 'cisplatin' },
+                    { name: 'Etoposide', doseVal: 100, unit: 'mg_m2', type: 'etoposide' }
+                ]
+            },
+            gemCarbo: {
+                name: 'GemCarbo',
+                drugs: [
+                    { name: 'Gemcitabine', doseVal: 1000, unit: 'mg_m2', type: 'generic' },
+                    { name: 'Carboplatin', doseVal: 5, unit: 'auc', type: 'carboplatin' }
+                ]
+            },
+            pacCarbo: {
+                name: 'Paclitaxel + Carboplatin',
+                drugs: [
+                    { name: 'Paclitaxel', doseVal: 175, unit: 'mg_m2', type: 'paclitaxel' },
+                    { name: 'Carboplatin', doseVal: 6, unit: 'auc', type: 'carboplatin' }
+                ]
+            },
+            pemetrexedCis: {
+                name: 'Pemetrexed + Cisplatin',
+                drugs: [
+                    { name: 'Pemetrexed', doseVal: 500, unit: 'mg_m2', type: 'pemetrexed' },
+                    { name: 'Cisplatin', doseVal: 75, unit: 'mg_m2', type: 'cisplatin' }
+                ]
+            }
+        };
+
+        let currentDrugs = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load default preset FOLFOX-6
+            loadPresetRegimen('folFox');
+        });
+
+        function loadPresetRegimen(presetKey) {
+            const key = presetKey || document.getElementById('preset-regimen').value;
+            if (PRESETS[key]) {
+                currentDrugs = JSON.parse(JSON.stringify(PRESETS[key].drugs));
+                document.getElementById('preset-regimen').value = key;
+            } else if (key === 'custom') {
+                if (currentDrugs.length === 0) {
+                    addCustomDrug();
+                }
+            }
+            renderDrugsInputs();
+            calculateAll();
+        }
+
+        function addCustomDrug() {
+            currentDrugs.push({
+                name: `Thuốc ${currentDrugs.length + 1}`,
+                doseVal: 100,
+                unit: 'mg_m2',
+                type: 'generic'
+            });
+            renderDrugsInputs();
+            calculateAll();
+        }
+
+        function removeDrug(index) {
+            if (currentDrugs.length <= 1) {
+                alert('Phác đồ cần có ít nhất 1 thuốc.');
+                return;
+            }
+            currentDrugs.splice(index, 1);
+            renderDrugsInputs();
+            calculateAll();
+        }
+
+        function renderDrugsInputs() {
+            const container = document.getElementById('drugs-container');
+            container.innerHTML = currentDrugs.map((drug, idx) => `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 relative hover:border-sky-300 transition">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-sky-700 bg-sky-100/70 px-2 py-0.5 rounded">Thuốc #${idx + 1}</span>
+                        <button onclick="removeDrug(${idx})" class="text-slate-400 hover:text-red-500 text-xs transition" title="Xóa thuốc này">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
+                        <div class="sm:col-span-5">
+                            <label class="block text-[10px] text-slate-500 font-semibold mb-0.5">Tên Thuốc / Hoạt chất</label>
+                            <input type="text" value="${drug.name}" onchange="updateDrugProp(${idx}, 'name', this.value)" class="w-full bg-white border border-slate-200 rounded px-2 py-1 font-bold focus:outline-none focus:border-sky-500">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label class="block text-[10px] text-slate-500 font-semibold mb-0.5">Đơn vị Liều</label>
+                            <select onchange="updateDrugProp(${idx}, 'unit', this.value)" class="w-full bg-white border border-slate-200 rounded px-1.5 py-1 font-semibold focus:outline-none">
+                                <option value="mg_m2" ${drug.unit === 'mg_m2' ? 'selected' : ''}>mg / m²</option>
+                                <option value="auc" ${drug.unit === 'auc' ? 'selected' : ''}>Target AUC (Carboplatin)</option>
+                                <option value="mg_kg" ${drug.unit === 'mg_kg' ? 'selected' : ''}>mg / kg</option>
+                                <option value="fixed" ${drug.unit === 'fixed' ? 'selected' : ''}>Liều cố định (mg)</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-[10px] text-slate-500 font-semibold mb-0.5">Liều Mức (Chỉ số)</label>
+                            <input type="number" step="0.1" min="0" value="${drug.doseVal}" onchange="updateDrugProp(${idx}, 'doseVal', parseFloat(this.value) || 0)" class="w-full bg-white border border-slate-200 rounded px-2 py-1 font-bold text-right focus:outline-none focus:border-sky-500">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-[10px] text-slate-500 font-semibold mb-0.5">Quy tắc Chỉnh</label>
+                            <select onchange="updateDrugProp(${idx}, 'type', this.value)" class="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-[11px] focus:outline-none">
+                                <option value="generic" ${drug.type === 'generic' ? 'selected' : ''}>Thông thường</option>
+                                <option value="carboplatin" ${drug.type === 'carboplatin' ? 'selected' : ''}>Carboplatin (Calvert)</option>
+                                <option value="cisplatin" ${drug.type === 'cisplatin' ? 'selected' : ''}>Cisplatin (Thận)</option>
+                                <option value="capecitabine" ${drug.type === 'capecitabine' ? 'selected' : ''}>Capecitabine (Thận)</option>
+                                <option value="pemetrexed" ${drug.type === 'pemetrexed' ? 'selected' : ''}>Pemetrexed (Thận)</option>
+                                <option value="doxorubicin" ${drug.type === 'doxorubicin' ? 'selected' : ''}>Doxorubicin (Gan)</option>
+                                <option value="paclitaxel" ${drug.type === 'paclitaxel' ? 'selected' : ''}>Paclitaxel (Gan)</option>
+                                <option value="etoposide" ${drug.type === 'etoposide' ? 'selected' : ''}>Etoposide (Thận)</option>
+                                <option value="oxaliplatin" ${drug.type === 'oxaliplatin' ? 'selected' : ''}>Oxaliplatin (Thần kinh)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateDrugProp(index, prop, value) {
+            currentDrugs[index][prop] = value;
+            calculateAll();
+        }
+
+        function calculateAll() {
+            // 1. Biometrics & BSA
+            const height = parseFloat(document.getElementById('height').value) || 165;
+            const weight = parseFloat(document.getElementById('weight').value) || 60;
+            const age = parseFloat(document.getElementById('age').value) || 60;
+            const gender = document.getElementById('gender').value;
+
+            const formula = document.getElementById('bsa-formula').value;
+            const capSetting = document.getElementById('bsa-cap').value;
+
+            let bsa = 0;
+            if (formula === 'dubois') {
+                bsa = 0.007184 * Math.pow(height, 0.725) * Math.pow(weight, 0.425);
+            } else {
+                // Mosteller
+                bsa = Math.sqrt((height * weight) / 3600);
+            }
+
+            if (capSetting === '2.0' && bsa > 2.0) {
+                bsa = 2.0;
+            }
+
+            document.getElementById('calculated-bsa').textContent = `${bsa.toFixed(2)} m²`;
+            document.getElementById('quick-bsa').textContent = `${bsa.toFixed(2)} m²`;
+
+            // 2. Renal Clearance (Cockcroft-Gault)
+            let scrVal = parseFloat(document.getElementById('scr-val').value) || 1.0;
+            const scrUnit = document.querySelector('input[name="scr-unit"]:checked').value;
+            let scrMgDl = scrVal;
+            if (scrUnit === 'umol') {
+                scrMgDl = scrVal / 88.4;
+            }
+
+            let crcl = ((140 - age) * weight) / (72 * scrMgDl);
+            if (gender === 'female') {
+                crcl *= 0.85;
+            }
+
+            document.getElementById('calculated-crcl').textContent = `${Math.round(crcl)} mL/min`;
+            document.getElementById('quick-crcl').textContent = `${Math.round(crcl)} mL/min`;
+
+            // 3. Hepatic lab values
+            const biliVal = parseFloat(document.getElementById('bili-val').value) || 0.8;
+            const astVal = parseFloat(document.getElementById('ast-val').value) || 1.0;
+
+            // 4. Toxicity Level
+            const levelFactor = parseFloat(document.getElementById('selected-level').value);
+
+            // Alerts list
+            const alerts = [];
+
+            // 5. Calculate Dose for Each Drug
+            const rowsHTML = currentDrugs.map(drug => {
+                let baselineDose = 0;
+
+                if (drug.unit === 'mg_m2') {
+                    baselineDose = drug.doseVal * bsa;
+                } else if (drug.unit === 'mg_kg') {
+                    baselineDose = drug.doseVal * weight;
+                } else if (drug.unit === 'fixed') {
+                    baselineDose = drug.doseVal;
+                } else if (drug.unit === 'auc') {
+                    // Calvert formula for Carboplatin: Dose = Target AUC * (capped CrCl + 25)
+                    const cappedCrCl = Math.min(crcl, 125); // ASCO/NCCN Cap at 125 mL/min
+                    baselineDose = drug.doseVal * (cappedCrCl + 25);
+                }
+
+                // Organ function adjustment factor
+                let organFactor = 1.0;
+                let organNote = '';
+
+                // Drug-specific rules
+                if (drug.type === 'cisplatin') {
+                    if (crcl < 45) {
+                        organFactor = 0;
+                        organNote = 'Chống chỉ định (CrCl < 45 mL/min)';
+                        alerts.push({ type: 'danger', msg: `Cisplatin: CrCl < 45 mL/min (${Math.round(crcl)} mL/min) → Chống chỉ định! Khuyên chuyển sang Carboplatin.` });
+                    } else if (crcl < 60) {
+                        organFactor = 0.75;
+                        organNote = 'Giảm 25% liều do suy thận (CrCl 45-59)';
+                        alerts.push({ type: 'warning', msg: `Cisplatin: CrCl 45-59 mL/min → Giảm 25% liều.` });
+                    }
+                } else if (drug.type === 'capecitabine') {
+                    if (crcl < 30) {
+                        organFactor = 0;
+                        organNote = 'Chống chỉ định (CrCl < 30 mL/min)';
+                        alerts.push({ type: 'danger', msg: `Capecitabine: CrCl < 30 mL/min → Chống chỉ định!` });
+                    } else if (crcl < 50) {
+                        organFactor = 0.75;
+                        organNote = 'Giảm 25% liều (CrCl 30-49 mL/min)';
+                        alerts.push({ type: 'warning', msg: `Capecitabine: CrCl 30-49 mL/min → Giảm 25% liều chuẩn.` });
+                    }
+                } else if (drug.type === 'pemetrexed') {
+                    if (crcl < 45) {
+                        organFactor = 0;
+                        organNote = 'Tạm dừng (CrCl < 45 mL/min)';
+                        alerts.push({ type: 'danger', msg: `Pemetrexed: CrCl < 45 mL/min → Tạm hoãn điều trị.` });
+                    }
+                } else if (drug.type === 'doxorubicin') {
+                    if (biliVal > 5.0) {
+                        organFactor = 0;
+                        organNote = 'Tạm hoãn (Bilirubin > 5.0 mg/dL)';
+                        alerts.push({ type: 'danger', msg: `Doxorubicin: Bilirubin > 5.0 mg/dL → Tạm dừng thuốc.` });
+                    } else if (biliVal >= 3.1) {
+                        organFactor = 0.25;
+                        organNote = 'Giảm 75% liều (Bilirubin 3.1-5.0)';
+                        alerts.push({ type: 'warning', msg: `Doxorubicin: Bilirubin 3.1-5.0 mg/dL → Dùng 25% liều chuẩn.` });
+                    } else if (biliVal >= 1.2) {
+                        organFactor = 0.5;
+                        organNote = 'Giảm 50% liều (Bilirubin 1.2-3.0)';
+                        alerts.push({ type: 'warning', msg: `Doxorubicin: Bilirubin 1.2-3.0 mg/dL → Giảm 50% liều.` });
+                    }
+                } else if (drug.type === 'paclitaxel') {
+                    if (biliVal > 2.0 || astVal > 2.0) {
+                        organFactor = 0.5;
+                        organNote = 'Giảm 50% liều (Độc tính gan)';
+                        alerts.push({ type: 'warning', msg: `Paclitaxel: Tăng Bilirubin/AST → Giảm 50% liều.` });
+                    }
+                } else if (drug.type === 'etoposide') {
+                    if (crcl < 15) {
+                        organFactor = 0.5;
+                        organNote = 'Giảm 50% liều do suy thận nặng';
+                    } else if (crcl < 50) {
+                        organFactor = 0.75;
+                        organNote = 'Giảm 25% liều do suy thận (CrCl < 50)';
+                    }
+                }
+
+                const organAdjustedDose = baselineDose * organFactor;
+                const finalRecommendedDose = organAdjustedDose * levelFactor;
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-2.5 font-bold text-slate-800">
+                            ${drug.name}
+                            ${organNote ? `<span class="block text-[10px] text-amber-600 font-semibold">${organNote}</span>` : ''}
+                        </td>
+                        <td class="p-2.5 text-slate-600">
+                            ${drug.doseVal} ${drug.unit === 'mg_m2' ? 'mg/m²' : drug.unit === 'auc' ? 'AUC' : drug.unit === 'mg_kg' ? 'mg/kg' : 'mg'}
+                        </td>
+                        <td class="p-2.5 text-right font-bold text-slate-700">${Math.round(baselineDose)} mg</td>
+                        <td class="p-2.5 text-right font-bold text-slate-600">${Math.round(organAdjustedDose)} mg</td>
+                        <td class="p-2.5 text-right font-black text-sky-700 text-sm bg-sky-50/60">
+                            ${finalRecommendedDose > 0 ? `${Math.round(finalRecommendedDose)} mg` : '<span class="text-red-600 font-bold">HOÃN / DỪNG</span>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('dose-table-body').innerHTML = rowsHTML;
+
+            // Render alerts
+            const alertsContainer = document.getElementById('alerts-container');
+            if (alerts.length === 0) {
+                alertsContainer.innerHTML = `
+                    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl p-2.5 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+                        <span>Không ghi nhận chống chỉ định hay vi phạm liều quan trọng do chức năng gan/thận.</span>
+                    </div>
+                `;
+            } else {
+                alertsContainer.innerHTML = alerts.map(a => `
+                    <div class="${a.type === 'danger' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-amber-50 border-amber-200 text-amber-800'} border text-xs rounded-xl p-2.5 flex items-center gap-2 font-medium">
+                        <i class="fa-solid ${a.type === 'danger' ? 'fa-circle-xmark text-red-600' : 'fa-triangle-exclamation text-amber-600'} text-sm"></i>
+                        <span>${a.msg}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function resetCalculator() {
+            document.getElementById('height').value = 165;
+            document.getElementById('weight').value = 60;
+            document.getElementById('age').value = 60;
+            document.getElementById('scr-val').value = 1.0;
+            document.getElementById('bili-val').value = 0.8;
+            document.getElementById('ast-val').value = 1.0;
+            document.getElementById('selected-level').value = '1.0';
+            loadPresetRegimen('folFox');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thang Điểm Nguy Cơ Huyết Khối Khorana & Khuyến Cáo VTE | OncoPortal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body class="text-slate-800 p-4 md:p-8 min-h-screen">
+    <div class="max-w-4xl mx-auto space-y-6">
+
+        <!-- Header Bar -->
+        <header class="bg-slate-800 text-white p-5 rounded-2xl shadow-md border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-rose-600 text-white p-3 rounded-xl shadow-inner text-xl">
+                    <i class="fa-solid fa-heart-circle-bolt"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white">Đánh Giá Nguy Cơ Huyết Khối Khorana & Dự Phòng VTE</h1>
+                    <p class="text-xs text-slate-300 font-medium mt-0.5">Khorana VTE Risk Score & Guideline Dự Phòng ASCO / NCCN 2023</p>
+                </div>
+            </div>
+            <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-slate-600 transition">
+                <i class="fa-solid fa-print"></i> In kết quả
+            </button>
+        </header>
+
+        <!-- Main Form Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Inputs Card -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
+                    <i class="fa-solid fa-[#e11d48] fa-sliders text-rose-600"></i>
+                    Yếu Tố Nguy Cơ Khorana (Trước Hóa Trị)
+                </h2>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">1. Vị trí Ung thư nguyên phát (Primary Cancer Site)</label>
+                    <select id="k-site" onchange="calculateKhorana()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                        <option value="2">Rất cao: Tụy, Dạ dày, U não nguyên phát (+2 điểm)</option>
+                        <option value="1" selected>Cao: Phổi, Lymphoma, Phụ khoa (Buồng trứng, Cổ tử cung), Thận, Bàng quang (+1 điểm)</option>
+                        <option value="0">Trung bình/Thấp: Đại trực tràng, Vú, Tiền liệt tuyến, Đầu cổ, Khác (0 điểm)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">2. Số lượng Tiểu cầu trước hóa trị (Platelet count)</label>
+                    <select id="k-plt" onchange="calculateKhorana()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                        <option value="0" selected>Bình thường (< 350,000 / mcL) (0 điểm)</option>
+                        <option value="1">Tăng (>= 350,000 / mcL) (+1 điểm)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">3. Hemoglobin (Hb) hoặc Dùng thuốc kích hồng cầu (ESA)</label>
+                    <select id="k-hb" onchange="calculateKhorana()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                        <option value="0" selected>Hb >= 10 g/dL & Không dùng ESA (0 điểm)</option>
+                        <option value="1">Hb < 10 g/dL HOẶC Có dùng Erythropoietin ESA (+1 điểm)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">4. Số lượng Bạch cầu (WBC count)</label>
+                    <select id="k-wbc" onchange="calculateKhorana()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                        <option value="0" selected>Bình thường (<= 11,000 / mcL) (0 điểm)</option>
+                        <option value="1">Tăng (> 11,000 / mcL) (+1 điểm)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">5. Chỉ số Khối Cơ Thể (BMI)</label>
+                    <select id="k-bmi" onchange="calculateKhorana()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                        <option value="0" selected>BMI < 35 kg/m2 (0 điểm)</option>
+                        <option value="1">Béo phì nặng (BMI >= 35 kg/m2) (+1 điểm)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Risk Output Card -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
+                    <i class="fa-solid fa-chart-line text-rose-600"></i>
+                    Phân Tầng Nguy Cơ Huyết Khối VTE
+                </h2>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
+                    <div>
+                        <div class="text-xs text-slate-500 font-semibold">Tổng điểm Khorana:</div>
+                        <div id="k-total-score" class="text-3xl font-black text-slate-800">1</div>
+                    </div>
+                    <div id="k-risk-badge" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-amber-100 text-amber-800 border border-amber-300">
+                        Nguy Cơ Trung Bình
+                    </div>
+                </div>
+
+                <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl space-y-2">
+                    <div class="text-xs font-bold text-rose-900">Tỷ lệ biến chứng Huyết khối (VTE Rate) trong 2.5 tháng:</div>
+                    <div id="k-vte-rate" class="text-2xl font-black text-rose-900">1.8% - 4.8%</div>
+                    <p id="k-vte-desc" class="text-xs text-rose-800 font-medium">Nguy cơ biến chứng DVT/PE trung bình trong đợt hóa trị.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clinical Guidelines & Prophylaxis Recommendation -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
+                <i class="fa-solid fa-pills text-teal-600"></i>
+                Khuyến Cáo Dự Phòng Thuốc Kháng Đông Ngoại Trú (ASCO / NCCN 2023)
+            </h2>
+
+            <div id="rec-box" class="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-2">
+                <div id="rec-title" class="font-bold text-amber-900 text-sm">Cân nhắc dự phòng VTE ở nhóm nguy cơ trung bình (Khorana 1 - 2 điểm):</div>
+                <div id="rec-body" class="text-xs text-amber-800 leading-relaxed space-y-1">
+                    <p>ASCO/NCCN khuyến cáo cân nhắc dùng Thuốc kháng đông đường uống thế hệ mới (DOAC) cho bệnh nhân ngoại trú đang hóa trị có nguy cơ Khorana >= 2 hoặc có thêm yếu tố nguy cơ bổ sung (tiền sử VTE, bất động):</p>
+                    <ul class="list-disc pl-5 font-semibold space-y-0.5 text-amber-900">
+                        <li><strong>Rivaroxaban (Xarelto)</strong>: 10 mg uống 1 lần/ngày (Duy trì trong suốt đợt hóa trị - tối đa 6 tháng).</li>
+                        <li><strong>Apixaban (Eliquis)</strong>: 2.5 mg uống 2 lần/ngày.</li>
+                        <li><strong>Enoxaparin (LMWH)</strong>: 40 mg tiêm dưới da 1 lần/ngày.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Contraindication Safety Checklist -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs text-slate-600">
+                <div class="font-bold text-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved text-rose-500"></i>
+                    Chống chỉ định dùng thuốc kháng đông dự phòng ngoại trú (Cần loại trừ trước khi kê đơn):
+                </div>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>Đang có xuất huyết cấp tính hoặc Tiêu cầu < 50,000 / mcL.</li>
+                    <li>Tổn thương ung thư nguy cơ xuất huyết cao (Ung thư đường tiêu hóa chưa mổ, Ung thư não di căn có chảy máu).</li>
+                    <li>Suy thận nặng (CrCl < 15 - 30 mL/phút) hoặc dùng cùng thuốc ức chế strong CYP3A4/P-gp.</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function calculateKhorana() {
+            const site = parseInt(document.getElementById('k-site').value);
+            const plt = parseInt(document.getElementById('k-plt').value);
+            const hb = parseInt(document.getElementById('k-hb').value);
+            const wbc = parseInt(document.getElementById('k-wbc').value);
+            const bmi = parseInt(document.getElementById('k-bmi').value);
+
+            const score = site + plt + hb + wbc + bmi;
+            document.getElementById('k-total-score').textContent = score;
+
+            const badge = document.getElementById('k-risk-badge');
+            const rate = document.getElementById('k-vte-rate');
+            const desc = document.getElementById('k-vte-desc');
+            const recBox = document.getElementById('rec-box');
+            const recTitle = document.getElementById('rec-title');
+            const recBody = document.getElementById('rec-body');
+
+            if (score === 0) {
+                badge.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-100 text-emerald-800 border border-emerald-300';
+                badge.textContent = 'Nguy Cơ Thấp (Low Risk)';
+                rate.textContent = '0.8% - 1.0%';
+                desc.textContent = 'Tỷ lệ biến chứng thuyên tắc huyết khối rất thấp.';
+
+                recBox.className = 'bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-2';
+                recTitle.textContent = 'Không khuyến cáo dùng kháng đông dự phòng thường quy:';
+                recTitle.className = 'font-bold text-emerald-900 text-sm';
+                recBody.innerHTML = '<p class="text-xs text-emerald-800">Bệnh nhân ngoại trú nguy cơ thấp (Khorana 0 điểm) không cần dùng thuốc kháng đông dự phòng. Khuyến cáo vận động nhẹ nhàng và uống đủ nước.</p>';
+            } else if (score === 1 || score === 2) {
+                badge.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-amber-100 text-amber-800 border border-amber-300';
+                badge.textContent = 'Nguy Cơ Trung Bình (Intermediate Risk)';
+                rate.textContent = '1.8% - 4.8%';
+                desc.textContent = 'Tỷ lệ biến chứng huyết khối trung bình trong quá trình hóa trị.';
+
+                recBox.className = 'bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-2';
+                recTitle.textContent = 'Cân nhắc dự phòng VTE ở điểm Khorana >= 2:';
+                recTitle.className = 'font-bold text-amber-900 text-sm';
+                recBody.innerHTML = `
+                    <p class="text-xs text-amber-800">Nếu điểm Khorana = 2 hoặc có nguy cơ bổ sung, cân nhắc kê đơn DOAC dự phòng ngoại trú:</p>
+                    <ul class="list-disc pl-5 font-semibold space-y-0.5 text-amber-900 text-xs">
+                        <li><strong>Rivaroxaban</strong>: 10 mg uống 1 lần/ngày.</li>
+                        <li><strong>Apixaban</strong>: 2.5 mg uống 2 lần/ngày.</li>
+                        <li><strong>Enoxaparin</strong>: 40 mg tiêm SC 1 lần/ngày.</li>
+                    </ul>
+                `;
+            } else {
+                badge.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-100 text-rose-800 border border-rose-300';
+                badge.textContent = 'Nguy Cơ Cao (High Risk)';
+                rate.textContent = '6.7% - 17.7%';
+                desc.textContent = 'Nguy cơ biến chứng huyết khối rất cao nếu không dự phòng.';
+
+                recBox.className = 'bg-rose-50 border border-rose-200 p-4 rounded-xl space-y-2';
+                recTitle.textContent = 'Khuyên dùng Thuốc Kháng Đông Dự Phòng Ngoại Trú (ASCO/NCCN 2023):';
+                recTitle.className = 'font-bold text-rose-900 text-sm';
+                recBody.innerHTML = `
+                    <p class="text-xs text-rose-800">Chỉ định rõ ràng dùng kháng đông dự phòng ngoại trú trong suốt liệu trình hóa trị (6 tháng) nếu không có chống chỉ định xuất huyết:</p>
+                    <ul class="list-disc pl-5 font-semibold space-y-0.5 text-rose-900 text-xs">
+                        <li><strong>Rivaroxaban (Xarelto)</strong>: 10 mg uống 1 lần/ngày (Khuyên dùng đầu tay).</li>
+                        <li><strong>Apixaban (Eliquis)</strong>: 2.5 mg uống 2 lần/ngày (Khuyên dùng đầu tay).</li>
+                        <li><strong>Enoxaparin (LMWH)</strong>: 40 mg tiêm dưới da 1 lần/ngày (Nếu không dùng được DOAC).</li>
+                    </ul>
+                `;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', calculateKhorana);
+    </script>
+</body>
+</html>
