@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tổng hợp hướng dẫn điều trị Bộ Y tế, các hiệp hội và tài liệu y khoa Việt Nam cùng các nghiên cứu lâm sàng quốc tế">
+  <title>Oncology Clinical Updates & Guidelines</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link rel="stylesheet" href="oncology.css">
+</head>
+
+<body>
+  <!-- TOP NAV -->
+  <nav class="topnav">
+    <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Thu gọn / Mở rộng Sidebar (Alt+S)" aria-label="Thu gọn hoặc mở rộng Sidebar">
+      <svg class="sidebar-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="9" y1="3" x2="9" y2="21"></line>
+        <path class="toggle-arrow-path" d="M15 9l-3 3 3 3"></path>
+      </svg>
+    </button>
+    <a href="../index.html" class="topnav-back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Trang chủ OncoPortal
+    </a>
+    <div class="topnav-divider"></div>
+    <div class="topnav-title">🎗️ Oncology Clinical Updates & Guidelines</div>
+    <div class="topnav-right">
+      
+      <!-- Supabase Connection Indicator & Sync -->
+      <button class="btn" id="supabase-status-btn" onclick="openSupabaseModal()" style="padding: 0.35rem 0.65rem; display: flex; align-items: center; gap: 6px; border-radius: 8px; border: 1.5px solid var(--border-light); cursor: pointer;">
+        <span id="supabase-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; display: inline-block;"></span>
+        <span id="supabase-status-text" style="font-size: 0.72rem; font-weight: 700;">Supabase: Local Mode</span>
+      </button>
+      <span class="topnav-pill">EBM & Guidelines</span>
+    </div>
+  </nav>
+
+  <div class="app-shell">
+
+    <!-- LEFT NAV -->
+    <nav class="left-nav" id="left-nav">
+      <div class="left-nav-header">
+        <span class="left-nav-title-text">BẢNG ĐIỀU HƯỚNG</span>
+        <button class="left-nav-toggle-btn" id="left-nav-toggle-btn" onclick="toggleSidebar()" title="Thu gọn / Mở rộng Sidebar (Alt+S)" aria-label="Thu gọn hoặc mở rộng Sidebar">
+          <svg class="left-nav-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <div class="left-nav-section">
+        <div class="left-nav-label">Chức năng chính</div>
+        <button class="left-nav-link active" id="sidebar-btn-studies" onclick="switchTab('list')" title="Tất cả tài liệu">
+          <span class="left-nav-icon">📚</span>
+          <span class="left-nav-text">Tất cả tài liệu</span>
+          <span class="left-nav-link-badge" id="total-count-sidebar">0</span>
+        </button>
+        <button class="left-nav-link" id="sidebar-btn-saved" onclick="switchTab('saved')" title="Đã lưu trữ">
+          <span class="left-nav-icon">⭐</span>
+          <span class="left-nav-text">Đã lưu trữ</span>
+          <span class="left-nav-link-badge" id="saved-count-sidebar">0</span>
+        </button>
+        <a href="../guideline-radar/radar.html" class="left-nav-link" style="text-decoration:none; color:inherit;" title="Guideline Radar">
+          <span class="left-nav-icon">📡</span>
+          <span class="left-nav-text">Guideline Radar</span>
+        </a>
+        <button class="left-nav-link" onclick="openAddModal()" title="Thêm tài liệu">
+          <span class="left-nav-icon">➕</span>
+          <span class="left-nav-text">Thêm tài liệu</span>
+        </button>
+        <button class="left-nav-link" onclick="openImportModal()" title="Nhập dữ liệu JSON">
+          <span class="left-nav-icon">📥</span>
+          <span class="left-nav-text">Nhập dữ liệu JSON</span>
+        </button>
+      </div>
+
+      <div class="left-nav-section">
+        <div class="left-nav-label">Lọc nhanh chuyên khoa</div>
+        <div id="spec-filter-list"></div>
+        <div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-light);" id="left-nav-extra-filters">
+          <button class="left-nav-link" id="sidebar-btn-summary" onclick="filterByHasSummary()" title="Có bài Tóm tắt">
+            <span class="left-nav-icon">📝</span>
+            <span class="left-nav-text">Có bài Tóm tắt</span>
+            <span class="left-nav-link-badge" id="summary-count-sidebar">0</span>
+          </button>
+          <button class="left-nav-link" id="sidebar-btn-subgroup" onclick="filterBySubgroupData()" title="Có dữ liệu Subgroup">
+            <span class="left-nav-icon">🧬</span>
+            <span class="left-nav-text">Có dữ liệu Subgroup</span>
+            <span class="left-nav-link-badge" id="subgroup-count-sidebar">0</span>
+          </button>
+          <button class="left-nav-link" id="sidebar-btn-asian" onclick="filterByAsianData()" title="Dữ liệu Châu Á">
+            <span class="left-nav-icon">🌏</span>
+            <span class="left-nav-text">Dữ liệu Châu Á</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- MOBILE BACKDROP -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+      <!-- ══ CÓ GÌ MỚI ══ -->
+      <section class="updates-section" id="section-recent-updates">
+        <div class="updates-header" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer;" onclick="toggleRecentUpdatesSec()">
+          <div>
+            <h2>🆕 Có Gì Mới</h2>
+            <p>Cập nhật hướng dẫn lâm sàng và nghiên cứu mới nhất</p>
+          </div>
+          <button id="btn-toggle-recent-updates" style="background: var(--surface-2, #f8fafc); border: 1px solid var(--border-light, #e2e8f0); border-radius: 20px; padding: 0.3rem 0.8rem; font-size: 0.76rem; font-weight: 700; color: var(--text-muted, #475569); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;" aria-label="Thu gọn hoặc mở rộng phần Có Gì Mới">
+            <span id="recent-updates-toggle-label">Thu gọn</span>
+            <span id="recent-updates-toggle-icon">▲</span>
+          </button>
+        </div>
+        <div class="updates-list" id="updates-list">
+          <!-- Dynamic content -->
+        </div>
+      </section>
+
+      <!-- TABS NAVIGATION ROW -->
+      <div class="tabs-header-row">
+        <div class="tabs-header-left">
+          <h1 id="page-panel-title">Oncology Clinical Updates & Guidelines</h1>
+          <p>Cập nhật lâm sàng, kết quả thử nghiệm, khuyến cáo và thông tin thuốc Ung thư (Oncology)</p>
+        </div>
+        <div class="tab-bar-container">
+          <button class="tab-trigger active" id="tab-list" onclick="switchTab('list')">
+            📋 Danh sách
+          </button>
+          <button class="tab-trigger" id="tab-saved" onclick="switchTab('saved')">
+            ⭐ Đã lưu <span class="tab-trigger-count" id="saved-count">0</span>
+          </button>
+          <button class="tab-trigger" id="tab-compare" onclick="switchTab('compare')">
+            🔄 So sánh <span class="tab-trigger-count" id="compare-count">0</span>
+          </button>
+          <button class="tab-trigger" id="tab-analytics" onclick="switchTab('analytics')">
+            📊 Thống kê
+          </button>
+          <button class="tab-trigger" id="tab-timeline" onclick="switchTab('timeline')">
+            📅 Timeline
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: DANH SÁCH / ĐÃ LƯU ══ -->
+      <section class="content-panel active" id="panel-studies">
+        
+        <!-- Controls & Filters Card -->
+        <div class="controls-card">
+          <!-- Row 1: Search & Layout Settings -->
+          <div class="controls-row-1">
+            <div class="search-box">
+              <input type="text" id="search-input" placeholder="Tìm kiếm nghiên cứu, thuốc, chuyên khoa, đối tượng..." aria-label="Tìm kiếm">
+            </div>
+            
+            <button class="btn" id="filter-icd-btn" onclick="openIcdFilterModal()" title="Lọc theo mã bệnh ICD-10" style="margin-right: auto;">
+              🔍 Lọc ICD-10
+            </button>
+
+            <div class="segmented-control">
+              <button class="segment-btn" id="view-mode-full" onclick="setViewMode('full')">Full View</button>
+              <button class="segment-btn active" id="view-mode-compact" onclick="setViewMode('compact')">Compact</button>
+            </div>
+
+            <!-- Column dropdown -->
+            <div class="dropdown-wrapper">
+              <button class="btn" id="columns-toggle-btn" onclick="toggleColumnsDropdown(event)">
+                📊 Cột hiển thị
+              </button>
+              <div class="dropdown-menu" id="columns-dropdown-menu">
+                <label class="dropdown-item"><input type="checkbox" checked data-column="cancerType" onchange="toggleColumnVisibility('cancerType', this.checked)"> Loại Ung thư</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="phase" onchange="toggleColumnVisibility('phase', this.checked)"> Giai đoạn (Phase)</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="presentedAt" onchange="toggleColumnVisibility('presentedAt', this.checked)"> Trình bày tại</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="population" onchange="toggleColumnVisibility('population', this.checked)"> Đối tượng</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="intervention" onchange="toggleColumnVisibility('intervention', this.checked)"> Can thiệp</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="primaryEndpoint" onchange="toggleColumnVisibility('primaryEndpoint', this.checked)"> Tiêu chí chính</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="medianPFS" onchange="toggleColumnVisibility('medianPFS', this.checked)"> Trung vị PFS</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="medianOS" onchange="toggleColumnVisibility('medianOS', this.checked)"> Trung vị OS</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="keyResults" onchange="toggleColumnVisibility('keyResults', this.checked)"> Kết luận ngắn</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="impact" onchange="toggleColumnVisibility('impact', this.checked)"> Ảnh hưởng</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="fdaStatus" onchange="toggleColumnVisibility('fdaStatus', this.checked)"> Trạng thái FDA</label>
+              </div>
+            </div>
+
+            <button class="btn" id="filter-summary-btn" onclick="toggleHasSummaryFilter()" title="Lọc các nghiên cứu/hướng dẫn có bài tóm tắt chi tiết">
+              📝 Có Tóm tắt
+            </button>
+
+            <button class="btn" id="advanced-filters-btn" onclick="toggleAdvancedFilters()">
+              ⚙️ Lọc nâng cao
+            </button>
+            
+            <button class="btn" onclick="resetFilters()">
+              🔄 Reset
+            </button>
+            
+            <div class="stats-badge">
+              Hiển thị <strong id="display-count">0</strong> nghiên cứu
+            </div>
+          </div>
+
+          <!-- Row 1.5: Quick Practice Badges -->
+          <div class="filter-group-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-light);">
+            <span class="filter-row-label">Lọc nhanh</span>
+            <div class="filter-pills">
+              <button class="filter-pill" onclick="setFilter('impact', 'practice-changing')" style="border-color: #ef4444; color: #ef4444; background: #fef2f2;">🔥 Practice-Changing</button>
+              <button class="filter-pill" onclick="setFilter('sourceType', 'vn-moh')" style="border-color: #ef4444; color: #b91c1c; background: #fff0f2;">🇻🇳 Khuyến cáo BYT</button>
+              <button class="filter-pill" id="quick-asian-data-btn" onclick="filterByAsianData()" style="border-color: #f59e0b; color: #d97706; background: #fffbeb;">🌏 Dữ liệu Châu Á</button>
+            </div>
+          </div>
+
+          <!-- Row 2: Source Type Filters -->
+          <div class="filter-group-row" id="filter-row-source-type">
+            <span class="filter-row-label">Phân loại nguồn</span>
+            <div class="filter-pills" id="source-type-pills">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Row 3: Impact Filters -->
+          <div class="filter-group-row" id="filter-row-impact">
+            <span class="filter-row-label">Mức ảnh hưởng</span>
+            <div class="filter-pills" id="impact-pills">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Advanced Filters Row (Chuyên khoa) -->
+          <div class="filter-group-row" id="filter-row-cancerType" style="display: none;">
+            <span class="filter-row-label">Loại Ung thư</span>
+            <div class="filter-pills" id="cancer-type-pills">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Advanced Filters Row (Thiết kế nghiên cứu) -->
+          <div class="filter-group-row" id="filter-row-design" style="display: none;">
+            <span class="filter-row-label">Thiết kế</span>
+            <div class="filter-pills" id="design-pills">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Advanced Filters Row (Thời gian & Châu Á) -->
+          <div class="filter-group-row" id="filter-row-period" style="display: none;">
+            <span class="filter-row-label">Thời gian</span>
+            <div class="filter-pills" id="period-pills">
+              <!-- Rendered via JS -->
+            </div>
+            <div class="asian-data-checkbox-container">
+              <label class="checkbox-label">
+                <input type="checkbox" id="asian-data-filter" onchange="handleAsianFilterChange()"> Dữ liệu Châu Á
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+          <table class="study-table" id="studies-table-element">
+            <thead>
+              <tr>
+                <th class="col-checkbox cell-center">
+                  <input type="checkbox" class="row-selector" id="select-all-checkboxes" onchange="toggleSelectAllRows(this.checked)" aria-label="Chọn tất cả">
+                </th>
+                <th class="col-star cell-center">⭐</th>
+                <th class="col-expand cell-center"></th>
+                <th class="col-study sortable" data-sort="title">Tên nghiên cứu / Thuốc</th>
+                <th class="sortable" data-sort="cancerType" data-col="cancerType">Loại Ung thư</th>
+                <th class="sortable" data-sort="phase" data-col="phase">Giai đoạn</th>
+                <th class="sortable" data-sort="presentedAt" data-col="presentedAt">Trình bày tại</th>
+                <th class="sortable" data-sort="population" data-col="population">Đối tượng</th>
+                <th class="sortable" data-sort="intervention" data-col="intervention">Can thiệp</th>
+                <th class="sortable" data-sort="primaryEndpoint" data-col="primaryEndpoint">Tiêu chí chính</th>
+                <th class="sortable" data-sort="medianPFS" data-col="medianPFS">Trung vị PFS</th>
+                <th class="sortable" data-sort="medianOS" data-col="medianOS">Trung vị OS</th>
+                <th class="sortable" data-sort="keyResults" data-col="keyResults">Kết luận ngắn</th>
+                <th class="col-impact sortable" data-sort="impact" data-col="impact">Ảnh hưởng</th>
+                <th class="sortable" data-sort="fdaStatus" data-col="fdaStatus">Trạng thái FDA</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <!-- Dynamic content -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="empty-state" style="display:none;">
+          <div class="empty-state-icon">📋</div>
+          <p id="empty-state-message">Chưa có tài liệu nào khớp với bộ lọc. Hãy điều chỉnh bộ lọc hoặc thêm tài liệu mới.</p>
+        </div>
+
+      </section>
+
+      <!-- ══ PANEL: SO SÁNH ══ -->
+      <section class="content-panel" id="panel-compare">
+        <div class="compare-container">
+          <div class="compare-header">
+            <div>
+              <h3>Bảng đối chiếu hướng dẫn & nghiên cứu lâm sàng</h3>
+              <p>Đang so sánh <span id="compare-selected-count">0</span> tài liệu được chọn</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <div class="segmented-control">
+                <button class="segment-btn active" id="compare-mode-grid-btn" onclick="setCompareMode('grid')">📋 Bảng Chi Tiết</button>
+                <button class="segment-btn" id="compare-mode-matrix-btn" onclick="setCompareMode('matrix')">📊 Ma Trận Chứng Cứ (Heatmap)</button>
+              </div>
+              <button class="btn" onclick="clearComparison()">❌ Xóa tất cả so sánh</button>
+            </div>
+          </div>
+          
+          <div class="compare-grid" id="compare-grid-container">
+            <!-- Dynamic comparison cards -->
+          </div>
+
+          <div class="compare-matrix-wrapper" id="compare-matrix-container" style="display: none;">
+            <!-- Dynamic Heatmap Matrix -->
+          </div>
+          
+          <div class="empty-state" id="compare-empty-state">
+            <div class="empty-state-icon">🔄</div>
+            <p>Vui lòng chọn ít nhất một tài liệu ở bảng danh sách (tích chọn checkbox) để so sánh.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ PANEL: ANALYTICS ══ -->
+      <section class="content-panel" id="panel-analytics">
+        <!-- Rendered by renderAnalytics() -->
+      </section>
+
+      <!-- ══ PANEL: TIMELINE ══ -->
+      <section class="content-panel" id="panel-timeline">
+        <!-- Rendered by renderTimeline() -->
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ADD STUDY MODAL -->
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-form-title">➕ Thêm Tài Liệu / Nghiên Cứu Mới</h3>
+        <button class="modal-close" onclick="closeAddModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="add-form" onsubmit="handleFormSubmit(event)">
+          <input type="hidden" id="study-id">
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="study-title">Tên tài liệu / Nghiên cứu *</label>
+              <input type="text" id="study-title" required placeholder="Ví dụ: Khuyến cáo điều trị suy tim VNHA 2023">
+            </div>
+            <div class="form-group">
+              <label for="study-author">Tên tác giả (nếu có)</label>
+              <input type="text" id="study-author" placeholder="Ví dụ: Braunwald, McMurray...">
+            </div>
+            <div class="form-group">
+              <label for="study-icd10">Mã ICD-10 (Cách nhau bởi dấu phẩy)</label>
+              <input type="text" id="study-icd10" placeholder="Ví dụ: I50, I50.9, E11">
+              <small style="color: var(--text-muted); font-size: 0.75rem;">Nhập mã ICD-10 để phân loại bệnh lý</small>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="study-drug">Tên hoạt chất / Nhóm thuốc *</label>
+            <input type="text" id="study-drug" required placeholder="Ví dụ: ARNI, SGLT2i">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="study-source-type">Phân loại nguồn *</label>
+              <select id="study-source-type" required>
+                <option value="">-- Chọn phân loại nguồn --</option>
+                <option value="intl-study">Nghiên cứu Quốc tế</option>
+                <option value="intl-guideline">Guideline Quốc tế</option>
+                <option value="vn-moh">Bộ Y tế Việt Nam</option>
+                <option value="vn-doh">Sở Y tế Việt Nam</option>
+                <option value="vn-association">Hội chuyên khoa VN (VNHA,...)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="study-design">Thiết kế nghiên cứu *</label>
+              <select id="study-design" required>
+                <option value="">-- Chọn thiết kế nghiên cứu --</option>
+                <option value="rct">Thử nghiệm lâm sàng (RCT)</option>
+                <option value="meta">Tổng quan / Phân tích gộp (Meta-Analysis)</option>
+                <option value="cohort">Nghiên cứu quan sát / Thuần tập</option>
+                <option value="guideline">Hướng dẫn / Khuyến cáo lâm sàng</option>
+                <option value="review">Bài tổng quan y khoa (Review)</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="study-specialty">Chuyên khoa *</label>
+              <select id="study-specialty" required>
+                <option value="">-- Chọn chuyên khoa --</option>
+                <option value="cardio">Tim mạch (Cardiology)</option>
+                <option value="pulmo">Hô hấp (Pulmonology)</option>
+                <option value="gi">Tiêu hóa (Gastroenterology)</option>
+                <option value="endo">Nội tiết (Endocrinology)</option>
+                <option value="neuro">Thần kinh (Neurology)</option>
+                <option value="infect">Truyền nhiễm (Infectious Disease)</option>
+                <option value="renal">Thận học (Nephrology)</option>
+                <option value="rheum">Cơ xương khớp (Rheumatology)</option>
+                <option value="hema">Huyết học (Hematology)</option>
+                <option value="onco">Ung thư (Oncology)</option>
+                <option value="icu">Hồi sức cấp cứu (HSCC / ICU)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="study-impact">Mức ảnh hưởng lâm sàng *</label>
+              <select id="study-impact" required>
+                <option value="">-- Chọn mức ảnh hưởng --</option>
+                <option value="practice-changing">Practice-Changing (Thay đổi thực hành)</option>
+                <option value="informative">Informative (Thông tin hữu ích)</option>
+                <option value="early-signal">Early Signal (Tín hiệu sớm)</option>
+                <option value="negative">Negative (Không hiệu quả/Âm tính)</option>
+                <option value="regulatory">Regulatory (Pháp lý/Phê duyệt)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="study-organization">Tổ chức / Tạp chí *</label>
+              <input type="text" id="study-organization" required placeholder="Ví dụ: NEJM, Lancet, ACC, ADA">
+            </div>
+            <div class="form-group">
+              <label for="study-year">Năm công bố *</label>
+              <input type="number" id="study-year" required min="2000" max="2035" placeholder="2025">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="study-intervention">Can thiệp / Đối chứng</label>
+              <input type="text" id="study-intervention" placeholder="Ví dụ: Empagliflozin 10mg vs Placebo">
+            </div>
+            <div class="form-group">
+              <label for="study-primary-endpoint">Tiêu chí đánh giá chính</label>
+              <input type="text" id="study-primary-endpoint" placeholder="Ví dụ: Tử vong do tim mạch hoặc nhập viện do suy tim">
+            </div>
+          </div>
+
+          
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="study-phase">Giai đoạn nghiên cứu / Phân loại phụ</label>
+              <input type="text" id="study-phase" placeholder="Ví dụ: Phase III, Guidelines">
+            </div>
+            <div class="form-group">
+              <label for="study-sample-size">Cỡ mẫu nghiên cứu (số lượng bệnh nhân)</label>
+              <input type="number" id="study-sample-size" placeholder="Ví dụ: 7020">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="study-key-results">Kết quả chính / Chỉ số thống kê</label>
+            <input type="text" id="study-key-results" placeholder="Ví dụ: HR 0.75 (95% CI 0.65-0.86); p<0.001">
+          </div>
+
+          <div class="form-group">
+            <label for="study-population">Đối tượng nghiên cứu (Population)</label>
+            <input type="text" id="study-population" placeholder="Ví dụ: Bệnh nhân ĐTĐ typ 2 có nguy cơ tim mạch cao">
+          </div>
+
+          <div class="form-group">
+            <label for="study-summary">Kết luận ngắn gọn (Conclusion) *</label>
+            <textarea id="study-summary" rows="2" required placeholder="Mô tả tóm tắt kết quả chính..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="study-detailed-conclusion">Kết luận chi tiết / Thông tin bổ sung</label>
+            <textarea id="study-detailed-conclusion" rows="3" placeholder="Chi tiết về các tiêu chí phụ, biến cố bất lợi hoặc liều dùng..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="study-fda-status">Trạng thái FDA / Khuyến cáo hướng dẫn</label>
+              <input type="text" id="study-fda-status" placeholder="Ví dụ: Approved 2016, AHA/ACC Class I Recommendation">
+            </div>
+            <div class="form-group">
+              <label for="study-source-url">Link nguồn (PubMed / Journal URL)</label>
+              <input type="url" id="study-source-url" placeholder="https://www.nejm.org/doi/...">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="study-file">File HTML tóm tắt (tùy chọn)</label>
+              <input type="text" id="study-file" placeholder="Ví dụ: studies/empa-reg.html">
+            </div>
+            <div class="form-group" style="display: flex; align-items: center;">
+              <label class="form-checkbox-label">
+                <input type="checkbox" id="study-asian-data"> Thử nghiệm có dữ liệu bệnh nhân Châu Á
+              </label>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label for="study-subgroups">🧬 Dữ liệu Subgroup (JSON — tùy chọn)</label>
+              <textarea id="study-subgroups" rows="4"
+                placeholder='{
+  "Châu Á": "HR 0.82 (95% CI 0.64-1.04)",
+  "Suy tim": "HR 0.65 (95% CI 0.50-0.85)",
+  "Bệnh thận mạn": "HR 0.70 (95% CI 0.51-0.96)"
+}'></textarea>
+              <div style="font-size:0.72rem;color:var(--text-faint);margin-top:4px;">Nhập dạng JSON key-value: {"Tên subgroup": "Kết quả HR/OR/RR"}. Hệ thống sẽ tự vẽ forest plot mini.</div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+            <button type="button" class="btn" onclick="closeAddModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-study">Lưu tài liệu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUPABASE SETTINGS MODAL -->
+  <div class="modal-overlay" id="supabase-modal">
+    <div class="modal" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>☁️ Cấu hình Supabase</h3>
+        <button class="modal-close" onclick="closeSupabaseModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
+          Đồng bộ dữ liệu tài liệu & nghiên cứu lên đám mây Supabase để đồng bộ hóa trên mọi thiết bị. Dữ liệu sẽ tự động lưu tạm thời tại LocalStorage khi ngoại tuyến.
+        </p>
+        <form id="supabase-form" onsubmit="saveSupabaseConfig(event)">
+          <div class="form-group">
+            <label for="sb-url">Supabase Project URL</label>
+            <input type="url" id="sb-url" placeholder="https://xxxxxxxxxxxxxx.supabase.co" required>
+          </div>
+          <div class="form-group">
+            <label for="sb-key">Supabase Anon Key (Public Key)</label>
+            <input type="password" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+          </div>
+
+          <details style="margin-top: 1rem; border: 1px solid var(--border-light); border-radius: 8px; padding: 0.5rem;">
+            <summary style="font-size: 0.75rem; font-weight: 700; color: var(--accent); cursor: pointer; user-select: none;">💡 Câu lệnh SQL tạo bảng mẫu trên Supabase</summary>
+            <pre style="font-size: 0.68rem; background: var(--surface-2); padding: 0.5rem; border-radius: 6px; overflow-x: auto; margin-top: 0.5rem; color: var(--text-muted); text-align: left; max-height: 150px; font-family: monospace;">
+create table oncology_clinical_updates (
+  id text primary key,
+  title text not null,
+  author text,
+  drug text,
+  "sourceType" text,
+  specialty text,
+  design text,
+  intervention text,
+  "primaryEndpoint" text,
+  "keyResults" text,
+  impact text,
+  year integer,
+  organization text,
+  phase text,
+  "sampleSize" integer,
+  population text,
+  summary text,
+  "detailedConclusion" text,
+  "fdaStatus" text,
+  "sourceUrl" text,
+  file text,
+  "asianData" boolean,
+  bookmarked boolean,
+  "matrixEndpoints" jsonb,
+  "decisionTree" jsonb,
+  "pocketCard" jsonb,
+  "citation" jsonb,
+  "radarUrl" text,
+  "createdAt" timestamp with time zone default timezone('utc'::text, now())
+);</pre>
+          </details>
+          
+          <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+            <button type="button" class="btn" style="color: var(--color-practice-changing); border-color: rgba(220,38,38,0.2);" onclick="clearSupabaseConfig()">Xóa cấu hình</button>
+            <button type="button" class="btn" onclick="closeSupabaseModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary">Lưu & Kết nối</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT DATA MODAL -->
+  <div class="modal-overlay" id="import-modal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>📥 Nhập Dữ Liệu Hướng Dẫn & Nghiên Cứu</h3>
+        <button class="modal-close" onclick="closeImportModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.5;">
+          Nhập dữ liệu bằng cách kéo thả/tải lên file JSON hoặc dán chuỗi mã JSON trực tiếp dưới đây. Cấu trúc JSON cần khớp với định dạng cơ sở dữ liệu.
+        </p>
+        
+        <!-- Way 1: File Upload (Drag & Drop) -->
+        <div class="form-group">
+          <label style="font-weight: 700; margin-bottom: 0.5rem; display: block;">Cách 1: Chọn hoặc Kéo thả file JSON</label>
+          <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+            <p>📂 Kéo thả file .json vào đây hoặc click để chọn file</p>
+            <small>Hỗ trợ file JSON chứa một đối tượng nghiên cứu hoặc danh sách nghiên cứu</small>
+            <input type="file" id="file-input" accept=".json" style="display: none;" onchange="handleFileSelect(event)">
+          </div>
+        </div>
+
+        <div style="text-align: center; margin: 1.25rem 0; color: var(--text-faint); font-weight: 600; font-size: 0.78rem; position: relative;">
+          <span style="background: var(--surface); padding: 0 12px; position: relative; z-index: 1;">HOẶC</span>
+          <div style="position: absolute; top: 50%; left: 0; right: 0; border-top: 1px solid var(--border-light); z-index: 0;"></div>
+        </div>
+
+        <!-- Way 2: Textarea copy-paste -->
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label for="json-text" style="font-weight: 700; display: block; margin: 0;">Cách 2: Dán mã JSON trực tiếp</label>
+            <button type="button" class="btn btn-small" onclick="fillSampleJSON()" style="font-size: 0.72rem; padding: 2px 8px; color: var(--accent); border-color: var(--accent-mid);">📋 Dán Mẫu JSON Chuẩn</button>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); background: var(--surface-2); padding: 6px 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid var(--border-light);">
+            💡 <strong>Hệ thống tự động vẽ Forest plot mini</strong> khi nhận chuỗi có chỉ số <code>OR</code>, <code>RR</code>, <code>HR</code>, <code>aOR</code>, <code>aHR</code>, <code>p-value</code> (ví dụ: <code>OR 0.75 (95% CI 0.65-0.86, p=0.002)</code>) hoặc JSON object subgroup.
+          </div>
+          <textarea id="json-text" rows="8" placeholder='Ví dụ dán mảng các đối tượng nghiên cứu JSON:
+[
+  {
+    "title": "EMPA-REG OUTCOME",
+    "drug": "Empagliflozin",
+    "sourceType": "intl-study",
+    "specialty": "cardio",
+    "design": "rct",
+    "keyResults": "HR 0.86 (95% CI 0.74-0.99, p=0.04)",
+    "year": 2015,
+    "summary": "Mô tả tóm tắt...",
+    "subgroups": {
+      "Châu Á": "HR 0.82 (95% CI 0.64-1.04, p=0.10)",
+      "Suy tim": "HR 0.65 (95% CI 0.50-0.85, p<0.001)"
+    }
+  }
+]' style="font-family: monospace; font-size: 0.78rem;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" class="btn" onclick="closeImportModal()">Hủy</button>
+          <button type="button" class="btn btn-primary" onclick="importFromText()">📥 Nhập dữ liệu mã JSON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POCKET CHEAT-SHEET MODAL -->
+  <div class="modal-overlay" id="pocket-modal">
+    <div class="modal" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 id="pocket-modal-title">⚡ Pocket Cheat-Sheet Tra Cứu Nhanh</h3>
+        <button class="modal-close" onclick="closePocketModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="pocket-modal-body">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- CITATION GENERATOR MODAL -->
+  <div class="modal-overlay" id="citation-modal">
+    <div class="modal" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3>⚡ Trích Dẫn Y Khoa Chuẩn & Bệnh Án</h3>
+        <button class="modal-close" onclick="closeCitationModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="citation-modal-body">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE DECISION TREE MODAL -->
+  <div class="modal-overlay" id="decision-modal">
+    <div class="modal" style="max-width: 720px;">
+      <div class="modal-header">
+        <h3 id="decision-modal-title">🧩 Thuật Toán Động Cho Guideline</h3>
+        <button class="modal-close" onclick="closeDecisionModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="decision-modal-body">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBGROUP ANALYSIS MODAL -->
+  <div class="modal-overlay" id="subgroup-modal">
+    <div class="modal" style="max-width: 860px; width: 92%;">
+      <div class="modal-header">
+        <h3 id="subgroup-modal-title">🧬 Phân Tích Subgroup Lâm Sàng</h3>
+        <button class="modal-close" onclick="closeSubgroupModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="subgroup-modal-body" style="padding-top: 0.5rem;">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ICD-10 PICKER MODAL -->
+  <div class="modal-overlay" id="icd10-modal">
+    <div class="modal" style="max-width: 600px; display: flex; flex-direction: column; max-height: 85vh;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-list-ul"></i> Tra cứu mã bệnh ICD-10</h3>
+        <button class="modal-close" onclick="closeIcdFilterModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div style="position: relative; margin-bottom: 1rem;">
+          <input type="text" id="icd-search-input" placeholder="Gõ tên bệnh hoặc mã bệnh (VD: Suy tim, I50)..." style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
+        </div>
+        <div id="icd-results-container" style="flex: 1; overflow-y: auto; background: var(--surface-2); border-radius: 8px; border: 1px solid var(--border-light);">
+          <div style="text-align: center; padding: 2rem; color: var(--text-muted);">Nhập từ khóa để tìm mã ICD-10</div>
+        </div>
+      </div>
+  <!-- NNT / NNH CALCULATOR MODAL -->
+  <div class="modal-overlay" id="nnt-calculator-modal">
+    <div class="modal" style="max-width: 650px; width: 90%;">
+      <div class="modal-header">
+        <h3>🧮 Máy Tính Chỉ Số NNT / NNH Lâm Sàng (Number Needed to Treat)</h3>
+        <button class="modal-close" onclick="closeNntModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Tính toán số lượng bệnh nhân cần điều trị (NNT) để ngăn ngừa 1 biến cố có hại, hoặc NNH (Number Needed to Harm) để phát sinh 1 tác dụng phụ.
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text); display: block; margin-bottom: 4px;">Tỷ lệ biến cố nhóm chứng (CER %)</label>
+            <input type="number" id="nnt-cer-input" step="0.01" min="0" max="100" placeholder="VD: 12.5" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-light); border-radius: 6px; background: var(--surface);">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text); display: block; margin-bottom: 4px;">Tỷ lệ nhóm can thiệp (EER %)</label>
+            <input type="number" id="nnt-eer-input" step="0.01" min="0" max="100" placeholder="VD: 8.2" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-light); border-radius: 6px; background: var(--surface);">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.25rem;">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Hoặc nhập Tỷ số nguy cơ (HR):</span>
+          <input type="number" id="nnt-hr-input" step="0.01" placeholder="VD: 0.75" style="width: 120px; padding: 0.4rem; border: 1px solid var(--border-light); border-radius: 6px; background: var(--surface); font-size: 0.85rem;">
+          <button class="btn btn-small" onclick="calculateNNTFromHR()">Ước tính từ HR</button>
+        </div>
+
+        <div id="nnt-results-card" style="background: var(--surface-2); border: 1px solid var(--border-light); border-radius: 8px; padding: 1rem; display: none;">
+          <!-- Results injected via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <script src="../../../../js/cliniportal-sync.js"></script>
+  <script src="../js/ebm-format-loader.js"></script>
+  <!-- Load ICD-10 Data -->
+  <script src="../../../../js/data/icd10-data.js"></script>
+  <script src="oncologydata.js"></script>
+  <script src="js/drug-linker.js"></script>
+  <script src="oncology.js"></script>
+</body>
+</html>

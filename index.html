@@ -49,9 +49,9 @@
                         class="text-sky-500">Portal</span></span>
             </div>
             <nav class="hidden md:flex space-x-8">
-                <a href="#" class="text-teal-600 font-bold border-b-2 border-teal-600 px-1 py-2">Trang chủ</a>
-                <a href="#" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition">Phác đồ</a>
-                <a href="#" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition">Nghiên cứu</a>
+                <a href="index.html" class="text-teal-600 font-bold border-b-2 border-teal-600 px-1 py-2">Trang chủ</a>
+                <a href="oncology-guidelines/oncology.html" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition">Phác đồ & Hướng dẫn</a>
+                <a href="#tools" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition">Công cụ</a>
                 <a href="#" class="text-slate-500 hover:text-teal-600 font-medium px-1 py-2 transition">Về chúng tôi</a>
             </nav>
         </div>
@@ -70,14 +70,20 @@
     <main id="tools" class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex flex-col gap-10">
 
         <div id="favorite-section"
-            class="bg-gradient-to-br from-amber-50/60 to-orange-50/60 border border-amber-200/80 rounded-2xl p-6 shadow-sm">
-            <div class="flex items-center gap-2 border-b border-amber-200 pb-3 mb-4">
-                <div class="bg-amber-500 text-white p-1.5 rounded-lg text-sm shadow-sm">
-                    <i class="fa-solid fa-star"></i>
+            class="bg-gradient-to-br from-amber-50/60 to-orange-50/60 border border-amber-200/80 rounded-2xl p-6 shadow-sm transition-all duration-300">
+            <div class="flex items-center justify-between border-b border-amber-200 pb-3 mb-4 cursor-pointer select-none group/fav-header" onclick="toggleFavoriteSection()">
+                <div class="flex items-center gap-2">
+                    <div class="bg-amber-500 text-white p-1.5 rounded-lg text-sm shadow-sm group-hover/fav-header:scale-105 transition-transform">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <h2 class="text-xl font-black text-amber-900 uppercase tracking-wide">Ứng dụng yêu thích</h2>
                 </div>
-                <h2 class="text-xl font-black text-amber-900 uppercase tracking-wide">Ứng dụng yêu thích</h2>
+                <button id="fav-toggle-btn" class="text-amber-700 hover:text-amber-900 bg-amber-100/60 hover:bg-amber-200/80 rounded-lg p-1.5 px-3 transition duration-200 flex items-center gap-1.5 text-xs font-bold" title="Thu gọn / Mở rộng">
+                    <span id="fav-toggle-text">Thu gọn</span>
+                    <i id="fav-toggle-icon" class="fa-solid fa-chevron-up text-sm transition-transform duration-200"></i>
+                </button>
             </div>
-            <div id="favorite-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div id="favorite-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 transition-all duration-300">
             </div>
         </div>
 
@@ -119,7 +125,7 @@
                                 </div>
                             </a>
                             <a href="Công cụ/Chucnang_than.html" data-id="calc-renal" data-title="Chức năng thận"
-                                data-url="Chucnang_than.html" data-color="blue"
+                                data-url="Công cụ/Chucnang_than.html" data-color="blue"
                                 class="tool-link flex items-center justify-between bg-slate-50 border border-slate-200/60 hover:bg-white hover:border-blue-400 rounded-xl px-3.5 py-3 transition duration-200 group">
                                 <span class="font-semibold text-slate-700 text-xs truncate max-w-[150px]">Chức năng
                                     thận</span>
@@ -132,7 +138,7 @@
                                 </div>
                             </a>
                             <a href="Công cụ/QL_RL_Natrimau.html" data-id="calc-low-na"
-                                data-title="Quản lý Rối loạn Natri máu" data-url="QL_RL_Natrimau.html" data-color="blue"
+                                data-title="Quản lý Rối loạn Natri máu" data-url="Công cụ/QL_RL_Natrimau.html" data-color="blue"
                                 class="tool-link flex items-center justify-between bg-slate-50 border border-slate-200/60 hover:bg-white hover:border-blue-400 rounded-xl px-3.5 py-3 transition duration-200 group">
                                 <span class="font-semibold text-slate-700 text-xs truncate max-w-[150px]">Quản lý Rối
                                     loạn
@@ -147,7 +153,7 @@
                             </a>
 
                             <a href="Công cụ/QL_RL_Kalimau.html" data-id="calc-low-k"
-                                data-title="Quản lý Rối loạn Kali máu" data-url="QL_RL_Kalimau.html" data-color="blue"
+                                data-title="Quản lý Rối loạn Kali máu" data-url="Công cụ/QL_RL_Kalimau.html" data-color="blue"
                                 class="tool-link flex items-center justify-between bg-slate-50 border border-slate-200/60 hover:bg-white hover:border-blue-400 rounded-xl px-3.5 py-3 transition duration-200 group">
                                 <span class="font-semibold text-slate-700 text-xs truncate max-w-[150px]">Quản lý Rối
                                     loạn
@@ -311,13 +317,45 @@
                 </div>
 
                 <div
-                    class="bg-slate-50 rounded-2xl p-6 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center h-[440px] text-center hover:bg-slate-100 hover:border-teal-400 transition cursor-pointer group">
+                    class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col h-[440px] relative overflow-hidden group/card hover:shadow-md hover:border-rose-200 transition-all duration-300">
                     <div
-                        class="w-12 h-12 bg-white text-slate-400 rounded-full flex items-center justify-center text-xl mb-3 shadow-sm group-hover:text-teal-500 group-hover:shadow transition shrink-0">
-                        <i class="fa-solid fa-plus"></i>
+                        class="absolute top-0 right-0 w-24 h-24 bg-rose-50/50 rounded-bl-full z-0 pointer-events-none transition-all group-hover/card:bg-rose-100/50">
                     </div>
-                    <h3 class="text-lg font-bold text-slate-600 group-hover:text-teal-600">Thêm công cụ mới</h3>
-                    <p class="text-slate-400 text-xs mt-2">Dành cho nhà phát triển</p>
+                    <div class="relative z-10 flex flex-col h-full">
+                        <div
+                            class="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-xl mb-3 shadow-inner shrink-0">
+                            <i class="fa-solid fa-book-medical"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-1 shrink-0">Phác đồ & Hướng dẫn</h3>
+                        <p class="text-slate-400 text-xs mb-4 min-h-[2rem] shrink-0">Hướng dẫn điều trị Ung Bướu, EBM & nghiên cứu lâm sàng.</p>
+
+                        <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar flex flex-col gap-2.5">
+                            <a href="oncology-guidelines/oncology.html" data-id="guideline-oncology"
+                                data-title="Hướng dẫn & Phác đồ Ung Bướu" data-url="oncology-guidelines/oncology.html" data-color="rose"
+                                class="tool-link flex items-center justify-between bg-slate-50 border border-slate-200/60 hover:bg-white hover:border-rose-400 rounded-xl px-3.5 py-3 transition duration-200 group">
+                                <span class="font-semibold text-slate-700 text-xs truncate max-w-[150px]">Hướng dẫn & Phác đồ Ung Bướu</span>
+                                <div class="flex items-center gap-2.5" onclick="event.preventDefault();">
+                                    <button onclick="toggleFavorite('guideline-oncology')"
+                                        class="star-btn text-slate-300 hover:text-amber-500 transition p-0.5"><i
+                                            class="fa-regular fa-star text-sm"></i></button>
+                                    <i
+                                        class="fa-solid fa-arrow-right text-slate-300 group-hover:text-rose-500 group-hover:translate-x-0.5 transition"></i>
+                                </div>
+                            </a>
+                            <a href="oncology-guidelines/kho-guidelines/index.html" data-id="guideline-kho"
+                                data-title="Kho Guidelines & EBM" data-url="oncology-guidelines/kho-guidelines/index.html" data-color="rose"
+                                class="tool-link flex items-center justify-between bg-slate-50 border border-slate-200/60 hover:bg-white hover:border-rose-400 rounded-xl px-3.5 py-3 transition duration-200 group">
+                                <span class="font-semibold text-slate-700 text-xs truncate max-w-[150px]">Kho Guidelines & EBM</span>
+                                <div class="flex items-center gap-2.5" onclick="event.preventDefault();">
+                                    <button onclick="toggleFavorite('guideline-kho')"
+                                        class="star-btn text-slate-300 hover:text-amber-500 transition p-0.5"><i
+                                            class="fa-regular fa-star text-sm"></i></button>
+                                    <i
+                                        class="fa-solid fa-arrow-right text-slate-300 group-hover:text-rose-500 group-hover:translate-x-0.5 transition"></i>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -342,8 +380,40 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            initFavoriteCollapse();
             renderFavorites();
         });
+
+        // Quản lý trạng thái thu gọn / mở rộng section Ứng dụng yêu thích
+        function initFavoriteCollapse() {
+            const isCollapsed = localStorage.getItem('onco_fav_collapsed') === 'true';
+            applyFavoriteCollapseState(isCollapsed);
+        }
+
+        function toggleFavoriteSection() {
+            const isCollapsed = localStorage.getItem('onco_fav_collapsed') === 'true';
+            const newState = !isCollapsed;
+            localStorage.setItem('onco_fav_collapsed', newState ? 'true' : 'false');
+            applyFavoriteCollapseState(newState);
+        }
+
+        function applyFavoriteCollapseState(collapsed) {
+            const grid = document.getElementById('favorite-grid');
+            const icon = document.getElementById('fav-toggle-icon');
+            const text = document.getElementById('fav-toggle-text');
+            
+            if (!grid) return;
+
+            if (collapsed) {
+                grid.classList.add('hidden');
+                if (icon) icon.className = 'fa-solid fa-chevron-down text-sm transition-transform duration-200';
+                if (text) text.textContent = 'Mở rộng';
+            } else {
+                grid.classList.remove('hidden');
+                if (icon) icon.className = 'fa-solid fa-chevron-up text-sm transition-transform duration-200';
+                if (text) text.textContent = 'Thu gọn';
+            }
+        }
 
         // Hàm lấy danh sách từ LocalStorage
         function getFavorites() {
@@ -412,6 +482,7 @@
                         let hoverBorderColor = 'hover:border-blue-400';
                         if (color === 'emerald') hoverBorderColor = 'hover:border-emerald-400';
                         if (color === 'purple') hoverBorderColor = 'hover:border-purple-400';
+                        if (color === 'rose') hoverBorderColor = 'hover:border-rose-400';
 
                         htmlContent += `
                             <a href="${url}" class="flex items-center justify-between bg-white border border-amber-200/70 shadow-sm ${hoverBorderColor} rounded-xl px-4 py-3 transition duration-200 group animate-fadeIn">
