@@ -325,15 +325,26 @@
       if (supabaseClient) {
         updateSupabaseStatus('connected', 'Supabase: Deleting All...');
         try {
-          const { error } = await supabaseClient
+          const currentIds = studies.map(s => s.id).filter(Boolean);
+          if (currentIds.length > 0) {
+            const { error: delErr1 } = await supabaseClient
+              .from('oncology_clinical_updates')
+              .delete()
+              .in('id', currentIds);
+            if (delErr1) console.warn('Delete by IN failed, attempting fallback neq:', delErr1);
+          }
+          
+          // Fallback sweep: xóa tất cả dòng còn sót lại trên Supabase
+          const { error: delErr2 } = await supabaseClient
             .from('oncology_clinical_updates')
             .delete()
-            .neq('id', '');
-          if (error) throw error;
+            .neq('id', '___impossible_id___');
+          
+          if (delErr2) throw delErr2;
           console.log('Successfully deleted all studies from Supabase');
         } catch (err) {
           console.error('Failed to delete all studies from Supabase:', err);
-          alert('Cảnh báo xóa trên Supabase: ' + (err.message || 'Chưa xóa được trên Cloud'));
+          alert('Cảnh báo xóa trên Supabase: ' + (err.message || JSON.stringify(err)));
         }
       }
 
