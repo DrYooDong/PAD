@@ -316,6 +316,39 @@
       }
     }
 
+    async function deleteAllStudiesUI() {
+      if (!confirm("⚠️ Anh/chị có chắc chắn muốn XÓA SẠCH tất cả nghiên cứu đang hiển thị trên Web và Supabase không?\n\nHành động này không thể hoàn tác.")) {
+        return;
+      }
+      
+      // 1. Xóa toàn bộ dữ liệu trên Supabase nếu đã kết nối
+      if (supabaseClient) {
+        updateSupabaseStatus('connected', 'Supabase: Deleting All...');
+        try {
+          const { error } = await supabaseClient
+            .from('oncology_clinical_updates')
+            .delete()
+            .neq('id', '');
+          if (error) throw error;
+          console.log('Successfully deleted all studies from Supabase');
+        } catch (err) {
+          console.error('Failed to delete all studies from Supabase:', err);
+          alert('Cảnh báo xóa trên Supabase: ' + (err.message || 'Chưa xóa được trên Cloud'));
+        }
+      }
+
+      // 2. Xóa dữ liệu local storage & reset mảng studies
+      studies = [];
+      saveStudies();
+      renderTable();
+      renderUpdates();
+      if (supabaseClient) {
+        updateSupabaseStatus('connected', 'Supabase: Synced (0 items)');
+      }
+      
+      alert('🎉 Đã xóa sạch toàn bộ nghiên cứu! Danh sách hiện đã về 0.');
+    }
+
     // ════════════════════════════
     // DATA MIGRATION & LOCAL STORAGE
     // ════════════════════════════

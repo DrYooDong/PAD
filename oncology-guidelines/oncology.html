@@ -80,6 +80,10 @@
           <span class="left-nav-icon">📥</span>
           <span class="left-nav-text">Nhập dữ liệu JSON</span>
         </button>
+        <button class="left-nav-link" onclick="deleteAllStudiesUI()" title="Xóa tất cả tài liệu" style="color: #ef4444;">
+          <span class="left-nav-icon">🗑️</span>
+          <span class="left-nav-text">Xóa tất cả tài liệu</span>
+        </button>
       </div>
 
       <div class="left-nav-section">
@@ -202,6 +206,10 @@
             
             <button class="btn" onclick="resetFilters()">
               🔄 Reset
+            </button>
+            
+            <button class="btn" onclick="deleteAllStudiesUI()" style="background: #fef2f2; color: #dc2626; border-color: #fca5a5;" title="Xóa toàn bộ dữ liệu trên web và Supabase">
+              🗑️ Xóa tất cả
             </button>
             
             <div class="stats-badge">
