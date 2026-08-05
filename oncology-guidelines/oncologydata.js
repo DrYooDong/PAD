@@ -12,6 +12,8 @@
       gynae: { name: '🌸 Gynae', color: '#d946ef', bg: '#fdf4ff' },
       hn: { name: 'H&N', color: '#10b981', bg: '#ecfdf5' },
       skin: { name: '☀️ Skin', color: '#f59e0b', bg: '#fffbeb' },
+      thyroid: { name: '🦋 Thyroid', color: '#06b6d4', bg: '#ecfeff' },
+      onco: { name: '🎗️ Onco', color: '#7c3aed', bg: '#f5f3ff' },
       reg: { name: '📋 Reg', color: '#dc2626', bg: '#fef2f2' },
       guide: { name: '📖 Guide', color: '#0d9488', bg: '#ccfbf1' }
     };

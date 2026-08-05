@@ -87,7 +87,7 @@
       </div>
 
       <div class="left-nav-section">
-        <div class="left-nav-label">Lọc nhanh chuyên khoa</div>
+        <div class="left-nav-label">Lọc theo Cơ quan / Vị trí Ung thư</div>
         <div id="spec-filter-list"></div>
         <div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-light);" id="left-nav-extra-filters">
           <button class="left-nav-link" id="sidebar-btn-summary" onclick="filterByHasSummary()" title="Có bài Tóm tắt">
@@ -416,20 +416,26 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label for="study-specialty">Chuyên khoa *</label>
+              <label for="study-specialty">Cơ quan / Vị trí Ung thư *</label>
               <select id="study-specialty" required>
-                <option value="">-- Chọn chuyên khoa --</option>
-                <option value="cardio">Tim mạch (Cardiology)</option>
-                <option value="pulmo">Hô hấp (Pulmonology)</option>
-                <option value="gi">Tiêu hóa (Gastroenterology)</option>
-                <option value="endo">Nội tiết (Endocrinology)</option>
-                <option value="neuro">Thần kinh (Neurology)</option>
-                <option value="infect">Truyền nhiễm (Infectious Disease)</option>
-                <option value="renal">Thận học (Nephrology)</option>
-                <option value="rheum">Cơ xương khớp (Rheumatology)</option>
-                <option value="hema">Huyết học (Hematology)</option>
-                <option value="onco">Ung thư (Oncology)</option>
-                <option value="icu">Hồi sức cấp cứu (HSCC / ICU)</option>
+                <option value="">-- Chọn cơ quan / vị trí ung thư --</option>
+                <optgroup label="🎗️ Ung thư học">
+                  <option value="lung">Ung thư Phổi (Lung)</option>
+                  <option value="breast">Ung thư Vú (Breast)</option>
+                  <option value="gi">Ung thư Tiêu hóa (GI)</option>
+                  <option value="gu">Ung thư Tiết niệu (GU)</option>
+                  <option value="gynae">Ung thư Phụ khoa (Gynae)</option>
+                  <option value="hn">Ung thư Đầu cổ (H&N)</option>
+                  <option value="skin">Ung thư Da (Skin/Melanoma)</option>
+                  <option value="thyroid">Ung thư Tuyến giáp (Thyroid)</option>
+                  <option value="haem">Huyết học ung thư (Haem)</option>
+                  <option value="cns">Ung thư Thần kinh (CNS)</option>
+                  <option value="onco">Ung thư khác (Onco)</option>
+                </optgroup>
+                <optgroup label="📋 Khác">
+                  <option value="reg">Quy định / Phê duyệt (Regulatory)</option>
+                  <option value="guide">Hướng dẫn (Guideline)</option>
+                </optgroup>
               </select>
             </div>
             <div class="form-group">
@@ -567,15 +573,17 @@
           </div>
 
           <details style="margin-top: 1rem; border: 1px solid var(--border-light); border-radius: 8px; padding: 0.5rem;">
-            <summary style="font-size: 0.75rem; font-weight: 700; color: var(--accent); cursor: pointer; user-select: none;">💡 Câu lệnh SQL tạo bảng mẫu trên Supabase</summary>
-            <pre style="font-size: 0.68rem; background: var(--surface-2); padding: 0.5rem; border-radius: 6px; overflow-x: auto; margin-top: 0.5rem; color: var(--text-muted); text-align: left; max-height: 150px; font-family: monospace;">
-create table oncology_clinical_updates (
+            <summary style="font-size: 0.75rem; font-weight: 700; color: var(--accent); cursor: pointer; user-select: none;">💡 Câu lệnh SQL tạo / cập nhật đủ 100% cột trên Supabase</summary>
+            <pre style="font-size: 0.68rem; background: var(--surface-2); padding: 0.5rem; border-radius: 6px; overflow-x: auto; margin-top: 0.5rem; color: var(--text-muted); text-align: left; max-height: 220px; font-family: monospace;">
+-- 1. Lệnh tạo bảng mới (Nếu chưa có bảng):
+create table if not exists oncology_clinical_updates (
   id text primary key,
   title text not null,
   author text,
   drug text,
   "sourceType" text,
   specialty text,
+  "cancerType" text,
   design text,
   intervention text,
   "primaryEndpoint" text,
@@ -591,15 +599,31 @@ create table oncology_clinical_updates (
   "fdaStatus" text,
   "sourceUrl" text,
   file text,
-  "asianData" boolean,
-  bookmarked boolean,
+  "asianData" boolean default false,
+  bookmarked boolean default false,
+  icd10 text,
+  subgroups text,
   "matrixEndpoints" jsonb,
   "decisionTree" jsonb,
   "pocketCard" jsonb,
   "citation" jsonb,
   "radarUrl" text,
   "createdAt" timestamp with time zone default timezone('utc'::text, now())
-);</pre>
+);
+
+-- 2. Nếu ĐÃ CÓ BẢNG CŨ nhưng bị thiếu cột, hãy copy toàn bộ đoạn sau dán vào SQL Editor để sửa lỗi:
+alter table oncology_clinical_updates 
+  add column if not exists specialty text,
+  add column if not exists "cancerType" text,
+  add column if not exists icd10 text,
+  add column if not exists subgroups text,
+  add column if not exists "matrixEndpoints" jsonb,
+  add column if not exists "decisionTree" jsonb,
+  add column if not exists "pocketCard" jsonb,
+  add column if not exists "citation" jsonb,
+  add column if not exists "radarUrl" text,
+  add column if not exists "asianData" boolean default false,
+  add column if not exists bookmarked boolean default false;</pre>
           </details>
           
           <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">

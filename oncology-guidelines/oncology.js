@@ -168,6 +168,11 @@
           const localOnlyStudies = studies.filter(s => !remoteIds.has(s.id));
 
           const remoteStudies = data.map(s => {
+            let resCancerType = s.cancerType || s.specialty || 'onco';
+            if (['cardio', 'pulmo', 'endo', 'renal', 'hema', 'neuro', 'infect', 'icu'].includes(resCancerType)) {
+              const tLower = (s.title || '').toLowerCase();
+              resCancerType = (tLower.includes('thyroid') || (s.icd10 && JSON.stringify(s.icd10).includes('C73'))) ? 'thyroid' : 'onco';
+            }
             return {
               ...s, // Preserve rich EBM fields like matrixEndpoints, relatedCalculators, citation, pocketCard, decisionTree, etc.
               id: s.id,
@@ -175,7 +180,8 @@
               author: s.author || '',
               drug: s.drug || 'N/A',
               sourceType: s.sourceType || 'intl-study',
-              cancerType: s.specialty || 'cardio',
+              cancerType: resCancerType,
+              specialty: resCancerType,
               design: s.design || 'rct',
               intervention: s.intervention || '',
               primaryEndpoint: s.primaryEndpoint || '',
@@ -207,45 +213,24 @@
           saveStudies(); // cache local
           renderTable();
           renderUpdates();
-          updateSupabaseStatus('connected', 'Supabase: Synced');
+          if (localOnlyStudies.length > 0) {
+            updateSupabaseStatus('connected', `Supabase: Synced (+${localOnlyStudies.length} local)`);
+          } else {
+            updateSupabaseStatus('connected', 'Supabase: Synced');
+          }
 
           // Sync any local-only studies to Supabase
           if (localOnlyStudies.length > 0) {
-            localOnlyStudies.forEach(study => dbSaveStudy(study));
+            for (const study of localOnlyStudies) {
+              await dbSaveStudy(study);
+            }
           }
         } else {
           // Upload local data to seed Supabase
           if (studies.length > 0) {
             const { error: insertError } = await supabaseClient
               .from('oncology_clinical_updates')
-              .insert(studies.map(s => ({
-                id: s.id,
-                title: s.title,
-                author: s.author,
-                drug: s.drug,
-                sourceType: s.sourceType,
-                cancerType: s.specialty,
-                design: s.design,
-                intervention: s.intervention || '',
-                primaryEndpoint: s.primaryEndpoint || '',
-                keyResults: s.keyResults || '',
-                impact: s.impact,
-                year: s.year,
-                organization: s.organization,
-                phase: s.phase,
-                sampleSize: s.sampleSize,
-                population: s.population,
-                summary: s.summary,
-                detailedConclusion: s.detailedConclusion,
-                fdaStatus: s.fdaStatus,
-                sourceUrl: s.sourceUrl,
-                file: s.file,
-                asianData: s.asianData,
-                bookmarked: s.bookmarked,
-                icd10: s.icd10 ? JSON.stringify(s.icd10) : null,
-                subgroups: s.subgroups ? JSON.stringify(s.subgroups) : null,
-                createdAt: s.createdAt
-              })));
+              .insert(studies.map(s => buildSupabasePayload(s)));
               
             if (insertError) throw insertError;
             updateSupabaseStatus('connected', 'Supabase: Seeded');
@@ -253,50 +238,72 @@
         }
       } catch (err) {
         console.error('Supabase Sync failed:', err);
-        updateSupabaseStatus('error', 'Supabase: Sync Failed');
+        handleSupabaseError(err, 'Sync Failed');
+      }
+    }
+
+    function buildSupabasePayload(study) {
+      return {
+        id: study.id,
+        title: study.title || '',
+        author: study.author || '',
+        drug: study.drug || '',
+        sourceType: study.sourceType || 'intl-study',
+        specialty: study.specialty || study.cancerType || 'onco',
+        cancerType: study.cancerType || study.specialty || 'onco',
+        design: study.design || 'rct',
+        intervention: study.intervention || '',
+        primaryEndpoint: study.primaryEndpoint || '',
+        keyResults: study.keyResults || '',
+        impact: study.impact || 'informative',
+        year: study.year || new Date().getFullYear(),
+        organization: study.organization || '',
+        phase: study.phase || '',
+        sampleSize: study.sampleSize || null,
+        population: study.population || '',
+        summary: study.summary || '',
+        detailedConclusion: study.detailedConclusion || '',
+        fdaStatus: study.fdaStatus || '',
+        sourceUrl: study.sourceUrl || '',
+        file: study.file || '',
+        asianData: study.asianData !== undefined ? study.asianData : false,
+        bookmarked: study.bookmarked !== undefined ? study.bookmarked : false,
+        icd10: study.icd10 ? (typeof study.icd10 === 'string' ? study.icd10 : JSON.stringify(study.icd10)) : null,
+        subgroups: study.subgroups ? (typeof study.subgroups === 'string' ? study.subgroups : JSON.stringify(study.subgroups)) : null,
+        matrixEndpoints: study.matrixEndpoints || null,
+        decisionTree: study.decisionTree || null,
+        pocketCard: study.pocketCard || null,
+        citation: study.citation || null,
+        radarUrl: study.radarUrl || '',
+        createdAt: study.createdAt || new Date().toISOString()
+      };
+    }
+
+    function handleSupabaseError(err, defaultMsg) {
+      const errMsg = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : defaultMsg;
+      console.error('Supabase Error details:', err);
+
+      if (errMsg.includes('column') || errMsg.includes('does not exist') || err.code === '42703' || err.code === 'PGRST204') {
+        updateSupabaseStatus('error', 'Lỗi: Thư viện Supabase thiếu Cột!');
+        alert(`⚠️ LỖI SUPABASE THIẾU CỘT (DATABASE COLUMN MISSING)\n\nBảng 'oncology_clinical_updates' trên Supabase của anh/chị đang bị thiếu một số cột dữ liệu nên không nhận được bài viết.\n\n👉 Chi tiết lỗi: ${errMsg}\n\n💡 CÁCH XỬ LÝ KHẮC PHỤC NHANH (30 GIÂY):\n1. Mở Supabase ➔ Chọn menu "SQL Editor"\n2. Bấm "New query"\n3. Dán câu lệnh SQL từ nút "☁️ Cấu hình Supabase" trên giao diện Web ➔ Bấm "Run".`);
+      } else {
+        updateSupabaseStatus('error', 'Lỗi: ' + errMsg);
       }
     }
 
     async function dbSaveStudy(study) {
       if (!supabaseClient) return;
       try {
+        const payload = buildSupabasePayload(study);
         const { error } = await supabaseClient
           .from('oncology_clinical_updates')
-          .upsert({
-            id: study.id,
-            title: study.title,
-            author: study.author,
-            drug: study.drug,
-            sourceType: study.sourceType,
-            cancerType: study.specialty,
-            design: study.design,
-            intervention: study.intervention || '',
-            primaryEndpoint: study.primaryEndpoint || '',
-            keyResults: study.keyResults || '',
-            impact: study.impact,
-            year: study.year,
-            organization: study.organization,
-            phase: study.phase,
-            sampleSize: study.sampleSize,
-            population: study.population,
-            summary: study.summary,
-            detailedConclusion: study.detailedConclusion,
-            fdaStatus: study.fdaStatus,
-            sourceUrl: study.sourceUrl,
-            file: study.file,
-            asianData: study.asianData,
-            bookmarked: study.bookmarked,
-            icd10: study.icd10 ? JSON.stringify(study.icd10) : null,
-            subgroups: study.subgroups ? JSON.stringify(study.subgroups) : null,
-            createdAt: study.createdAt
-          }, { onConflict: 'id' });
+          .upsert(payload, { onConflict: 'id' });
           
         if (error) throw error;
         console.log('Saved to Supabase successfully');
       } catch (err) {
         console.error('Failed to save to Supabase:', err);
-        // Hiển thị chi tiết lỗi lên UI để dễ chẩn đoán
-        updateSupabaseStatus('error', 'Lỗi: ' + (err.message || err.details || 'Save Failed'));
+        handleSupabaseError(err, 'Save Failed');
       }
     }
 
@@ -395,6 +402,12 @@
               }
             }
 
+            let resCancerType = s.cancerType || s.specialty || 'onco';
+            if (['cardio', 'pulmo', 'endo', 'renal', 'hema', 'neuro', 'infect', 'icu'].includes(resCancerType)) {
+              const tLower = (s.title || '').toLowerCase();
+              resCancerType = (tLower.includes('thyroid') || (s.icd10 && JSON.stringify(s.icd10).includes('C73'))) ? 'thyroid' : 'onco';
+            }
+
             return {
               ...s, // Preserve rich EBM fields like matrixEndpoints, relatedCalculators, etc.
               id: s.id || generateId(),
@@ -402,7 +415,8 @@
               author: s.author || '',
               drug: s.drug || 'N/A',
               sourceType: defaultSourceType,
-              cancerType: s.specialty || 'cardio',
+              cancerType: resCancerType,
+              specialty: resCancerType,
               design: defaultDesign,
               intervention: s.intervention || '',
               primaryEndpoint: s.primaryEndpoint || '',
@@ -429,12 +443,23 @@
                   if (match && match.icd10) parsed = match.icd10;
                 }
                 if (!parsed || parsed.length === 0) {
-                  const spec = s.specialty || 'cardio';
+                  const spec = s.specialty || s.cancerType || 'onco';
                   if (spec === 'cardio') parsed = ['I50', 'I10'];
                   else if (spec === 'pulmo') parsed = ['J44'];
                   else if (spec === 'endo') parsed = ['E11'];
+                  else if (spec === 'thyroid') parsed = ['C73', 'E04'];
                   else if (spec === 'renal') parsed = ['N18'];
                   else if (spec === 'infect' || spec === 'icu') parsed = ['A41'];
+                  else if (spec === 'lung') parsed = ['C34'];
+                  else if (spec === 'breast') parsed = ['C50'];
+                  else if (spec === 'gi') parsed = ['C18', 'C20'];
+                  else if (spec === 'gu') parsed = ['C61', 'C67'];
+                  else if (spec === 'gynae') parsed = ['C53', 'C56'];
+                  else if (spec === 'hn') parsed = ['C01', 'C10'];
+                  else if (spec === 'haem' || spec === 'hema') parsed = ['C91', 'C95'];
+                  else if (spec === 'cns') parsed = ['C71'];
+                  else if (spec === 'skin') parsed = ['C43'];
+                  else if (spec === 'neuro') parsed = ['G35'];
                 }
                 return parsed;
               })(),
@@ -1069,6 +1094,7 @@
                         <span class="detail-label">Kết quả / Chỉ số</span>
                         <span class="detail-val" style="font-family: monospace; color: var(--accent); font-weight:700;">${escapeHtml(study.keyResults || 'N/A')}</span>
                         ${forestPlotHtml}
+                        ${(() => { const pc = renderPieChartIfPercent(study.keyResults, study.summary); return pc ? `<div style="margin-top:0.5rem;">${pc}</div>` : ''; })()}
                       </div>
                       <div class="detail-item">
                         <span class="detail-label">Đối tượng nghiên cứu</span>
@@ -1785,7 +1811,9 @@
           if (index !== -1) {
           studies[index] = {
             ...studies[index],
-            title, author, drug, sourceType, specialty, design, intervention, primaryEndpoint, oldRegimen, newRegimen, keyResults,
+            title, author, drug, sourceType, specialty,
+            cancerType: specialty, // Always sync cancerType = specialty for consistency
+            design, intervention, primaryEndpoint, oldRegimen, newRegimen, keyResults,
             impact, organization, year, phase, sampleSize,
             population, summary, detailedConclusion, fdaStatus, sourceUrl, file, asianData, subgroups, icd10
           };
@@ -1796,7 +1824,9 @@
         // Add mode
         const newStudy = {
           id: generateId(),
-          title, author, drug, sourceType, specialty, design, intervention, primaryEndpoint, oldRegimen, newRegimen, keyResults,
+          title, author, drug, sourceType, specialty,
+          cancerType: specialty, // Always sync cancerType = specialty for consistency
+          design, intervention, primaryEndpoint, oldRegimen, newRegimen, keyResults,
           impact, organization, year, phase, sampleSize,
           population, summary, detailedConclusion, fdaStatus, sourceUrl, file, asianData, subgroups, icd10,
           bookmarked: false,
@@ -1837,7 +1867,21 @@
       if(document.getElementById('study-author')) document.getElementById('study-author').value = study.author || '';
       document.getElementById('study-drug').value = study.drug || '';
       document.getElementById('study-source-type').value = study.sourceType || 'intl-study';
-      document.getElementById('study-specialty').value = study.specialty;
+      const specSelect = document.getElementById('study-specialty');
+      if (specSelect) {
+        let val = study.specialty || study.cancerType || '';
+        if (val === 'endo' && (study.title || '').toLowerCase().includes('thyroid')) val = 'thyroid';
+        specSelect.value = val;
+        if (!specSelect.value) {
+          const titleLower = (study.title || '').toLowerCase();
+          const icdStr = Array.isArray(study.icd10) ? study.icd10.join(',') : '';
+          if (titleLower.includes('thyroid') || icdStr.includes('C73')) {
+            specSelect.value = 'thyroid';
+          } else {
+            specSelect.value = 'onco';
+          }
+        }
+      }
       document.getElementById('study-design').value = study.design || 'rct';
       document.getElementById('study-intervention').value = study.intervention || '';
       document.getElementById('study-primary-endpoint').value = study.primaryEndpoint || '';
@@ -2037,6 +2081,404 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    // ════════════════════════════
+    // PIE CHART MINI (TỶ LỆ PHẦN TRĂM)
+    // ════════════════════════════
+
+    /**
+     * Phân tích chuỗi kết quả để tìm tỷ lệ % (ORR, CR, PR, PD, OS rate, ORR %, ...)
+     * Trả về mảng {label, value} nếu tìm thấy, ngược lại trả về null.
+     * Ví dụ: "ORR 76%, CR 12%, PR 64%" → [{label:'ORR', value:76}, ...]
+     */
+    function parsePieData(text) {
+      if (!text || typeof text !== 'string') return null;
+
+      // Patterns hay gặp trong oncology: ORR, CR, PR, SD, PD, DCR, OS rate, PFS rate
+      const KNOWN_LABELS = [
+        'ORR', 'CR', 'PR', 'SD', 'PD', 'DCR', 'CBR',
+        'OS rate', 'PFS rate', 'ORR rate', 'Response rate',
+        'Đáp ứng hoàn toàn', 'Đáp ứng một phần', 'Bệnh ổn định', 'Bệnh tiến triển',
+        'Complete response', 'Partial response', 'Stable disease', 'Progressive disease'
+      ];
+
+      const results = [];
+
+      // Pattern 1: "LABEL XX%" hoặc "LABEL: XX%" hoặc "LABEL XX.X%"
+      // Bắt được: ORR 76%, CR 12%, PR: 64%, ORR: 76.3%
+      const pattern1 = /\b(ORR|CR|PR|SD|PD|DCR|CBR|OS\s+rate|PFS\s+rate|Response\s+rate)\s*[:\s]\s*(\d+(?:\.\d+)?)\s*%/gi;
+      let m;
+      while ((m = pattern1.exec(text)) !== null) {
+        const label = m[1].replace(/\s+/g, ' ').trim().toUpperCase();
+        const value = parseFloat(m[2]);
+        if (!isNaN(value) && value > 0 && value <= 100) {
+          // Avoid duplicate labels
+          if (!results.find(r => r.label === label)) {
+            results.push({ label, value });
+          }
+        }
+      }
+
+      // Pattern 2: "XX% label" – ví dụ "76% ORR", "12% CR"
+      const pattern2 = /(\d+(?:\.\d+)?)\s*%\s+(ORR|CR|PR|SD|PD|DCR|CBR)/gi;
+      while ((m = pattern2.exec(text)) !== null) {
+        const label = m[2].trim().toUpperCase();
+        const value = parseFloat(m[1]);
+        if (!isNaN(value) && value > 0 && value <= 100) {
+          if (!results.find(r => r.label === label)) {
+            results.push({ label, value });
+          }
+        }
+      }
+
+      // Cần ít nhất 2 phân khúc để vẽ pie chart có nghĩa
+      if (results.length < 2) return null;
+
+      // Tính "phần còn lại" nếu tổng < 100%
+      const total = results.reduce((s, r) => s + r.value, 0);
+      if (total < 98) {
+        // Chỉ thêm "Khác" nếu đang dùng nhóm CR/PR/SD/PD (tổng nên bằng 100%)
+        const hasResponseSet = results.some(r => ['CR','PR','SD','PD'].includes(r.label));
+        if (hasResponseSet) {
+          const remainder = Math.max(0, 100 - total);
+          if (remainder > 0.5) {
+            results.push({ label: 'Khác', value: Math.round(remainder * 10) / 10 });
+          }
+        }
+      }
+
+      return results.length >= 2 ? results : null;
+    }
+
+    /**
+     * Màu sắc cho từng loại kết quả
+     */
+    const PIE_COLORS = {
+      'CR':  '#15803d',   // Complete Response - xanh đậm
+      'PR':  '#22c55e',   // Partial Response - xanh nhạt
+      'SD':  '#f59e0b',   // Stable Disease - vàng
+      'PD':  '#ef4444',   // Progressive Disease - đỏ
+      'ORR': '#6366f1',   // Overall Response Rate - tím
+      'DCR': '#0ea5e9',   // Disease Control Rate - xanh dương
+      'CBR': '#8b5cf6',   // Clinical Benefit Rate - tím nhạt
+      'OS RATE': '#10b981',
+      'PFS RATE': '#0d9488',
+      'RESPONSE RATE': '#6366f1',
+      'Khác': '#94a3b8',  // Không xếp loại - xám
+    };
+
+    function getPieColor(label, index) {
+      const key = label.toUpperCase();
+      if (PIE_COLORS[key]) return PIE_COLORS[key];
+      const fallback = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6'];
+      return fallback[index % fallback.length];
+    }
+
+    /**
+     * Vẽ SVG pie chart mini từ mảng {label, value}
+     * @returns {string} HTML string
+     */
+    function renderPieChartSVG(slices) {
+      if (!slices || slices.length === 0) return '';
+
+      const W = 180, H = 140;
+      const cx = 62, cy = 68, r = 52, innerR = 30;
+      const total = slices.reduce((s, sl) => s + sl.value, 0);
+      if (total === 0) return '';
+
+      const animId = 'pc' + Math.random().toString(36).slice(2, 7);
+      let angle = -Math.PI / 2;
+      const GAP = 0.018;
+      const paths = [];
+
+      slices.forEach((sl, i) => {
+        const sweep = Math.max((sl.value / total) * 2 * Math.PI - GAP, 0.01);
+        const end = angle + sweep;
+        const x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle);
+        const x2 = cx + r * Math.cos(end),   y2 = cy + r * Math.sin(end);
+        const ix1 = cx + innerR * Math.cos(end),   iy1 = cy + innerR * Math.sin(end);
+        const ix2 = cx + innerR * Math.cos(angle), iy2 = cy + innerR * Math.sin(angle);
+        const lg = sweep > Math.PI ? 1 : 0;
+        const d = `M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 ${lg} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} L${ix1.toFixed(1)} ${iy1.toFixed(1)} A${innerR} ${innerR} 0 ${lg} 0 ${ix2.toFixed(1)} ${iy2.toFixed(1)}Z`;
+        const color = getPieColor(sl.label, i);
+
+        paths.push(`<path d="${d}" fill="${color}" opacity="0.92" class="pie-sector-${animId}">
+          <title>${sl.label}: ${sl.value}%</title>
+        </path>`);
+        angle = end + GAP;
+      });
+
+      // Chú thích bên phải
+      const legendItems = slices.map((sl, i) => {
+        const color = getPieColor(sl.label, i);
+        const y = 14 + i * 18;
+        return `<g transform="translate(130,${y})">
+          <rect x="0" y="-8" width="10" height="10" rx="2" fill="${color}" opacity="0.9"/>
+          <text x="14" y="0" font-size="9" fill="var(--text-muted)" font-family="Inter,sans-serif" dominant-baseline="middle">
+            <tspan font-weight="700" fill="${color}">${sl.value}%</tspan> ${escapeHtml(sl.label)}
+          </text>
+        </g>`;
+      }).join('');
+
+      // Tổng ORR ở tâm
+      const orrSlice = slices.find(s => s.label === 'ORR');
+      const centerLabel = orrSlice
+        ? `<text x="${cx}" y="${cy - 6}" text-anchor="middle" font-size="14" font-weight="800" fill="var(--text)" font-family="Plus Jakarta Sans,sans-serif">${orrSlice.value}%</text>
+           <text x="${cx}" y="${cy + 8}" text-anchor="middle" font-size="8" fill="var(--text-faint)" font-family="Inter,sans-serif">ORR</text>`
+        : `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text)" font-family="Inter,sans-serif">${slices.length} nhóm</text>`;
+
+      return `<div class="pie-chart-inline" title="Biểu đồ phân bố tỷ lệ đáp ứng">
+        <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;overflow:visible;">
+          <defs>
+            <filter id="pie-shadow-${animId}" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.12"/>
+            </filter>
+          </defs>
+          <g filter="url(#pie-shadow-${animId})">
+            ${paths.join('')}
+          </g>
+          <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="var(--surface)"/>
+          ${centerLabel}
+          ${legendItems}
+        </svg>
+      </div>`;
+    }
+
+    /**
+     * Phân tích chuỗi kết quả để tìm tỷ lệ % giữa các nhóm/tiêu chí so sánh độc lập
+     * Ví dụ: "75.2% ở nhóm MTC chưa điều trị, 54.6% ở nhóm MTC đã điều trị, 87.3% ở nhóm TC chưa điều trị và 49.5% ở nhóm TC đã điều trị"
+     */
+    function parseBarData(text) {
+      if (!text || typeof text !== 'string') return null;
+
+      const results = [];
+      // Pattern 1: "XX.X% (ở/cho/tại) (nhóm) [Tên nhóm]"
+      const pattern1 = /(\d+(?:\.\d+)?)\s*%\s*(?:ở|cho|tại|trong)?\s*(?:nhóm\s+)?([a-z0-9\sàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệđìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ\(\)\/\-\+]+?)(?=\s*[,;\.]|\s+(?:và|hoặc|với|\d+(?:\.\d+)?\s*%)|$)/gi;
+      let m;
+      while ((m = pattern1.exec(text)) !== null) {
+        const val = parseFloat(m[1]);
+        let label = m[2].trim().replace(/^(và|hoặc|ở|cho|tại|trong)\s+/i, '');
+        if (!isNaN(val) && val > 0 && val <= 100 && label.length >= 2 && label.length <= 40) {
+          label = label.replace(/\s+/g, ' ');
+          if (!results.find(r => r.label.toLowerCase() === label.toLowerCase())) {
+            results.push({ label, value: val });
+          }
+        }
+      }
+
+      // Pattern 2: "[Tên nhóm]: XX.X%"
+      if (results.length < 2) {
+        const pattern2 = /([a-z0-9\sàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệđìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ\(\)\/\-\+]+?)\s*[:\s]\s*(\d+(?:\.\d+)?)\s*%/gi;
+        while ((m = pattern2.exec(text)) !== null) {
+          const val = parseFloat(m[2]);
+          let label = m[1].trim();
+          if (!isNaN(val) && val > 0 && val <= 100 && label.length >= 2 && label.length <= 40) {
+            label = label.replace(/\s+/g, ' ');
+            if (!results.find(r => r.label.toLowerCase() === label.toLowerCase())) {
+              results.push({ label, value: val });
+            }
+          }
+        }
+      }
+
+      return results.length >= 2 ? results : null;
+    }
+
+    /**
+     * Vẽ Biểu đồ Cột Ngang So Sánh (Horizontal Bar Chart)
+     */
+    function renderBarChartSVG(bars) {
+      if (!bars || bars.length === 0) return '';
+      const colors = ['#0ea5e9', '#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#0d9488'];
+
+      const rowsHtml = bars.map((b, i) => {
+        const clr = colors[i % colors.length];
+        return `
+          <div class="bar-chart-row" style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+            <div style="width:130px; font-size:0.75rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(b.label)}">${escapeHtml(b.label)}</div>
+            <div style="flex:1; background:var(--border-light); height:12px; border-radius:6px; overflow:hidden; position:relative;">
+              <div style="width:${Math.min(100, Math.max(0, b.value))}%; background:${clr}; height:100%; border-radius:6px; transition:width 0.5s ease;"></div>
+            </div>
+            <div style="width:45px; text-anchor:end; text-align:right; font-size:0.75rem; font-weight:800; font-family:monospace; color:${clr};">${b.value}%</div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="bar-chart-inline" style="background:var(--surface-2); border:1px solid var(--border-light); border-radius:10px; padding:8px 12px; margin-top:6px; max-width:440px;" title="Biểu đồ cột so sánh tỷ lệ giữa các nhóm">
+          <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">📊 So sánh tỷ lệ giữa các nhóm:</div>
+          ${rowsHtml}
+        </div>
+      `;
+    }
+
+    // ════════════════════════════
+    // WATERFALL PLOT MINI (RECIST TUMOR SHRINKAGE)
+    // ════════════════════════════
+
+    function parseWaterfallData(text) {
+      if (!text || typeof text !== 'string') return null;
+      if (!/waterfall|thác nước|thay đổi kích thước|tumor shrinkage|size change/i.test(text)) return null;
+
+      const matches = text.match(/([+-]?\d+(?:\.\d+)?)\s*%/g);
+      if (!matches || matches.length < 3) return null;
+
+      const values = matches.map(m => parseFloat(m)).filter(v => !isNaN(v) && v >= -100 && v <= 200);
+      if (values.length < 3) return null;
+
+      values.sort((a, b) => b - a);
+      return values;
+    }
+
+    function renderWaterfallPlotSVG(values) {
+      if (!values || values.length === 0) return '';
+      const W = 280, H = 110, PL = 28, PR = 10, PT = 18, PB = 20;
+      const plotW = W - PL - PR, plotH = H - PT - PB;
+
+      const minV = Math.min(-100, Math.min(...values) - 10);
+      const maxV = Math.max(30, Math.max(...values) + 10);
+      const range = maxV - minV;
+
+      const toY = v => PT + plotH - ((v - minV) / range) * plotH;
+      const yZero = toY(0);
+      const yPR30 = toY(-30);
+      const yPD20 = toY(20);
+
+      const slotW = plotW / values.length;
+      const barW = Math.max(4, Math.min(slotW * 0.75, 18));
+
+      const barsHtml = values.map((val, i) => {
+        const x = PL + i * slotW + (slotW - barW) / 2;
+        const yVal = toY(val);
+        const yTop = Math.min(yZero, yVal);
+        const barH = Math.abs(yVal - yZero);
+        const isPR = val <= -30;
+        const isGrowth = val > 0;
+        const clr = isPR ? '#16a34a' : (isGrowth ? '#ef4444' : '#0ea5e9');
+
+        return `<rect x="${x.toFixed(1)}" y="${yTop.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(2, barH).toFixed(1)}" rx="1.5" fill="${clr}" opacity="0.9">
+          <title>Bệnh nhân ${i + 1}: ${val > 0 ? '+' : ''}${val}%</title>
+        </rect>`;
+      }).join('');
+
+      return `
+        <div class="waterfall-plot-inline" style="background:var(--surface-2); border:1px solid var(--border-light); border-radius:10px; padding:8px 10px; margin-top:6px; max-width:320px;" title="Waterfall Plot — Tỷ lệ thay đổi kích thước khối u theo RECIST 1.1">
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">
+            <span>🌊 Waterfall Plot (RECIST 1.1)</span>
+            <span style="font-size:0.65rem; color:#16a34a; font-weight:600;">PR (-30%)</span>
+          </div>
+          <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block; overflow:visible;">
+            <line x1="${PL}" y1="${yZero.toFixed(1)}" x2="${W - PR}" y2="${yZero.toFixed(1)}" stroke="var(--text-muted)" stroke-width="1.5"/>
+            <line x1="${PL}" y1="${yPR30.toFixed(1)}" x2="${W - PR}" y2="${yPR30.toFixed(1)}" stroke="#16a34a" stroke-width="1" stroke-dasharray="3,2" opacity="0.7"/>
+            <line x1="${PL}" y1="${yPD20.toFixed(1)}" x2="${W - PR}" y2="${yPD20.toFixed(1)}" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2" opacity="0.7"/>
+
+            <text x="${PL - 4}" y="${(yZero + 3).toFixed(1)}" text-anchor="end" font-size="7.5" fill="var(--text-faint)" font-family="monospace">0%</text>
+            <text x="${PL - 4}" y="${(yPR30 + 3).toFixed(1)}" text-anchor="end" font-size="7" fill="#16a34a" font-weight="700" font-family="monospace">-30%</text>
+            <text x="${PL - 4}" y="${(yPD20 + 3).toFixed(1)}" text-anchor="end" font-size="7" fill="#ef4444" font-weight="700" font-family="monospace">+20%</text>
+
+            ${barsHtml}
+          </svg>
+        </div>
+      `;
+    }
+
+    // ════════════════════════════
+    // KAPLAN-MEIER SURVIVAL CURVE MINI (BẢN ĐỒ SỐNG CÒN K-M)
+    // ════════════════════════════
+
+    function parseKaplanMeierData(text) {
+      if (!text || typeof text !== 'string') return null;
+      if (!/kaplan|km|sống còn|survival curve|sống thêm|tỷ lệ.*tháng|tỷ lệ.*năm/i.test(text)) return null;
+
+      const pattern = /(\d+(?:\.\d+)?)\s*(tháng|month|năm|year|yr|m)\s*[:\s]\s*(\d+(?:\.\d+)?)\s*%/gi;
+      const points = [];
+      let m;
+      while ((m = pattern.exec(text)) !== null) {
+        let timeVal = parseFloat(m[1]);
+        const unit = m[2].toLowerCase();
+        if (unit.includes('năm') || unit.includes('year') || unit.includes('yr')) timeVal *= 12;
+        const survPct = parseFloat(m[3]);
+        if (!isNaN(timeVal) && !isNaN(survPct) && survPct >= 0 && survPct <= 100) {
+          points.push({ time: timeVal, survival: survPct });
+        }
+      }
+
+      if (points.length < 2) return null;
+      points.sort((a, b) => a.time - b.time);
+      return points;
+    }
+
+    function renderKaplanMeierSVG(points) {
+      if (!points || points.length === 0) return '';
+      const W = 260, H = 115, PL = 28, PR = 12, PT = 14, PB = 22;
+      const plotW = W - PL - PR, plotH = H - PT - PB;
+
+      const maxTime = Math.max(...points.map(p => p.time)) * 1.15;
+      const toX = t => PL + (t / maxTime) * plotW;
+      const toY = s => PT + plotH - (s / 100) * plotH;
+
+      let d = `M${PL} ${toY(100)}`;
+      let currX = PL;
+      let currY = toY(100);
+
+      points.forEach(p => {
+        const nextX = toX(p.time);
+        const nextY = toY(p.survival);
+        d += ` L${nextX.toFixed(1)} ${currY.toFixed(1)} L${nextX.toFixed(1)} ${nextY.toFixed(1)}`;
+        currX = nextX;
+        currY = nextY;
+      });
+
+      d += ` L${(PL + plotW).toFixed(1)} ${currY.toFixed(1)}`;
+
+      const dotsHtml = points.map(p => {
+        const x = toX(p.time), y = toY(p.survival);
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#0284c7" stroke="#ffffff" stroke-width="1">
+          <title>${p.time} tháng: ${p.survival}% sống còn</title>
+        </circle>`;
+      }).join('');
+
+      return `
+        <div class="km-curve-inline" style="background:var(--surface-2); border:1px solid var(--border-light); border-radius:10px; padding:8px 10px; margin-top:6px; max-width:300px;" title="Đường cong sống còn Kaplan-Meier (K-M Plot)">
+          <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">📈 Kaplan-Meier Survival Curve</div>
+          <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block; overflow:visible;">
+            <line x1="${PL}" y1="${toY(100)}" x2="${W - PR}" y2="${toY(100)}" stroke="var(--border-light)" stroke-width="1"/>
+            <line x1="${PL}" y1="${toY(50)}" x2="${W - PR}" y2="${toY(50)}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,2" opacity="0.6"/>
+            <line x1="${PL}" y1="${toY(0)}" x2="${W - PR}" y2="${toY(0)}" stroke="var(--text-muted)" stroke-width="1.5"/>
+
+            <text x="${PL - 4}" y="${toY(100) + 3}" text-anchor="end" font-size="7" fill="var(--text-faint)">100%</text>
+            <text x="${PL - 4}" y="${toY(50) + 3}" text-anchor="end" font-size="7" fill="#0284c7" font-weight="700">50%</text>
+            <text x="${PL - 4}" y="${toY(0) + 3}" text-anchor="end" font-size="7" fill="var(--text-faint)">0%</text>
+
+            <path d="${d}" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linejoin="miter" stroke-linecap="square"/>
+            ${dotsHtml}
+          </svg>
+        </div>
+      `;
+    }
+
+    /**
+     * Main entry: kiểm tra chuỗi keyResults hoặc summary, trả về HTML biểu đồ phù hợp
+     */
+    function renderPieChartIfPercent(keyResults, summary) {
+      // 1. Thử vẽ Waterfall Plot nếu có dữ liệu RECIST thay đổi kích thước u (VD: Waterfall: -80%, -50%, +15%)
+      let wf = parseWaterfallData(keyResults) || parseWaterfallData(summary);
+      if (wf) return renderWaterfallPlotSVG(wf);
+
+      // 2. Thử vẽ Kaplan-Meier Curve nếu có dữ liệu mốc thời gian sống còn (VD: K-M: 12 tháng: 85%, 24 tháng: 64%)
+      let km = parseKaplanMeierData(keyResults) || parseKaplanMeierData(summary);
+      if (km) return renderKaplanMeierSVG(km);
+
+      // 3. Thử vẽ Pie Chart nếu là tỷ lệ phần trăm phân bố tổng 100% (CR, PR, SD, PD, ORR)
+      let slices = parsePieData(keyResults) || parsePieData(summary);
+      if (slices) return renderPieChartSVG(slices);
+
+      // 4. Thử vẽ Bar Chart nếu là so sánh % độc lập giữa các nhóm (như ví dụ PFS 3 năm giữa các nhóm)
+      let bars = parseBarData(keyResults) || parseBarData(summary);
+      if (bars) return renderBarChartSVG(bars);
+
+      return '';
     }
 
     // ════════════════════════════
@@ -2609,12 +3051,13 @@
               ${sgInlineBadge}
             </div>
 
-            <!-- Key Results + Forest Plot -->
+            <!-- Key Results + Forest Plot + Pie Chart -->
             ${study.keyResults ? `
             <div class="mc-results" onclick="toggleExpandRow('${study.id}', event)">
               <span class="mc-results-label">Kết quả chính:</span>
               <span class="mc-results-val">${escapeHtml(study.keyResults)}</span>
               ${forestPlotHtml ? `<div class="mc-forest-wrap">${forestPlotHtml}</div>` : ''}
+              ${(() => { const pc = renderPieChartIfPercent(study.keyResults, study.summary); return pc ? `<div style="margin-top:4px;">${pc}</div>` : ''; })()}
             </div>` : ''}
 
             <!-- Summary (always visible) -->
@@ -2708,7 +3151,7 @@
 
           <div class="analytics-charts-row">
             <div class="analytics-chart-card">
-              <h3 class="analytics-chart-title">🏥 Phân bố Chuyên khoa</h3>
+              <h3 class="analytics-chart-title">🏥 Phân bố theo Cơ quan / Vị trí Ung thư</h3>
               ${specDD.length ? `
               <div class="donut-chart-wrapper">
                 <div class="donut-svg-container">

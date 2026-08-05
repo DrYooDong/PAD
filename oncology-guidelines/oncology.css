@@ -2667,5 +2667,58 @@
   background: #faf5ff;
 }
 
+/* ════════════════════════════════ */
+/* PIE CHART MINI - Tỷ lệ đáp ứng  */
+/* ════════════════════════════════ */
+
+.pie-chart-inline {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 6px 10px 4px 8px;
+  margin-top: 6px;
+  transition: box-shadow var(--tr);
+  cursor: default;
+  overflow: visible;
+}
+
+.pie-chart-inline:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  border-color: var(--accent);
+}
+
+.pie-chart-inline svg {
+  overflow: visible;
+}
+
+.pie-chart-inline path {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  transform-origin: center;
+}
+
+.pie-chart-inline path:hover {
+  opacity: 1 !important;
+  transform: scale(1.04);
+}
+
+[data-theme="dark"] .pie-chart-inline {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.1);
+}
+
+@media (max-width: 600px) {
+  .pie-chart-inline {
+    width: 100%;
+    justify-content: center;
+  }
+  .pie-chart-inline svg {
+    width: 160px;
+    height: 126px;
+  }
+}
+
+
 
 
