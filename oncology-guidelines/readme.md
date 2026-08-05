@@ -1,127 +1,275 @@
-# 📖 Hướng Dẫn Sử Dụng & Tài Liệu Phân Hệ Guidelines
+# 📖 Hướng Dẫn Sử Dụng & Tài Liệu Phân Hệ Oncology Guidelines
 
-Phân hệ **Guidelines & Nghiên Cứu Lâm Sàng** (`Guidelines.html`) là một cấu phần quan trọng trong hệ sinh thái **CliniPortal**, được thiết kế chuyên biệt cho mục đích tra cứu, phân tích và đối chiếu các tài liệu hướng dẫn điều trị (trong nước & quốc tế) và các thử nghiệm lâm sàng dựa trên nguyên tắc **Y học chứng cứ (EBM)**.
+Phân hệ **Oncology Guidelines & Nghiên Cứu Ung Bướu** (`oncology.html`) là một cấu phần quan trọng trong hệ sinh thái **CliniPortal**, được thiết kế chuyên biệt cho mục đích tra cứu, phân tích và đối chiếu các tài liệu hướng dẫn điều trị (trong nước & quốc tế) và các thử nghiệm lâm sàng chuyên khoa Ung bướu dựa trên nguyên tắc **Y học chứng cứ (EBM)**.
 
 ---
 
 ## ✨ Giới Thiệu Phân Hệ
 
-Phân hệ hỗ trợ bác sĩ lâm sàng và nghiên cứu viên trong việc:
-*   **Tổng hợp đa nguồn**: Quản lý song song tài liệu trong nước (Bộ Y tế, các Sở Y tế, Hiệp hội chuyên khoa như Hội Tim mạch học Việt Nam - VNHA...) và nghiên cứu quốc tế.
-*   **Phân tích Y học chứng cứ (EBM)**: Trích xuất và cấu trúc hóa các tiêu chí can thiệp, tiêu chí đánh giá chính và chỉ số thống kê từ nghiên cứu.
-*   **So sánh thông tin trực quan**: Chọn và đối chiếu nhanh các nghiên cứu có cùng chỉ định hoặc hoạt chất để tìm ra giải pháp điều trị tối ưu nhất.
+Phân hệ hỗ trợ bác sĩ lâm sàng và nghiên cứu viên Ung bướu trong việc:
+*   **Tổng hợp đa nguồn**: Quản lý song song tài liệu trong nước (Bộ Y tế, VNOA...) và nghiên cứu quốc tế (NCCN, ESMO, ASCO, NEJM, Lancet Oncology...).
+*   **Phân tích Y học chứng cứ (EBM)**: Trích xuất và cấu trúc hóa các tiêu chí can thiệp, tiêu chí đánh giá chính (PFS, OS, ORR) và chỉ số thống kê từ nghiên cứu (HR, OR, 95% CI).
+*   **Tự động render biều đồ Forest Plot SVG**: Tự động chuyển đổi các chỉ số thống kê (`HR 0.65 (95% CI 0.51-0.83, p=0.001)`) thành biểu đồ Forest Plot trực quan.
+*   **Phân tích Subgroup & Mã ICD-10**: Hỗ trợ phân tích phân nhóm bệnh nhân (ví dụ: nhóm Châu Á, di căn não) và mã hóa ICD-10.
 
 ---
 
 ## 📊 Cấu Trúc Bảng Dữ Liệu (Data Schema)
 
-Để phục vụ phân tích EBM, mỗi tài liệu/nghiên cứu trong phân hệ được cấu trúc hóa theo các trường dữ liệu sau:
+Để phục vụ phân tích EBM Ung bướu, mỗi nghiên cứu được cấu trúc hóa theo các trường dữ liệu sau:
 
 | Trường dữ liệu | Tên cột hiển thị | Loại dữ liệu | Mô tả chi tiết | Ví dụ |
 | :--- | :--- | :--- | :--- | :--- |
-| `title` | Tên nghiên cứu / Tài liệu | `Text` (Bắt buộc) | Tên chính thức của tài liệu hướng dẫn hoặc nghiên cứu lâm sàng. | *EMPA-REG OUTCOME* |
-| `drug` | Hoạt chất / Can thiệp | `Text` | Hoạt chất chính hoặc nhóm thuốc được nghiên cứu/khuyến cáo. | *Empagliflozin* |
-| `sourceType` | Phân loại nguồn | `Dropdown` | Phân loại nguồn gốc xuất xứ tài liệu (gồm 5 loại). | *Bộ Y tế Việt Nam* |
-| `specialty` | Chuyên khoa | `Dropdown` | Chuyên khoa y học áp dụng nghiên cứu. | *Tim mạch* |
-| `design` | Thiết kế | `Dropdown` | Loại hình nghiên cứu hoặc tài liệu. | *Thử nghiệm lâm sàng (RCT)* |
-| `intervention` | Can thiệp / Đối chứng | `Text` | Tóm tắt nhóm can thiệp và nhóm đối chứng (Placebo/Chuẩn điều trị). | *Empagliflozin 10mg vs Placebo* |
-| `primaryEndpoint`| Tiêu chí chính | `Text` | Kết cục gộp chính đo lường hiệu quả điều trị. | *3-point MACE* |
-| `keyResults` | Kết quả chính | `Text` (Monospace) | Tỷ số chênh lệch, khoảng tin cậy (CI) hoặc mức khuyến cáo. | *HR 0.86 (95% CI 0.74-0.99); p=0.04* |
-| `impact` | Ảnh hưởng lâm sàng | `Dropdown` | Đánh giá mức độ thay đổi thực hành lâm sàng của tài liệu. | *Practice-Changing* |
-| `sampleSize` | Cỡ mẫu | `Integer` | Tổng số lượng bệnh nhân tham gia thử nghiệm. | *7020* |
-| `population` | Đối tượng nghiên cứu | `Text` | Đặc điểm và tiêu chuẩn lựa chọn bệnh nhân. | *Bệnh nhân ĐTĐ típ 2 nguy cơ TM cao* |
-| `summary` | Kết luận cốt lõi | `Text` (Bắt buộc) | Tóm tắt ngắn gọn kết quả chính của tài liệu. | *Giảm 14% tiêu chí gộp chính MACE...* |
-| `detailedConclusion`| Kết luận chi tiết | `Text` (Multi-line) | Các kết quả chi tiết của tiêu chí phụ, tác dụng phụ hoặc phân tích dưới nhóm. | *Tử vong tim mạch giảm 38%...* |
-| `fdaStatus` | Phê duyệt / Khuyến cáo | `Text` | Trạng thái phê duyệt pháp lý hoặc phân độ khuyến cáo. | *FDA Approved 2016* |
-| `sourceUrl` | Link nguồn | `URL` | Đường dẫn trực tiếp tới PubMed hoặc trang chủ đơn vị ban hành. | *https://www.nejm.org/...* |
-| `file` | File HTML chi tiết | `Text` | Đường dẫn tương đối tới tệp báo cáo chuyên sâu offline trong hệ thống. | *studies/empa-reg.html* |
-| `asianData` | Dữ liệu Châu Á | `Boolean` | Đánh dấu nếu nghiên cứu có nhóm bệnh nhân Châu Á để đối chiếu thực tế. | *Đã chọn (True)* |
+| `id` | Mã nghiên cứu | `Text` (PK) | Slug duy nhất của nghiên cứu. | `study_onco_beamion_lung_2026` |
+| `title` | Tên nghiên cứu | `Text` (Bắt buộc) | Tên chính thức của tài liệu/nghiên cứu. | *Beamion LUNG-1: Zongertinib cho NSCLC* |
+| `drug` | Hoạt chất / Phác đồ | `Text` | Hoạt chất chính hoặc phác đồ can thiệp. | *Zongertinib* |
+| `sourceType` | Phân loại nguồn | `Dropdown` | `intl-study`, `intl-guideline`, `vn-moh`, `vn-association`, `fda`. | *Nghiên cứu Quốc tế* |
+| `cancerType` | Nhóm ung thư | `Dropdown` | `lung`, `breast`, `gi`, `gu`, `haem`, `cns`, `gynae`, `hn`, `skin`, `reg`, `guide`. | *Phổi (Lung)* |
+| `design` | Thiết kế nghiên cứu | `Dropdown` | `rct`, `phase1`, `phase2`, `phase3`, `meta`, `cohort`, `guideline`, `review`. | *Lâm sàng Giai đoạn I* |
+| `presentedAt` | Nơi công bố | `Text` | Tạp chí hoặc hội nghị y khoa công bố. | *ELCC 2026 / NEJM* |
+| `intervention` | Can thiệp / Đối chứng | `Text` | Tóm tắt nhóm can thiệp và đối chứng. | *Zongertinib 120mg QD vs Placebo* |
+| `primaryEndpoint`| Tiêu chí chính | `Text` | Tiêu chí đánh giá chính & ORR. | *ORR (BICR) — 76%* |
+| `medianPFS` | mPFS | `Text` | Trung vị sống thêm không tiến triển. | *14.4 tháng* |
+| `medianOS` | mOS | `Text` | Trung vị sống thêm toàn bộ. | *Chưa đạt* |
+| `keyResults` | Kết quả chính | `Text` (Monospace) | Tỷ số chênh lệch, khoảng tin cậy (CI) vẽ Forest Plot. | *HR 0.65 (95% CI 0.51-0.83, p=0.001)* |
+| `impact` | Ảnh hưởng lâm sàng | `Dropdown` | `practice-changing`, `regulatory`, `informative`, `early-signal`, `negative`. | *Practice-Changing* |
+| `year` | Năm công bố | `Integer` | Năm xuất bản. | *2026* |
+| `organization` | Đơn vị ban hành | `Text` | Tạp chí hoặc tổ chức công bố. | *NEJM / Boehringer Ingelheim* |
+| `phase` | Giai đoạn | `Text` | Giai đoạn nghiên cứu. | *Phase I* |
+| `sampleSize` | Cỡ mẫu | `Integer` | Số lượng bệnh nhân. | *340* |
+| `population` | Đối tượng nghiên cứu | `Text` | Quần thể bệnh nhân tham gia. | *NSCLC tiến triển có đột biến HER2* |
+| `summary` | Kết luận cốt lõi | `Text` (Bắt buộc) | Tóm tắt kết quả chính. | *Zongertinib cho thấy hiệu quả bền vững...* |
+| `detailedConclusion`| Kết luận chi tiết | `Text` | Tác dụng phụ (AEs), phân tích sâu. | *Đạt ORR 76%, tác dụng phụ nhẹ...* |
+| `fdaStatus` | Phê duyệt FDA | `Text` | Trạng thái pháp lý FDA/EMA. | *Đã phê duyệt Feb 2026* |
+| `sourceUrl` | Link nguồn | `URL` | Link PubMed / DOI. | *https://www.nejm.org/...* |
+| `asianData` | Dữ liệu Châu Á | `Boolean` | Có dữ liệu bệnh nhân Châu Á hay không. | *True* |
+| `icd10` | Mã ICD-10 | `JSONB / Array` | Mảng danh sách mã ICD-10 liên quan. | `["C34", "C34.9"]` |
+| `subgroups` | Phân tích Subgroup | `JSONB / Object` | Map phân tích phân nhóm (Forest Plot mini). | `{"Châu Á": "HR 0.60 (95% CI 0.43-0.82)"}` |
 
 ---
 
-## 🛠️ Các Tính Năng Giao Diện (UI Features)
+## 🤖 QUY TRÌNH NẠP DỮ LIỆU TỰ ĐỘNG BẰNG NOTEBOOK LM / AI
 
-### 1. Bộ Lọc Đa Chiều Nâng Cao
-*   **Tìm kiếm nhanh**: Hỗ trợ tìm kiếm thời gian thực theo từ khóa trong tiêu đề, hoạt chất, kết luận, tiêu chí chính và đối tượng nghiên cứu.
-*   **Bộ lọc thuộc tính**: Bấm vào nút **`Bộ lọc nâng cao`** để mở rộng các bộ lọc chuyên khoa, thiết kế nghiên cứu và thời gian công bố.
-*   **Bộ lọc nhanh Châu Á & Yêu thích**: 
-    - Lọc nhanh các nghiên cứu có dữ liệu bệnh nhân Châu Á bằng cách tích chọn checkbox tương ứng.
-    - Chuyển sang Tab **`Đã lưu`** ở thanh điều hướng để xem riêng danh sách tài liệu y khoa bạn đã đánh dấu sao thích.
+### Bước 1: Copy Master Prompt dành cho AI (ChatGPT, Claude, NotebookLM, Gemini)
 
-### 2. So Sánh Đối Chiếu Tài Liệu (Compare View)
-*   **Bước 1**: Tích chọn vào hộp kiểm (Checkbox) ở đầu các dòng nghiên cứu muốn so sánh trong bảng danh sách.
-*   **Bước 2**: Chuyển sang Tab **`So Sánh`** trên thanh công cụ chính (hoặc bấm vào huy hiệu số lượng tài liệu đang chọn ở góc phải).
-*   **Bước 3**: Giao diện dạng cột sẽ hiển thị song song các tiêu chí của các tài liệu được chọn như *Can thiệp/Đối chứng*, *Tiêu chí chính*, *Kết quả chính*, *Cỡ mẫu*, và *Kết luận cốt lõi* giúp dễ dàng nhận diện điểm khác biệt.
+Sao chép đoạn Prompt sau và gửi kèm bài báo/PDF nghiên cứu vào AI để xuất ra JSON chuẩn:
 
-### 3. Tùy Biến Bảng Hiển Thị (Display Customization)
-*   Để tối ưu hóa không gian hiển thị trên các màn hình nhỏ (iPad/Mobile) hoặc khi cần tập trung phân tích chuyên sâu:
-    - Bấm vào nút **`📊 Cột hiển thị`** ở góc trên bảng.
-    - Bật/Tắt các cột dữ liệu theo nhu cầu. Bảng và các tiêu đề cột sẽ co giãn đồng bộ một cách thông minh.
+```text
+Bạn là một chuyên gia Y học chứng cứ (EBM) và Bác sĩ Ung bướu (Oncologist).
+Nhiệm vụ của bạn là trích xuất dữ liệu từ bài báo / nghiên cứu y khoa được cung cấp và chuyển đổi thành MẢNG DỮ LIỆU JSON CHUẨN (JSON Array) 100% hợp lệ để nạp trực tiếp vào hệ thống web.
+
+⚠️ QUY TẮC BẮT BỘC VỀ ĐỊNH DẠNG JSON:
+- Đầu ra CHỈ LÀ KHỐI MÃ JSON bọc trong ```json ... ```. Không thêm bất kỳ lời mở đầu, giải thích hay câu chào hỏi nào khác.
+- Phải đảm bảo cú pháp JSON hợp lệ: Cặp dấu ngoặc kép "key": "value", không có dấu phẩy thừa (trailing comma) ở cuối object/array, chuỗi xuống dòng dùng \n.
+- Phải xuất ra định dạng mảng: [ { ... } ]
+
+### CẤU TRÚC CHI TIẾT CÁC TRƯỜNG DỮ LIỆU JSON BẮT BỘC:
+
+1. `id`: Chuỗi slug duy nhất dạng "study_onco_[tên_thuốc/nghiên_cứu]_[năm]" (chữ thường, gạch dưới).
+2. `title`: Tiêu đề nghiên cứu / bài báo chính thức (chuỗi string, BẮT BỘC).
+3. `drug`: Thuốc / Phác đồ can thiệp chính (chuỗi string).
+4. `sourceType`: Chọn ĐÚNG 1 trong các giá trị: "intl-study" | "intl-guideline" | "vn-moh" | "vn-association" | "fda".
+5. `cancerType`: Chọn ĐÚNG 1 trong các giá trị: "lung" | "breast" | "gi" | "gu" | "haem" | "cns" | "gynae" | "hn" | "skin" | "reg" | "guide".
+6. `specialty`: Đặt giá trị GIỐNG HỆT `cancerType`.
+7. `design`: Chọn ĐÚNG 1 trong các giá trị: "phase1" | "phase2" | "phase3" | "rct" | "meta" | "cohort" | "guideline" | "review" | "other".
+8. `presentedAt`: Hội nghị/Tạp chí công bố (VD: "ASCO 2025", "NEJM 2026").
+9. `intervention`: Nhóm can thiệp vs đối chứng (chuỗi string).
+10. `primaryEndpoint`: Tiêu chí chính & ORR/PFS (chuỗi string).
+11. `medianPFS`: Trung vị PFS (chuỗi string, VD: "14.4 tháng" hoặc "Chưa đạt").
+12. `medianOS`: Trung vị OS (chuỗi string, VD: "28.5 tháng" hoặc "Chưa đạt").
+13. `keyResults`: Chuỗi định dạng thống kê vẽ Forest Plot SVG: "HR 0.65 (95% CI 0.51-0.83, p=0.001)".
+14. `impact`: Chọn ĐÚNG 1 trong các giá trị: "practice-changing" | "regulatory" | "informative" | "early-signal" | "negative".
+15. `year`: Năm công bố (số nguyên integer, VD: 2026).
+16. `organization`: Tạp chí/Đơn vị công bố (chuỗi string).
+17. `phase`: Giai đoạn (chuỗi string, VD: "Phase III").
+18. `sampleSize`: Cỡ mẫu (số nguyên integer hoặc null).
+19. `population`: Đặc điểm bệnh nhân tham gia (chuỗi string).
+20. `summary`: Kết luận cốt lõi ngắn gọn 1-2 câu (chuỗi string, BẮT BỘC).
+21. `detailedConclusion`: Kết luận chi tiết, tác dụng phụ/độc tính AEs (chuỗi string).
+22. `fdaStatus`: Phê duyệt pháp lý (chuỗi string).
+23. `sourceUrl`: Link gốc PubMed/DOI (chuỗi string).
+24. `file`: Mặc định để chuỗi rỗng "".
+25. `asianData`: boolean (true nếu có dữ liệu bệnh nhân Châu Á, ngược lại false).
+26. `bookmarked`: boolean (mặc định false).
+27. `icd10`: Mảng mã ICD-10 liên quan (mảng chuỗi, VD: ["C34", "C34.9"]).
+28. `subgroups`: Object phân nhóm (VD: {"Châu Á": "HR 0.60 (95% CI 0.43-0.82, p=0.002)"}).
+
+Chỉ xuất khối mã JSON bọc trong ```json ... ```.
+```
+
+### Bước 2: Kết quả JSON đầu ra từ AI mẫu chuẩn 100%
+
+```json
+[
+  {
+    "id": "study_onco_beamion_lung_2026",
+    "title": "Beamion LUNG-1: Zongertinib cho ung thư phổi không tế bào nhỏ (NSCLC) đột biến HER2",
+    "drug": "Zongertinib",
+    "sourceType": "intl-study",
+    "cancerType": "lung",
+    "specialty": "lung",
+    "design": "phase1",
+    "presentedAt": "ELCC 2026",
+    "intervention": "Zongertinib 120 mg PO QD (<90kg) hoặc 180 mg (>=90kg)",
+    "primaryEndpoint": "Tỷ lệ đáp ứng khách quan (ORR) (BICR) — 76%",
+    "medianPFS": "14.4 tháng",
+    "medianOS": "Chưa đạt",
+    "keyResults": "HR 0.65 (95% CI 0.51-0.83, p=0.001)",
+    "impact": "practice-changing",
+    "year": 2026,
+    "organization": "NEJM / Boehringer Ingelheim",
+    "phase": "Phase I",
+    "sampleSize": 340,
+    "population": "NSCLC không vảy tiến triển/di căn có đột biến kích hoạt HER2 TKD",
+    "summary": "Zongertinib cho thấy hiệu quả bền vững ở bệnh nhân NSCLC có đột biến HER2 tiến triển.",
+    "detailedConclusion": "Zongertinib đạt ORR 76% và mPFS 14.4 tháng ở bệnh nhân NSCLC HER2+.",
+    "fdaStatus": "Đã phê duyệt (Accelerated approval) Feb 2026",
+    "sourceUrl": "https://www.nejm.org/doi/full/10.1056/NEJMoa2516969",
+    "file": "",
+    "asianData": true,
+    "bookmarked": true,
+    "icd10": ["C34", "C34.9"],
+    "subgroups": {
+      "Châu Á": "HR 0.60 (95% CI 0.43-0.82, p=0.002)",
+      "Di căn não": "HR 0.58 (95% CI 0.39-0.85, p=0.005)"
+    },
+    "createdAt": "2026-08-05T09:00:00.000Z"
+  }
+]
+```
 
 ---
 
-## ☁️ Tích Hợp & Đồng Bộ Hóa Đám Mây (Supabase Integration)
+## ☁️ TÍCH HỢP SUPABASE & ĐỒNG BỘ ĐÁM MÂY
 
-Trang web hoạt động theo cơ chế **Offline-First**. Mặc định toàn bộ dữ liệu sẽ lưu trữ trong trình duyệt của bạn thông qua `LocalStorage`. Để lưu trữ lâu dài và đồng bộ hóa trên nhiều máy tính/thiết bị khác nhau, bạn nên cấu hình lưu trữ đám mây thông qua dịch vụ **Supabase** (miễn phí).
+### 1. Tạo Bảng SQL trên Supabase (DDL)
 
-### Bước 1: Tạo Bảng trên Supabase Console
-1. Truy cập [Supabase](https://supabase.com) và khởi tạo một Project.
-2. Truy cập công cụ **SQL Editor** trong dự án của bạn.
-3. Tạo một Query mới, sao chép toàn bộ đoạn mã SQL dưới đây rồi nhấn **Run**:
+Truy cập **SQL Editor** trong dự án Supabase của bạn và chạy câu lệnh SQL sau:
 
 ```sql
-create table clinical_guidelines (
-  id text primary key,
-  title text not null,
-  drug text,
-  "sourceType" text,
-  specialty text,
-  design text,
-  intervention text,
-  "primaryEndpoint" text,
-  "keyResults" text,
-  impact text,
-  year integer,
-  organization text,
-  phase text,
-  "sampleSize" integer,
-  population text,
-  summary text,
-  "detailedConclusion" text,
-  "fdaStatus" text,
-  "sourceUrl" text,
-  file text,
-  "asianData" boolean,
-  bookmarked boolean,
-  "createdAt" timestamp with time zone default timezone('utc'::text, now())
+CREATE TABLE IF NOT EXISTS oncology_clinical_updates (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  author TEXT,
+  drug TEXT,
+  "sourceType" TEXT DEFAULT 'intl-study',
+  "cancerType" TEXT DEFAULT 'lung',
+  design TEXT DEFAULT 'rct',
+  "presentedAt" TEXT,
+  intervention TEXT,
+  "primaryEndpoint" TEXT,
+  "medianPFS" TEXT,
+  "medianOS" TEXT,
+  "keyResults" TEXT,
+  impact TEXT DEFAULT 'informative',
+  year INTEGER DEFAULT 2026,
+  organization TEXT,
+  phase TEXT,
+  "sampleSize" INTEGER,
+  population TEXT,
+  summary TEXT NOT NULL,
+  "detailedConclusion" TEXT,
+  "fdaStatus" TEXT,
+  "sourceUrl" TEXT,
+  file TEXT,
+  "asianData" BOOLEAN DEFAULT false,
+  bookmarked BOOLEAN DEFAULT false,
+  icd10 JSONB DEFAULT '[]'::jsonb,
+  subgroups JSONB DEFAULT '{}'::jsonb,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+
+-- Phân quyền Row Level Security (RLS)
+ALTER TABLE oncology_clinical_updates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access" ON oncology_clinical_updates FOR SELECT USING (true);
+CREATE POLICY "Allow public insert/update access" ON oncology_clinical_updates FOR ALL USING (true) WITH CHECK (true);
 ```
 
-### Bước 2: Cấu Hình Kết Nối Trên Giao Diện CliniPortal
-1. Tại Topnav của trang Hướng dẫn điều trị, bấm vào nút hiển thị trạng thái kết nối (ví dụ: **`Supabase: Local Mode`** ⚪).
-2. Điền thông tin kết nối từ tài khoản Supabase của bạn (`Settings -> API`):
-    - **Supabase Project URL** (địa chỉ URL của dự án)
-    - **Supabase Anon Key** (khóa API công khai)
-3. Nhấp **Lưu & Kết nối**.
+### 2. Nạp Dữ Liệu Qua SQL Insert / Upsert
 
-### Bước 3: Trạng Thái Đồng Bộ
-Nút trạng thái trên Topnav sẽ tự động chuyển màu để hiển thị trạng thái kết nối:
-*   🟢 **Supabase: Connected / Synced**: Đã kết nối đám mây thành công. Dữ liệu mẫu ban đầu (nếu Supabase trống) sẽ tự động được tải lên đám mây (Seeding).
-*   ⚪ **Supabase: Local Mode**: Chưa cấu hình URL/Key. Ứng dụng đọc/ghi dữ liệu từ `LocalStorage` ngoại tuyến trên thiết bị hiện tại.
-*   🔴 **Supabase: Conn Error / Sync Failed**: Lỗi kết nối mạng hoặc sai thông tin API. Hệ thống tự động chuyển sang chế độ Local dự phòng để tránh gián đoạn công việc của bác sĩ.
+```sql
+INSERT INTO oncology_clinical_updates (
+  id, title, drug, "sourceType", "cancerType", design, "presentedAt", 
+  intervention, "primaryEndpoint", "medianPFS", "medianOS", "keyResults", 
+  impact, year, organization, phase, "sampleSize", population, 
+  summary, "detailedConclusion", "fdaStatus", "sourceUrl", file, 
+  "asianData", bookmarked, icd10, subgroups, "createdAt"
+)
+VALUES 
+(
+  'study_onco_beamion_lung_2026',
+  'Beamion LUNG-1: Zongertinib cho ung thư phổi không tế bào nhỏ (NSCLC) đột biến HER2',
+  'Zongertinib',
+  'intl-study',
+  'lung',
+  'phase1',
+  'ELCC 2026',
+  'Zongertinib 120 mg PO QD (<90kg) hoặc 180 mg (>=90kg)',
+  'Tỷ lệ đáp ứng khách quan (ORR) (BICR) — 76%',
+  '14.4 tháng',
+  'Chưa đạt',
+  'HR 0.65 (95% CI 0.51-0.83, p=0.001)',
+  'practice-changing',
+  2026,
+  'NEJM / Boehringer Ingelheim',
+  'Phase I',
+  340,
+  'NSCLC không vảy tiến triển/di căn có đột biến kích hoạt HER2 TKD',
+  'Zongertinib cho thấy hiệu quả bền vững ở bệnh nhân NSCLC có đột biến HER2.',
+  'Zongertinib đạt ORR 76% và mPFS 14.4 tháng ở bệnh nhân NSCLC HER2+.',
+  'Đã phê duyệt (Accelerated approval) Feb 2026',
+  'https://www.nejm.org/doi/full/10.1056/NEJMoa2516969',
+  '',
+  true,
+  true,
+  '["C34", "C34.9"]'::jsonb,
+  '{"Châu Á": "HR 0.60 (95% CI 0.43-0.82, p=0.002)"}'::jsonb,
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  title = EXCLUDED.title,
+  drug = EXCLUDED.drug,
+  "keyResults" = EXCLUDED."keyResults",
+  summary = EXCLUDED.summary,
+  subgroups = EXCLUDED.subgroups;
+```
+
+### 3. Nạp Tự Động Qua Browser Console (JS SDK)
+
+Bạn mở Console trình duyệt (F12) tại trang Oncology Guidelines và chạy:
+
+```javascript
+async function uploadJsonToSupabase(jsonData) {
+  const url = localStorage.getItem('supabaseUrl');
+  const key = localStorage.getItem('supabaseKey');
+  if (!window.supabase || !url || !key) return alert("Chưa kết nối Supabase URL/Key!");
+
+  const client = window.supabase.createClient(url, key);
+  const formattedData = jsonData.map(s => ({
+    ...s,
+    icd10: Array.isArray(s.icd10) ? JSON.stringify(s.icd10) : (s.icd10 || null),
+    subgroups: typeof s.subgroups === 'object' ? JSON.stringify(s.subgroups) : (s.subgroups || null)
+  }));
+
+  const { data, error } = await client
+    .from('oncology_clinical_updates')
+    .upsert(formattedData, { onConflict: 'id' });
+
+  if (error) console.error("Lỗi:", error);
+  else alert("✅ Nạp thành công " + formattedData.length + " nghiên cứu lên Supabase!");
+}
+```
 
 ---
 
-## 📂 Cấu Trúc Tập Tin (File Architecture)
+## 📂 Cấu Trúc Tập Tin Phân Hệ
 
-Phân hệ được tổ chức tinh gọn trong cấu trúc thư mục y học chứng cứ của dự án:
 ```text
-pages/Y học chứng cứ/
-├── yhcc.html (Cổng kết nối phân hệ Y học chứng cứ)
-└── Guidelines/
-    ├── Guidelines.html (Trang giao diện ứng dụng chính)
-    └── README.md (Tài liệu hướng dẫn này)
+oncology-guidelines/
+├── oncology.html (Giao diện chính phân hệ Ung Bướu)
+├── oncology.css (Style giao diện)
+├── oncology.js (Logic nghiệp vụ & Kết nối Supabase)
+├── oncologydata.js (Dữ liệu mẫu mặc định & Config enum)
+├── OPERATIONS.md (Tài liệu kỹ thuật nội bộ)
+└── README.md (Hướng dẫn sử dụng này)
 ```
-
-> [!NOTE]
-> Trang web tuân thủ thiết kế tĩnh (pure HTML/CSS/JS), không phụ thuộc vào Node.js hay bất kỳ framework cồng kềnh nào để đảm bảo tốc độ tải tức thì và có thể chạy trực tiếp bằng cách mở file (`file:///`) ngoại tuyến.

@@ -487,7 +487,7 @@
             <span class="left-nav-text">Tất cả</span>
           </button>
         `;
-        Object.entries(SPECIALTIES).forEach(([key, spec]) => {
+        Object.entries(CANCER_TYPES).forEach(([key, spec]) => {
           specHtml += `
             <button class="spec-filter-item ${filters.cancerType === key ? 'active' : ''}" onclick="setFilter('cancerType', '${key}')" title="${spec.name}">
               <span class="spec-filter-dot" style="background: ${spec.color};"></span>
@@ -1907,7 +1907,8 @@
             author: item.author || '',
             drug: item.drug || 'N/A',
             sourceType: item.sourceType || 'intl-study',
-            cancerType: item.cancerType || 'cardio',
+            cancerType: item.cancerType || item.specialty || 'lung',
+            specialty: item.cancerType || item.specialty || 'lung',
             design: item.design || 'rct',
             intervention: item.intervention || '',
             primaryEndpoint: item.primaryEndpoint || '',
@@ -1957,28 +1958,33 @@
     function fillSampleJSON() {
       const sample = [
         {
-          "title": "Thử nghiệm DAPA-CKD (Dapagliflozin trên Bệnh Thận Mạn)",
-          "author": "Heerspink HJL et al.",
-          "drug": "Dapagliflozin 10mg QD",
+          "id": "study_onco_beamion_lung_2026",
+          "title": "Beamion LUNG-1: Zongertinib cho ung thư phổi không tế bào nhỏ (NSCLC) đột biến HER2",
+          "author": "NEJM 2026",
+          "drug": "Zongertinib",
           "sourceType": "intl-study",
-          "specialty": "renal",
-          "design": "rct",
-          "intervention": "Dapagliflozin 10mg QD vs Placebo",
-          "primaryEndpoint": "Tiêu chí gộp: Giảm ≥50% eGFR, suy thận giai đoạn cuối, tử vong tim mạch/thận",
-          "keyResults": "HR 0.61 (95% CI 0.51-0.72, p < 0.001)",
+          "cancerType": "lung",
+          "design": "phase1",
+          "intervention": "Zongertinib 120 mg PO QD (<90kg) hoặc 180 mg (>=90kg)",
+          "primaryEndpoint": "Tỷ lệ đáp ứng khách quan (ORR) (BICR) — 76%",
+          "medianPFS": "14.4 tháng",
+          "medianOS": "Chưa đạt",
+          "keyResults": "HR 0.65 (95% CI 0.51-0.83, p=0.001)",
           "impact": "practice-changing",
-          "year": 2020,
-          "organization": "NEJM / AstraZeneca",
-          "sampleSize": 4304,
-          "population": "Bệnh nhân bệnh thận mạn (eGFR 25-75 mL/min/1.73m²)",
-          "summary": "Dapagliflozin giảm 39% nguy cơ suy thận tiến triển hoặc tử vong ở bệnh nhân CKD bất kể có bị ĐTĐ hay không.",
+          "year": 2026,
+          "organization": "NEJM / Boehringer Ingelheim",
+          "sampleSize": 340,
+          "population": "NSCLC không vảy tiến triển/di căn có đột biến kích hoạt HER2 TKD",
+          "summary": "Zongertinib cho thấy hiệu quả bền vững ở bệnh nhân ung thư phổi không tế bào nhỏ có đột biến HER2 tiến triển.",
+          "detailedConclusion": "Zongertinib đạt ORR 76% và mPFS 14.4 tháng ở bệnh nhân NSCLC HER2+.",
+          "fdaStatus": "Đã phê duyệt (Accelerated approval) Feb 2026",
+          "icd10": ["C34", "C34.9"],
           "subgroups": {
-            "Có Đái tháo đường": "HR 0.64 (95% CI 0.52-0.79, p<0.001)",
-            "Không Đái tháo đường": "HR 0.50 (95% CI 0.35-0.72, p<0.001)",
             "Châu Á": "HR 0.60 (95% CI 0.43-0.82, p=0.002)",
-            "eGFR < 45 mL/min": "OR 0.63 (95% CI 0.51-0.78, p=0.001)"
+            "Di căn não": "HR 0.58 (95% CI 0.39-0.85, p=0.005)"
           },
-          "asianData": true
+          "asianData": true,
+          "bookmarked": true
         }
       ];
       const el = document.getElementById('json-text');
@@ -2342,8 +2348,11 @@
       const pcCount    = studies.filter(s => s.impact === 'practice-changing').length;
       const asianCount = studies.filter(s => s.asianData).length;
 
-      const specCounts = {}; Object.keys(SPECIALTIES).forEach(k => { specCounts[k] = 0; });
-      studies.forEach(s => { if (CANCER_TYPES[s.specialty]) specCounts[s.specialty]++; });
+      const specCounts = {}; Object.keys(CANCER_TYPES).forEach(k => { specCounts[k] = 0; });
+      studies.forEach(s => { 
+        const key = s.cancerType || s.specialty;
+        if (CANCER_TYPES[key]) specCounts[key]++; 
+      });
       const impactCounts = {}; Object.keys(IMPACTS).forEach(k => { impactCounts[k] = 0; });
       studies.forEach(s => { if (IMPACTS[s.impact]) impactCounts[s.impact]++; });
       const srcCounts = {}; Object.keys(SOURCE_TYPES).forEach(k => { srcCounts[k] = 0; });
