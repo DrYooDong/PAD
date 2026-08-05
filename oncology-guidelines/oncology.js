@@ -523,7 +523,8 @@
       let result = studies.filter(s => {
         if (currentTab === 'saved' && !s.bookmarked) return false;
         if (filters.sourceType && s.sourceType !== filters.sourceType) return false;
-        if (filters.specialty && s.specialty !== filters.specialty) return false;
+        if (filters.cancerType && (s.cancerType || s.specialty) !== filters.cancerType) return false;
+        if (filters.specialty && (s.cancerType || s.specialty) !== filters.specialty) return false;
         if (filters.design && s.design !== filters.design) return false;
         if (filters.impact && s.impact !== filters.impact) return false;
         if (filters.period && !isWithinPeriod(s, filters.period)) return false;
@@ -890,7 +891,8 @@
         const isSelected = selectedIds.has(study.id);
         const isBookmarked = study.bookmarked;
 
-        const spec = CANCER_TYPES[study.specialty] || { name: study.specialty, color: '#666', bg: '#f0f0f0' };
+        const cTypeKey0 = study.cancerType || study.specialty;
+        const spec = CANCER_TYPES[cTypeKey0] || { name: cTypeKey0 || 'Khác', color: '#666', bg: '#f0f0f0' };
         const impactConfig = IMPACTS[study.impact] || { name: study.impact || 'N/A', color: '#6b7280', bg: '#f3f4f6' };
         const srcTypeConfig = SOURCE_TYPES[study.sourceType] || { name: study.sourceType || 'N/A', color: '#6b7280', bg: '#f3f4f6' };
         const designConfig = DESIGNS[study.design] || { name: study.design || 'N/A' };
@@ -919,27 +921,22 @@
           ? window.CliniPortalDrugLinker.renderDrugInteractionBadge(study)
           : '';
 
-        // Columns HTML segments
-        const sourceTypeCell = columnVisibility.sourceType ? `<td><span class="badge badge-src-${study.sourceType}">${srcTypeConfig.name}</span></td>` : '';
-        const specialtyCell = columnVisibility.specialty ? `<td><span class="badge badge-${study.specialty}">${spec.name}</span></td>` : '';
-        const designCell = columnVisibility.design ? `<td><span class="badge-source">${designConfig.name}</span></td>` : '';
-        const organizationCell = columnVisibility.organization ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.organization || 'N/A')} (${study.year})</div></td>` : '';
-        const interventionCell = columnVisibility.intervention ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.intervention || 'N/A')}</div></td>` : '';
-        const primaryEndpointCell = columnVisibility.primaryEndpoint ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.primaryEndpoint || 'N/A')}</div></td>` : '';
-        const keyResultsCell = columnVisibility.keyResults ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.keyResults || 'N/A')}</div></td>` : '';
+        // Columns HTML segments matching oncology.html table header layout
+        const cTypeKey = study.cancerType || study.specialty;
+        const specConfig = CANCER_TYPES[cTypeKey] || { name: cTypeKey || 'Khác', color: '#666', bg: '#f0f0f0' };
+
+        const cancerTypeCell = columnVisibility.cancerType !== false ? `<td><span class="badge badge-${cTypeKey}" style="background:${specConfig.bg}; color:${specConfig.color};">${specConfig.name}</span></td>` : '';
+        const phaseCell = columnVisibility.phase !== false ? `<td><span class="badge-source">${escapeHtml(study.phase || 'N/A')}</span></td>` : '';
+        const presentedAtCell = columnVisibility.presentedAt !== false ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.presentedAt || 'N/A')}</div></td>` : '';
+        const populationCell = columnVisibility.population !== false ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.population || 'N/A')}</div></td>` : '';
+        const interventionCell = columnVisibility.intervention !== false ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.intervention || 'N/A')}</div></td>` : '';
+        const primaryEndpointCell = columnVisibility.primaryEndpoint !== false ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.primaryEndpoint || 'N/A')}</div></td>` : '';
+        const medianPFSCell = columnVisibility.medianPFS !== false ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.medianPFS || 'N/A')}</div></td>` : '';
+        const medianOSCell = columnVisibility.medianOS !== false ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.medianOS || 'N/A')}</div></td>` : '';
+        const keyResultsCell = columnVisibility.keyResults !== false ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.keyResults || 'N/A')} ${forestPlotHtml}</div></td>` : '';
         
-        // Cột bệnh ICD-10
-        const icd10Cell = columnVisibility.icd10 ? `
-          <td>
-            <div style="display:flex; flex-wrap:wrap; gap:4px;">
-              ${icd10Tags}
-            </div>
-          </td>
-        ` : '';
-        
-        // Build stale badge inline for title column
         const staleInline = staleBadge ? `${staleBadge}` : '';
-        const impactCell = columnVisibility.impact ? `
+        const impactCell = columnVisibility.impact !== false ? `
           <td>
             <span class="impact-badge impact-${study.impact}">
               <span class="impact-dot"></span>
@@ -947,17 +944,8 @@
             </span>
           </td>
         ` : '';
-        
-        const conclusionCell = columnVisibility.conclusion ? `
-          <td>
-            <div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">
-              ${escapeHtml(study.summary)}
-            </div>
-          </td>
-        ` : '';
 
-        const sampleSizeCell = columnVisibility.sampleSize ? `<td>${study.sampleSize ? 'n=' + formatNumber(study.sampleSize) : 'N/A'}</td>` : '';
-        const populationCell = columnVisibility.population ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.population || 'N/A')}</div></td>` : '';
+        const fdaStatusCell = columnVisibility.fdaStatus !== false ? `<td><div class="study-summary ${viewMode === 'compact' ? 'clamped' : ''}">${escapeHtml(study.fdaStatus || 'N/A')}</div></td>` : '';
 
         rowsHtml += `
           <tr id="tr-${study.id}" class="main-row ${isExpanded ? 'expanded' : ''}" onclick="toggleExpandRow('${study.id}', event)">
@@ -984,18 +972,17 @@
                 </div>
               </div>
             </td>
-            ${sourceTypeCell}
-            ${specialtyCell}
-            ${designCell}
-            ${organizationCell}
+            ${cancerTypeCell}
+            ${phaseCell}
+            ${presentedAtCell}
+            ${populationCell}
             ${interventionCell}
             ${primaryEndpointCell}
+            ${medianPFSCell}
+            ${medianOSCell}
             ${keyResultsCell}
             ${impactCell}
-            ${conclusionCell}
-            ${sampleSizeCell}
-            ${populationCell}
-            ${icd10Cell}
+            ${fdaStatusCell}
           </tr>
         `;
 
@@ -1132,7 +1119,8 @@
       }
 
       container.innerHTML = latest.map(study => {
-        const spec = CANCER_TYPES[study.specialty] || { name: study.specialty, color: '#666', bg: '#f0f0f0' };
+        const cTypeKey1 = study.cancerType || study.specialty;
+        const spec = CANCER_TYPES[cTypeKey1] || { name: cTypeKey1 || 'Khác', color: '#666', bg: '#f0f0f0' };
         
         return `
           <div class="update-item" onclick="toggleExpandRow('${study.id}', event)">
@@ -1295,7 +1283,8 @@
       const comparedStudies = studies.filter(s => selectedIds.has(s.id));
 
       container.innerHTML = comparedStudies.map(study => {
-        const spec = CANCER_TYPES[study.specialty] || { name: study.specialty, color: '#666', bg: '#f0f0f0' };
+        const cTypeKey2 = study.cancerType || study.specialty;
+        const spec = CANCER_TYPES[cTypeKey2] || { name: cTypeKey2 || 'Khác', color: '#666', bg: '#f0f0f0' };
         const impactConfig = IMPACTS[study.impact] || { name: study.impact || 'N/A', color: '#6b7280', bg: '#f3f4f6' };
         const srcTypeConfig = SOURCE_TYPES[study.sourceType] || { name: study.sourceType || 'N/A', color: '#6b7280', bg: '#f3f4f6' };
         const designConfig = DESIGNS[study.design] || { name: study.design || 'N/A' };
@@ -1312,7 +1301,7 @@
 
             <div class="compare-row" style="display: flex; flex-wrap: wrap; gap: 6px;">
               <span class="badge badge-src-${study.sourceType}">${srcTypeConfig.name}</span>
-              <span class="badge badge-${study.specialty}">${spec.name}</span>
+              <span class="badge badge-${cTypeKey2}" style="background:${spec.bg}; color:${spec.color}">${spec.name}</span>
               <span class="impact-badge impact-${study.impact}">
                 <span class="impact-dot"></span>
                 ${impactConfig.name}
@@ -2241,7 +2230,8 @@
       }
 
       cardsContainer.innerHTML = filtered.map(study => {
-        const spec = CANCER_TYPES[study.specialty] || { name: study.specialty, color: '#666', bg: '#f0f0f0' };
+        const cTypeKey = study.cancerType || study.specialty;
+        const spec = CANCER_TYPES[cTypeKey] || { name: cTypeKey || 'Khác', color: '#666', bg: '#f0f0f0' };
         const impactConfig = IMPACTS[study.impact] || { name: study.impact || 'N/A', color: '#6b7280', bg: '#f3f4f6' };
         const srcTypeConfig = SOURCE_TYPES[study.sourceType] || { name: study.sourceType || 'N/A', color: '#6b7280', bg: '#f3f4f6' };
         const isBookmarked = study.bookmarked;
@@ -2265,8 +2255,8 @@
                 </div>
                 <div class="mc-meta">
                   <span class="badge badge-src-${study.sourceType}" style="font-size:0.65rem;">${srcTypeConfig.name}</span>
-                  <span class="badge badge-${study.specialty}" style="font-size:0.65rem;">${spec.name}</span>
-                  <span style="color: var(--text-faint); font-size: 0.72rem;">${escapeHtml(study.organization || '')} (${study.year})</span>
+                  <span class="badge badge-${cTypeKey}" style="font-size:0.65rem; background:${spec.bg}; color:${spec.color}">${spec.name}</span>
+                  <span style="color: var(--text-faint); font-size: 0.72rem;">${escapeHtml(study.presentedAt || study.organization || '')} (${study.year})</span>
                 </div>
               </div>
               <div class="mc-header-right">
@@ -2554,7 +2544,8 @@
             </div>
             <div class="tl-items">
               ${vis.map(study => {
-                const spec = CANCER_TYPES[study.specialty]||{name:study.specialty,color:'#666'};
+                const cTypeKey3 = study.cancerType || study.specialty;
+                const spec = CANCER_TYPES[cTypeKey3]||{name:cTypeKey3||'Khác',color:'#666',bg:'#f0f0f0'};
                 const imp  = IMPACTS[study.impact]||{name:study.impact||'N/A',color:'#6b7280'};
                 const src  = SOURCE_TYPES[study.sourceType]||{name:study.sourceType||'',color:'#6b7280'};
                 const stale = getStaleAlertBadge(study);
@@ -2570,7 +2561,7 @@
                       </div>
                       <div class="tl-item-badges">
                         <span class="badge badge-src-${study.sourceType}" style="font-size:0.62rem;">${src.name}</span>
-                        <span class="badge badge-${study.specialty}" style="font-size:0.62rem;">${spec.name}</span>
+                        <span class="badge badge-${cTypeKey3}" style="font-size:0.62rem; background:${spec.bg}; color:${spec.color}">${spec.name}</span>
                         <span class="impact-badge impact-${study.impact}" style="font-size:0.62rem;"><span class="impact-dot"></span>${imp.name}</span>
                         ${study.sampleSize?`<span class="tl-n-badge">n=${formatNumber(study.sampleSize)}</span>`:''}
                       </div>
