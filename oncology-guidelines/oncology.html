@@ -182,17 +182,17 @@
                 📊 Cột hiển thị
               </button>
               <div class="dropdown-menu" id="columns-dropdown-menu">
-                <label class="dropdown-item"><input type="checkbox" checked data-column="cancerType" onchange="toggleColumnVisibility('cancerType', this.checked)"> Loại Ung thư</label>
-                <label class="dropdown-item"><input type="checkbox" checked data-column="phase" onchange="toggleColumnVisibility('phase', this.checked)"> Giai đoạn (Phase)</label>
-                <label class="dropdown-item"><input type="checkbox" checked data-column="presentedAt" onchange="toggleColumnVisibility('presentedAt', this.checked)"> Trình bày tại</label>
-                <label class="dropdown-item"><input type="checkbox" checked data-column="population" onchange="toggleColumnVisibility('population', this.checked)"> Đối tượng</label>
-                <label class="dropdown-item"><input type="checkbox" checked data-column="intervention" onchange="toggleColumnVisibility('intervention', this.checked)"> Can thiệp</label>
-                <label class="dropdown-item"><input type="checkbox" checked data-column="primaryEndpoint" onchange="toggleColumnVisibility('primaryEndpoint', this.checked)"> Tiêu chí chính</label>
-                <label class="dropdown-item"><input type="checkbox" checked data-column="medianPFS" onchange="toggleColumnVisibility('medianPFS', this.checked)"> Trung vị PFS</label>
-                <label class="dropdown-item"><input type="checkbox" checked data-column="medianOS" onchange="toggleColumnVisibility('medianOS', this.checked)"> Trung vị OS</label>
-                <label class="dropdown-item"><input type="checkbox" checked data-column="keyResults" onchange="toggleColumnVisibility('keyResults', this.checked)"> Kết luận ngắn</label>
-                <label class="dropdown-item"><input type="checkbox" checked data-column="impact" onchange="toggleColumnVisibility('impact', this.checked)"> Ảnh hưởng</label>
-                <label class="dropdown-item"><input type="checkbox" checked data-column="fdaStatus" onchange="toggleColumnVisibility('fdaStatus', this.checked)"> Trạng thái FDA</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="cancerType" onchange="toggleColumnVisibility('cancerType', this.checked)"> Cancer Type</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="phase" onchange="toggleColumnVisibility('phase', this.checked)"> Phase</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="presentedAt" onchange="toggleColumnVisibility('presentedAt', this.checked)"> Presented At</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="population" onchange="toggleColumnVisibility('population', this.checked)"> Population</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="intervention" onchange="toggleColumnVisibility('intervention', this.checked)"> Intervention</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="primaryEndpoint" onchange="toggleColumnVisibility('primaryEndpoint', this.checked)"> 1° Endpoint</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="medianPFS" onchange="toggleColumnVisibility('medianPFS', this.checked)"> mPFS</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="medianOS" onchange="toggleColumnVisibility('medianOS', this.checked)"> mOS</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="keyResults" onchange="toggleColumnVisibility('keyResults', this.checked)"> Conclusion</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="impact" onchange="toggleColumnVisibility('impact', this.checked)"> Impact</label>
+                <label class="dropdown-item"><input type="checkbox" checked data-column="fdaStatus" onchange="toggleColumnVisibility('fdaStatus', this.checked)"> FDA Status</label>
               </div>
             </div>
 
@@ -283,18 +283,18 @@
                 </th>
                 <th class="col-star cell-center">⭐</th>
                 <th class="col-expand cell-center"></th>
-                <th class="col-study sortable" data-sort="title">Tên nghiên cứu / Thuốc</th>
-                <th class="sortable" data-sort="cancerType" data-col="cancerType">Loại Ung thư</th>
-                <th class="sortable" data-sort="phase" data-col="phase">Giai đoạn</th>
-                <th class="sortable" data-sort="presentedAt" data-col="presentedAt">Trình bày tại</th>
-                <th class="sortable" data-sort="population" data-col="population">Đối tượng</th>
-                <th class="sortable" data-sort="intervention" data-col="intervention">Can thiệp</th>
-                <th class="sortable" data-sort="primaryEndpoint" data-col="primaryEndpoint">Tiêu chí chính</th>
-                <th class="sortable" data-sort="medianPFS" data-col="medianPFS">Trung vị PFS</th>
-                <th class="sortable" data-sort="medianOS" data-col="medianOS">Trung vị OS</th>
-                <th class="sortable" data-sort="keyResults" data-col="keyResults">Kết luận ngắn</th>
-                <th class="col-impact sortable" data-sort="impact" data-col="impact">Ảnh hưởng</th>
-                <th class="sortable" data-sort="fdaStatus" data-col="fdaStatus">Trạng thái FDA</th>
+                <th class="col-study sortable" data-sort="title">STUDY / DRUG</th>
+                <th class="sortable" data-sort="cancerType" data-col="cancerType">CANCER TYPE</th>
+                <th class="sortable" data-sort="phase" data-col="phase">PHASE</th>
+                <th class="sortable" data-sort="presentedAt" data-col="presentedAt">PRESENTED AT</th>
+                <th class="sortable" data-sort="population" data-col="population">POPULATION</th>
+                <th class="sortable" data-sort="intervention" data-col="intervention">INTERVENTION</th>
+                <th class="sortable" data-sort="primaryEndpoint" data-col="primaryEndpoint">1° ENDPOINT</th>
+                <th class="sortable" data-sort="medianPFS" data-col="medianPFS">mPFS</th>
+                <th class="sortable" data-sort="medianOS" data-col="medianOS">mOS</th>
+                <th class="sortable" data-sort="keyResults" data-col="keyResults">CONCLUSION</th>
+                <th class="col-impact sortable" data-sort="impact" data-col="impact">IMPACT</th>
+                <th class="sortable" data-sort="fdaStatus" data-col="fdaStatus">FDA STATUS</th>
               </tr>
             </thead>
             <tbody id="table-body">
